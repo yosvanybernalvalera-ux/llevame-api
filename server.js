@@ -27,6 +27,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir archivos HTML estáticos
+app.use(express.static(__dirname));
+
 // Base de datos
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
