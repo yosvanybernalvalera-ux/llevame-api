@@ -2,31 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LLévame - Cliente</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; background: #f5f5f5; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; padding-bottom: 80px; }
+        .header { background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; }
-        button { width: 100%; padding: 14px; background: #FF9800; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button:active { transform: scale(0.98); }
+        button.secondary { background: #666; }
+        button.danger { background: #f44336; }
         .hidden { display: none; }
-        .header { background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 20px; text-align: center; border-radius: 20px; margin-bottom: 20px; }
+        .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #333; color: white; padding: 14px; border-radius: 12px; text-align: center; z-index: 1000; }
+        .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; margin-top: 10px; line-height: 1.6; }
+        .categorias { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 15px 0; }
+        .categoria-card { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; }
+        .categoria-card.selected { border-color: #FF9800; background: #FFF3E0; }
+        .viaje-item { padding: 12px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚕 LLévame</h1>
-            <p>Tu taxi en Cuba</p>
-        </div>
+    <div class="header">
+        <h1>🚕 LLévame</h1>
+        <p>Tu taxi en Cuba</p>
+    </div>
 
+    <div class="container" id="app">
         <!-- Pantalla de bienvenida -->
         <div id="authScreen">
             <div class="card">
                 <button onclick="mostrarLogin()">Iniciar sesión</button>
-                <button onclick="mostrarRegistro()" style="margin-top: 10px; background: #666;">Registrarme</button>
+                <button onclick="mostrarRegistro()" class="secondary" style="margin-top: 10px;">Registrarme</button>
             </div>
         </div>
 
@@ -37,45 +46,93 @@
                 <input type="text" id="loginUsuario" placeholder="Usuario">
                 <input type="password" id="loginPassword" placeholder="Contraseña">
                 <button onclick="login()">Entrar</button>
-                <button onclick="volver()" style="margin-top: 10px; background: #999;">Volver</button>
+                <button onclick="volver()" class="secondary" style="margin-top: 10px;">Volver</button>
             </div>
         </div>
 
         <!-- Pantalla de registro -->
         <div id="registroScreen" class="hidden">
             <div class="card">
-                <h2>Registro</h2>
-                <input type="text" id="regUsuario" placeholder="Usuario">
-                <input type="password" id="regPassword" placeholder="Contraseña">
-                <input type="text" id="regNombre" placeholder="Nombre">
-                <input type="text" id="regApellidos" placeholder="Apellidos">
-                <input type="text" id="regCi" placeholder="Carnet de Identidad">
+                <h2>Registro de Cliente</h2>
+                <input type="text" id="regUsuario" placeholder="Usuario *">
+                <input type="password" id="regPassword" placeholder="Contraseña *">
+                <input type="text" id="regNombre" placeholder="Nombre *">
+                <input type="text" id="regApellidos" placeholder="Apellidos *">
+                <input type="text" id="regCi" placeholder="Carnet de Identidad *">
                 <input type="tel" id="regTelefono" placeholder="Teléfono">
                 <input type="email" id="regEmail" placeholder="Email">
                 <button onclick="registro()">Registrarme</button>
-                <button onclick="volver()" style="margin-top: 10px; background: #999;">Volver</button>
+                <button onclick="volver()" class="secondary" style="margin-top: 10px;">Volver</button>
             </div>
         </div>
 
         <!-- Pantalla principal (después de login) -->
         <div id="mainScreen" class="hidden">
+            <!-- Solicitar taxi -->
             <div class="card">
                 <h3>📍 Pedir Taxi</h3>
                 <input type="text" id="origen" placeholder="¿Dónde estás?">
                 <input type="text" id="destino" placeholder="¿A dónde vas?">
+                
+                <div class="categorias" id="categorias">
+                    <div class="categoria-card selected" onclick="seleccionarCategoria('economico')">🚗 Económico</div>
+                    <div class="categoria-card" onclick="seleccionarCategoria('confort')">🚙 Confort</div>
+                    <div class="categoria-card" onclick="seleccionarCategoria('clasico')">🚘 Clásico</div>
+                    <div class="categoria-card" onclick="seleccionarCategoria('lujo')">✨ Lujo</div>
+                    <div class="categoria-card" onclick="seleccionarCategoria('moto')">🏍️ Moto</div>
+                    <div class="categoria-card" onclick="seleccionarCategoria('triciclo')">🛺 Triciclo</div>
+                </div>
+                
                 <button onclick="solicitarTaxi()">Solicitar Taxi</button>
             </div>
+
+            <!-- Viaje activo -->
+            <div class="card" id="viajeActivoCard" style="display: none;">
+                <h3>🚖 Viaje en curso</h3>
+                <div id="viajeActivoInfo"></div>
+            </div>
+
+            <!-- Historial -->
+            <div class="card">
+                <h3>📋 Mis viajes</h3>
+                <div id="historialLista">Cargando...</div>
+            </div>
+
+            <!-- Perfil -->
             <div class="card">
                 <h3>👤 Mi perfil</h3>
-                <div id="perfilInfo"></div>
-                <button onclick="cerrarSesion()" style="background: #f44336;">Cerrar sesión</button>
+                <div id="perfilInfo" class="perfil-info">Cargando...</div>
+                <button onclick="editarPerfil()" style="margin-top: 10px; background: #2196F3;">Editar perfil</button>
+                <button onclick="cerrarSesion()" class="danger" style="margin-top: 10px; background: #f44336;">Cerrar sesión</button>
             </div>
         </div>
     </div>
 
+    <div id="notification" class="notification hidden"></div>
+
     <script>
         const API_URL = '';
         let token = localStorage.getItem('token');
+        let categoriaSeleccionada = 'economico';
+        let viajeActual = null;
+        let intervaloTimer = null;
+
+        function mostrarNotificacion(msg, tipo) {
+            const notif = document.getElementById('notification');
+            notif.textContent = msg;
+            notif.classList.remove('hidden');
+            notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
+            setTimeout(() => notif.classList.add('hidden'), 3000);
+        }
+
+        function seleccionarCategoria(cat) {
+            categoriaSeleccionada = cat;
+            document.querySelectorAll('.categoria-card').forEach((el, i) => {
+                const cats = ['economico', 'confort', 'clasico', 'lujo', 'moto', 'triciclo'];
+                if (cats[i] === cat) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
+        }
 
         function mostrarLogin() {
             document.getElementById('authScreen').classList.add('hidden');
@@ -97,22 +154,33 @@
             const usuario = document.getElementById('loginUsuario').value;
             const password = document.getElementById('loginPassword').value;
             
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, password })
-            });
-            const data = await res.json();
+            if (!usuario || !password) {
+                mostrarNotificacion('Completa usuario y contraseña', 'error');
+                return;
+            }
             
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                token = data.token;
-                document.getElementById('mainScreen').classList.remove('hidden');
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('loginScreen').classList.add('hidden');
-                cargarPerfil(data.usuario);
-            } else {
-                alert('Error: ' + data.error);
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, password })
+                });
+                const data = await res.json();
+                
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    document.getElementById('mainScreen').classList.remove('hidden');
+                    document.getElementById('authScreen').classList.add('hidden');
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    cargarPerfil();
+                    cargarHistorial();
+                    mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
+                } else {
+                    mostrarNotificacion(data.error || 'Error al iniciar sesión', 'error');
+                }
+            } catch (error) {
+                mostrarNotificacion('Error de conexión', 'error');
             }
         }
 
@@ -125,75 +193,146 @@
             const telefono = document.getElementById('regTelefono').value;
             const email = document.getElementById('regEmail').value;
             
-            const res = await fetch('/api/registro', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email })
-            });
-            const data = await res.json();
+            if (!usuario || !password || !nombre || !apellidos || !ci) {
+                mostrarNotificacion('Completa los campos obligatorios (*)', 'error');
+                return;
+            }
             
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-                token = data.token;
-                document.getElementById('mainScreen').classList.remove('hidden');
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('registroScreen').classList.add('hidden');
-                cargarPerfil(data.usuario);
-            } else {
-                alert('Error: ' + data.error);
+            try {
+                const res = await fetch('/api/registro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email })
+                });
+                const data = await res.json();
+                
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    document.getElementById('mainScreen').classList.remove('hidden');
+                    document.getElementById('authScreen').classList.add('hidden');
+                    document.getElementById('registroScreen').classList.add('hidden');
+                    cargarPerfil();
+                    cargarHistorial();
+                    mostrarNotificacion('Registro exitoso. Bienvenido', 'exito');
+                } else {
+                    mostrarNotificacion(data.error || 'Error al registrar', 'error');
+                }
+            } catch (error) {
+                mostrarNotificacion('Error de conexión', 'error');
             }
         }
 
-      async function cargarPerfilDesdeAPI() {
-    try {
-        const res = await fetch('/api/perfil', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await res.json();
-        
-        if (data.usuario) {
-            const u = data.usuario;
-            document.getElementById('perfilInfo').innerHTML = `
-                <strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>
-                CI: ${u.ci || 'No registrado'}<br>
-                Teléfono: ${u.telefono || 'No registrado'}<br>
-                Email: ${u.email || 'No registrado'}<br>
-                Usuario: ${u.usuario}
-                <button onclick="editarPerfil()" style="margin-top: 10px; background: #2196F3;">Editar perfil</button>
-            `;
+        async function cargarPerfil() {
+            try {
+                const res = await fetch('/api/perfil', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                
+                if (data.usuario) {
+                    const u = data.usuario;
+                    document.getElementById('perfilInfo').innerHTML = `
+                        <strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>
+                        CI: ${u.ci || 'No registrado'}<br>
+                        Teléfono: ${u.telefono || 'No registrado'}<br>
+                        Email: ${u.email || 'No registrado'}<br>
+                        Usuario: ${u.usuario}<br>
+                        Tipo: ${u.rol === 'admin' ? 'Administrador' : 'Cliente'}
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil';
+            }
         }
-    } catch (error) {
-        console.error('Error al cargar perfil:', error);
-        document.getElementById('perfilInfo').innerHTML = '<p>Error al cargar perfil</p>';
-    }
-}
+
+        async function editarPerfil() {
+            const nuevoNombre = prompt('Nuevo nombre:');
+            const nuevoTelefono = prompt('Nuevo teléfono:');
+            const nuevoEmail = prompt('Nuevo email:');
+            
+            if (!nuevoNombre && !nuevoTelefono && !nuevoEmail) return;
+            
+            try {
+                await fetch('/api/perfil', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ nombre: nuevoNombre, telefono: nuevoTelefono, email: nuevoEmail })
+                });
+                mostrarNotificacion('Perfil actualizado', 'exito');
+                cargarPerfil();
+            } catch (error) {
+                mostrarNotificacion('Error al actualizar', 'error');
+            }
+        }
 
         async function solicitarTaxi() {
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
             
             if (!origen || !destino) {
-                alert('Completa origen y destino');
+                mostrarNotificacion('Completa origen y destino', 'error');
                 return;
             }
             
-            const res = await fetch('/api/viajes/solicitar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ origen, destino, categoria: 'confort' })
-            });
-            const data = await res.json();
-            alert(data.exito ? '✅ Taxi solicitado' : 'Error: ' + data.error);
+            try {
+                const res = await fetch('/api/viajes/solicitar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ origen, destino, categoria: categoriaSeleccionada })
+                });
+                const data = await res.json();
+                
+                if (data.exito) {
+                    viajeActual = data.viaje;
+                    mostrarNotificacion('✅ Taxi solicitado. Espera confirmación', 'exito');
+                    document.getElementById('origen').value = '';
+                    document.getElementById('destino').value = '';
+                    cargarHistorial();
+                } else {
+                    mostrarNotificacion(data.error || 'Error al solicitar taxi', 'error');
+                }
+            } catch (error) {
+                mostrarNotificacion('Error de conexión', 'error');
+            }
+        }
+
+        async function cargarHistorial() {
+            try {
+                const res = await fetch('/api/viajes/mis-viajes', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                const viajes = data.viajes || [];
+                
+                if (viajes.length === 0) {
+                    document.getElementById('historialLista').innerHTML = '<p>No hay viajes aún</p>';
+                } else {
+                    document.getElementById('historialLista').innerHTML = viajes.map(v => `
+                        <div class="viaje-item">
+                            <strong>${v.origen} → ${v.destino}</strong><br>
+                            ${new Date(v.creado_en).toLocaleString()}<br>
+                            Estado: ${v.estado} | Precio: ${v.precio_final || v.precio_base} CUP
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                document.getElementById('historialLista').innerHTML = 'Error al cargar historial';
+            }
         }
 
         function cerrarSesion() {
             localStorage.removeItem('token');
+            token = null;
             location.reload();
         }
 
+        // Inicializar
         if (token) {
             document.getElementById('mainScreen').classList.remove('hidden');
             document.getElementById('authScreen').classList.add('hidden');
+            cargarPerfil();
+            cargarHistorial();
         }
     </script>
 </body>
