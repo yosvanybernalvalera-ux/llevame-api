@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>LLévame - Cliente</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* Formulario principal */
+        .form-container {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #FF9800;
+        }
+
+        /* Categorías */
+        .categorias {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .categoria-card {
+            background: #f9f9f9;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .categoria-card.selected {
+            border-color: #FF9800;
+            background: #FFF3E0;
+        }
+
+        .categoria-icon {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .categoria-nombre {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .categoria-precio {
+            font-size: 12px;
+            color: #FF9800;
+            margin-top: 5px;
+        }
+
+        /* Botón principal */
+        .btn-solicitar {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.1s;
+        }
+
+        .btn-solicitar:active {
+            transform: scale(0.98);
+        }
+
+        .btn-solicitar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Estado del viaje */
+        .estado-card {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .estado-titulo {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .estado-contenido {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 12px;
+        }
+
+        .precio-tiempo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF9800;
+            margin: 10px 0;
+        }
+
+        /* Historial */
+        .historial {
+            margin: 20px;
+        }
+
+        .historial h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .historial-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚕 LLévame</h1>
+        <p>Tu taxi en Cuba, rápido y seguro</p>
+    </div>
+
+    <!-- Formulario de solicitud -->
+    <div class="form-container" id="formContainer">
+        <div class="input-group">
+            <label>📍 ¿Dónde estás?</label>
+            <input type="text" id="origen" placeholder="Ej: Parque Central, Vedado..." autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label>🎯 ¿A dónde vas?</label>
+            <input type="text" id="destino" placeholder="Ej: Aeropuerto, Playa..." autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label>🚗 Elige tu categoría</label>
+            <div class="categorias" id="categorias">
+                <!-- Las categorías se cargarán con JS -->
+            </div>
+        </div>
+
+        <button class="btn-solicitar" id="btnSolicitar" onclick="solicitarTaxi()">
+            Solicitar Taxi
+        </button>
+    </div>
+
+    <!-- Estado del viaje -->
+    <div class="estado-card" id="estadoViaje">
+        <div class="estado-titulo">🚖 Estado de tu viaje</div>
+        <div class="estado-contenido" id="estadoInfo">
+            Buscando chofer...
+        </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="historial" id="historialSection">
+        <h3>📋 Historial de viajes</h3>
+        <div id="historialLista"></div>
+    </div>
+
+    <div id="notification" class="notification hidden"></div>
+
+    <script>
+        // ============= CONFIGURACIÓN =============
+        const API_URL = 'https://api-production-9ced.up.railway.app';
+        
+        // Variables globales
+        let clienteId = localStorage.getItem('llevame_cliente_id');
+        let viajeActual = null;
+        let intervaloEstado = null;
+        let categoriaSeleccionada = 'confort';
+        
+        // Categorías disponibles
+        const categoriasDisponibles = [
+            { id: 'economico', nombre: 'Económico', icono: '🚗', precioBase: 100 },
+            { id: 'confort', nombre: 'Confort', icono: '🚙', precioBase: 150 },
+            { id: 'clasico', nombre: 'Clásico', icono: '🚘', precioBase: 200 },
+            { id: 'lujo', nombre: 'Lujo', icono: '✨', precioBase: 300 },
+            { id: 'moto', nombre: 'Moto', icono: '🏍️', precioBase: 80 },
+            { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precioBase: 50 }
+        ];
+        
+        // ============= INICIALIZACIÓN =============
+        function init() {
+            // Generar ID de cliente si no existe
+            if (!clienteId) {
+                clienteId = 'cliente_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('llevame_cliente_id', clienteId);
+            }
+            
+            // Cargar categorías
+            cargarCategorias();
+            
+            // Cargar historial
+            cargarHistorial();
+            
+            // Recuperar viaje activo si existe
+            const viajeGuardado = localStorage.getItem('llevame_viaje_activo');
+            if (viajeGuardado) {
+                viajeActual = JSON.parse(viajeGuardado);
+                mostrarEstadoViaje();
+                iniciarSeguimiento();
+            }
+        }
+        
+        // Cargar categorías en la interfaz
+        function cargarCategorias() {
+            const container = document.getElementById('categorias');
+            container.innerHTML = categoriasDisponibles.map(cat => `
+                <div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" 
+                     onclick="seleccionarCategoria('${cat.id}')">
+                    <span class="categoria-icon">${cat.icono}</span>
+                    <span class="categoria-nombre">${cat.nombre}</span>
+                    <span class="categoria-precio">desde ${cat.precioBase} CUP</span>
+                </div>
+            `).join('');
+        }
+        
+        function seleccionarCategoria(catId) {
+            categoriaSeleccionada = catId;
+            cargarCategorias();
+        }
+        
+        // ============= SOLICITAR TAXI =============
+        async function solicitarTaxi() {
+            const origen = document.getElementById('origen').value;
+            const destino = document.getElementById('destino').value;
+            
+            if (!origen || !destino) {
+                mostrarNotificacion('Completa origen y destino', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('btnSolicitar');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Buscando chofer...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/viajes/solicitar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        origen: origen,
+                        destino: destino,
+                        cliente_id: clienteId,
+                        categoria: categoriaSeleccionada
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.exito) {
+                    viajeActual = data.viaje;
+                    localStorage.setItem('llevame_viaje_activo', JSON.stringify(viajeActual));
+                    mostrarEstadoViaje();
+                    iniciarSeguimiento();
+                    mostrarNotificacion('✅ Taxi solicitado. Espera confirmación', 'exito');
+                    
+                    // Limpiar campos
+                    document.getElementById('origen').value = '';
+                    document.getElementById('destino').value = '';
+                } else {
+                    mostrarNotificacion('Error al solicitar taxi', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error de conexión. Verifica tu internet', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Solicitar Taxi';
+            }
+        }
+        
+        // ============= SEGUIMIENTO DEL VIAJE =============
+        async function consultarEstado() {
+            if (!viajeActual) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/viajes/estado/${viajeActual.id}`);
+                const data = await response.json();
+                
+                if (data.viaje) {
+                    viajeActual = data.viaje;
+                    localStorage.setItem('llevame_viaje_activo', JSON.stringify(viajeActual));
+                    actualizarEstadoUI();
+                    
+                    // Si el viaje terminó, detener seguimiento y guardar en historial
+                    if (viajeActual.estado === 'completado') {
+                        detenerSeguimiento();
+                        localStorage.removeItem('llevame_viaje_activo');
+                        cargarHistorial();
+                        setTimeout(() => {
+                            document.getElementById('estadoViaje').style.display = 'none';
+                        }, 5000);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al consultar estado:', error);
+            }
+        }
+        
+        function actualizarEstadoUI() {
+            const estadoDiv = document.getElementById('estadoInfo');
+            let estadoTexto = '';
+            let estadoColor = '#FF9800';
+            let precioTexto = '';
+            
+            switch(viajeActual.estado) {
+                case 'buscando_chofer':
+                    estadoTexto = '🔄 Buscando chofer disponible...';
+                    estadoColor = '#FF9800';
+                    break;
+                case 'aceptado':
+                    estadoTexto = '✅ Chofer asignado. Está en camino hacia ti';
+                    estadoColor = '#4CAF50';
+                    break;
+                case 'en_curso':
+                    estadoTexto = '🚗 En camino a tu destino';
+                    estadoColor = '#2196F3';
+                    break;
+                case 'completado':
+                    estadoTexto = '🏁 Viaje completado';
+                    estadoColor = '#9E9E9E';
+                    precioTexto = `<div class="precio-tiempo">💰 ${viajeActual.precio_final || viajeActual.precio_base} CUP</div>`;
+                    break;
+                default:
+                    estadoTexto = viajeActual.estado;
+            }
+            
+            estadoDiv.innerHTML = `
+                <div style="color: ${estadoColor}; font-weight: bold; margin-bottom: 10px;">
+                    ${estadoTexto}
+                </div>
+                <div style="margin-top: 10px;">
+                    📍 Origen: ${viajeActual.origen}<br>
+                    🎯 Destino: ${viajeActual.destino}<br>
+                    🚗 Categoría: ${viajeActual.categoria || categoriaSeleccionada}<br>
+                    💰 Precio base: ${viajeActual.precio_base} CUP
+                    ${precioTexto}
+                </div>
+            `;
+        }
+        
+        function mostrarEstadoViaje() {
+            const estadoCard = document.getElementById('estadoViaje');
+            estadoCard.style.display = 'block';
+            actualizarEstadoUI();
+        }
+        
+        function iniciarSeguimiento() {
+            if (intervaloEstado) clearInterval(intervaloEstado);
+            consultarEstado(); // Consulta inmediata
+            intervaloEstado = setInterval(consultarEstado, 5000); // Cada 5 segundos
+        }
+        
+        function detenerSeguimiento() {
+            if (intervaloEstado) {
+                clearInterval(intervaloEstado);
+                intervaloEstado = null;
+            }
+        }
+        
+        // ============= HISTORIAL =============
+        async function cargarHistorial() {
+            try {
+                const response = await fetch(`${API_URL}/api/clientes/historial/${clienteId}`);
+                const data = await response.json();
+                
+                const historial = data.historial || [];
+                const listaDiv = document.getElementById('historialLista');
+                
+                if (historial.length === 0) {
+                    listaDiv.innerHTML = '<div style="text-align: center; color: #999;">No hay viajes aún</div>';
+                    return;
+                }
+                
+                listaDiv.innerHTML = historial.map(viaje => `
+                    <div class="historial-item">
+                        <div>
+                            <strong>${viaje.origen} → ${viaje.destino}</strong><br>
+                            <small>${new Date(viaje.creado_en).toLocaleString()}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong>${viaje.precio_final || viaje.precio_base} CUP</strong><br>
+                            <small>${viaje.estado === 'completado' ? '✅ Completado' : '🔄 ' + viaje.estado}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error al cargar historial:', error);
+            }
+        }
+        
+        // ============= NOTIFICACIONES =============
+        function mostrarNotificacion(mensaje, tipo) {
+            const notif = document.getElementById('notification');
+            notif.textContent = mensaje;
+            notif.classList.remove('hidden');
+            
+            if (tipo === 'error') {
+                notif.style.background = '#f44336';
+            } else {
+                notif.style.background = '#4CAF50';
+            }
+            
+            setTimeout(() => {
+                notif.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // ============= OBTENER UBICACIÓN (opcional) =============
+        function obtenerUbicacion() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    console.log('Ubicación obtenida:', position.coords);
+                    // Aquí se podría auto-completar el origen
+                }, error => {
+                    console.error('Error de ubicación:', error);
+                });
+            }
+        }
+        
+        // Iniciar
+        init();
+        obtenerUbicacion();
+    </script>
+</body>
+</html>
