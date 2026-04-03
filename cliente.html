@@ -22,7 +22,17 @@
     border: 1px solid rgba(255, 255, 255, 0.25);
     transition: transform 0.2s;
 }
-
+/* Overlay más oscuro para mejor contraste */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 1;
+}
 /* Asegurar texto legible dentro del card */
 .card h2, .card h3, .card .input-label {
     color: white;
