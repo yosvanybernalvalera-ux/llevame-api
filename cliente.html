@@ -9,6 +9,17 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- OneSignal para notificaciones push -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(function(OneSignal) {
+            OneSignal.init({
+                appId: "TU_APP_ID_DE_ONESIGNAL", // Reemplazar después
+            });
+        });
+    </script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -42,7 +53,7 @@
         }
         
         /* Contenido principal */
-        .header, .container, .modal {
+        .header, .container, .modal, .modal-panico {
             position: relative;
             z-index: 2;
         }
@@ -162,7 +173,7 @@
             display: block;
         }
         
-        input {
+        input, select {
             width: 100%;
             padding: 16px 18px;
             border: 1.5px solid rgba(0,0,0,0.08);
@@ -171,7 +182,7 @@
             background: white;
         }
         
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #FF9800;
         }
@@ -222,6 +233,18 @@
             padding: 10px;
             font-size: 13px;
         }
+        button.panico {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: auto;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-size: 14px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
         
         /* Botones de acción en viaje */
         .acciones-viaje {
@@ -270,6 +293,7 @@
             margin: 20px 0;
         }
         .precio-box .valor { font-size: 36px; font-weight: 800; color: #FF9800; }
+        .precio-detalle { font-size: 11px; color: #666; margin-top: 8px; }
         
         /* Modal del mapa */
         .modal {
@@ -294,6 +318,32 @@
         }
         .modal-map { flex: 1; width: 100%; }
         .modal-footer { padding: 16px; background: white; }
+        
+        /* Modal de pánico */
+        .modal-panico {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-panico.open { display: flex; }
+        .panico-card {
+            background: white;
+            border-radius: 32px;
+            padding: 30px;
+            max-width: 350px;
+            text-align: center;
+        }
+        .panico-card h2 { color: #f44336; margin-bottom: 20px; }
+        .panico-card p { margin-bottom: 20px; color: #666; }
+        .panico-buttons { display: flex; gap: 15px; }
+        .panico-buttons button { flex: 1; }
         
         /* Viaje activo */
         .viaje-activo { background: rgba(227, 242, 253, 0.95); border-left: 4px solid #2196F3; }
@@ -354,6 +404,8 @@
         
         .mt-10 { margin-top: 10px; }
         .text-center { text-align: center; }
+        .row { display: flex; gap: 10px; }
+        .row button { flex: 1; }
     </style>
 </head>
 <body>
@@ -373,6 +425,21 @@
         </div>
     </div>
     
+    <!-- Modal de pánico -->
+    <div id="modalPanico" class="modal-panico">
+        <div class="panico-card">
+            <h2>🆘 ¿ESTÁS SEGURO?</h2>
+            <p>Se enviará una alerta de emergencia con tu ubicación a los contactos configurados por el administrador.</p>
+            <div class="panico-buttons">
+                <button onclick="activarPanicoConfirmado()" style="background: #f44336;">Sí, activar</button>
+                <button onclick="cerrarPanico()" class="secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botón de pánico flotante -->
+    <button class="panico" onclick="abrirPanico()">🆘</button>
+    
     <!-- Header -->
     <div class="header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
@@ -390,7 +457,7 @@
     </div>
 
     <div class="container" id="app">
-        <!-- Pantalla de bienvenida (visible solo sin sesión) -->
+        <!-- Pantalla de bienvenida -->
         <div id="authScreen">
             <div class="card">
                 <h2>🔐 Bienvenido</h2>
@@ -421,6 +488,7 @@
                 <input type="text" id="regCi" placeholder="Carnet de Identidad *">
                 <input type="tel" id="regTelefono" placeholder="Teléfono">
                 <input type="email" id="regEmail" placeholder="Email">
+                <input type="tel" id="regTelefonoEmergencia" placeholder="Teléfono emergencia (opcional)">
                 <button onclick="registro()">Registrarme</button>
                 <button onclick="volver()" class="secondary" style="margin-top: 12px;">Volver</button>
             </div>
@@ -438,12 +506,17 @@
                         <button onclick="seleccionarOrigenMapa()">🗺️ Mapa</button>
                         <button onclick="seleccionarOrigenDirecciones()">📌 Direcciones</button>
                         <button onclick="escribirOrigenManual()">✏️ Escribir</button>
+                        <button onclick="usarUbicacionActual()">📍 Actual</button>
                     </div>
                 </div>
                 
                 <div class="input-group">
                     <div class="input-label">Destino</div>
                     <input type="text" id="destino" placeholder="¿A dónde quieres ir?">
+                    <div class="ubicacion-buttons">
+                        <button onclick="seleccionarDestinoMapa()">🗺️ Mapa</button>
+                        <button onclick="usarDireccionesDestino()">📌 Direcciones</button>
+                    </div>
                 </div>
                 
                 <div id="categoriasSection" class="hidden">
@@ -453,6 +526,7 @@
                 <div id="precioSection" class="hidden">
                     <div class="precio-box">
                         <div class="valor" id="precioEstimado">-- CUP</div>
+                        <div class="precio-detalle" id="precioDetalle"></div>
                     </div>
                 </div>
                 
@@ -505,16 +579,19 @@
         let mapaFondo = null;
         let mapaModal = null;
         let ubicacionSeleccionada = null;
+        let destinoSeleccionado = null;
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
+        let origenCoords = null;
+        let destinoCoords = null;
         
-        const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
+        const preciosBase = { economico: 15, confort: 20, clasico: 25, lujo: 35, moto: 10, triciclo: 8 };
         const categorias = [
-            { id: 'economico', nombre: 'Económico', icono: '🚗', precio: 100 },
-            { id: 'confort', nombre: 'Confort', icono: '🚙', precio: 150 },
-            { id: 'clasico', nombre: 'Clásico', icono: '🚘', precio: 200 },
-            { id: 'lujo', nombre: 'Lujo', icono: '✨', precio: 300 },
-            { id: 'moto', nombre: 'Moto', icono: '🏍️', precio: 80 },
-            { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
+            { id: 'economico', nombre: 'Económico', icono: '🚗', precioKm: 15 },
+            { id: 'confort', nombre: 'Confort', icono: '🚙', precioKm: 20 },
+            { id: 'clasico', nombre: 'Clásico', icono: '🚘', precioKm: 25 },
+            { id: 'lujo', nombre: 'Lujo', icono: '✨', precioKm: 35 },
+            { id: 'moto', nombre: 'Moto', icono: '🏍️', precioKm: 10 },
+            { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precioKm: 8 }
         ];
 
         // ============= MAPAS =============
@@ -535,7 +612,25 @@
             }
         }
         
-        function abrirMapaSeleccion() {
+        function usarUbicacionActual() {
+            if (navigator.geolocation) {
+                mostrarNotificacion('Obteniendo ubicación...', 'exito');
+                navigator.geolocation.getCurrentPosition(pos => {
+                    ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    origenCoords = ubicacionActual;
+                    document.getElementById('origen').value = `${ubicacionActual.lat.toFixed(5)}, ${ubicacionActual.lng.toFixed(5)}`;
+                    verificarOrigenDestino();
+                    mostrarNotificacion('Ubicación actual seleccionada', 'exito');
+                }, error => {
+                    mostrarNotificacion('Error al obtener ubicación', 'error');
+                });
+            } else {
+                mostrarNotificacion('GPS no disponible', 'error');
+            }
+        }
+        
+        function abrirMapaSeleccion(tipo) {
+            window.tipoSeleccion = tipo;
             document.getElementById('modalMapa').classList.add('open');
             setTimeout(() => {
                 if (mapaModal) mapaModal.remove();
@@ -553,6 +648,9 @@
             }, 100);
         }
         
+        function seleccionarOrigenMapa() { abrirMapaSeleccion('origen'); }
+        function seleccionarDestinoMapa() { abrirMapaSeleccion('destino'); }
+        
         function cerrarModalMapa() {
             document.getElementById('modalMapa').classList.remove('open');
             if (mapaModal) mapaModal.remove();
@@ -561,7 +659,13 @@
         
         function confirmarUbicacionMapa() {
             if (ubicacionSeleccionada) {
-                document.getElementById('origen').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
+                if (window.tipoSeleccion === 'origen') {
+                    origenCoords = ubicacionSeleccionada;
+                    document.getElementById('origen').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
+                } else if (window.tipoSeleccion === 'destino') {
+                    destinoCoords = ubicacionSeleccionada;
+                    document.getElementById('destino').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
+                }
                 cerrarModalMapa();
                 verificarOrigenDestino();
                 mostrarNotificacion('Ubicación seleccionada', 'exito');
@@ -570,9 +674,7 @@
             }
         }
         
-        // ============= SELECCIÓN DE ORIGEN =============
-        function seleccionarOrigenMapa() { abrirMapaSeleccion(); }
-        
+        // ============= SELECCIÓN DE ORIGEN/DESTINO =============
         function seleccionarOrigenDirecciones() {
             fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } })
                 .then(res => res.json())
@@ -588,6 +690,34 @@
                             const idx = parseInt(sel) - 1;
                             if (dirs[idx]) {
                                 document.getElementById('origen').value = dirs[idx].direccion;
+                                if (dirs[idx].lat && dirs[idx].lng) {
+                                    origenCoords = { lat: dirs[idx].lat, lng: dirs[idx].lng };
+                                }
+                                verificarOrigenDestino();
+                            }
+                        }
+                    }
+                });
+        }
+        
+        function usarDireccionesDestino() {
+            fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(res => res.json())
+                .then(data => {
+                    const dirs = data.direcciones || [];
+                    if (dirs.length === 0) {
+                        mostrarNotificacion('No hay direcciones guardadas', 'error');
+                    } else {
+                        let msg = 'Selecciona un destino:\n\n';
+                        dirs.forEach((d, i) => { msg += `${i+1}. ${d.nombre}: ${d.direccion}\n`; });
+                        const sel = prompt(msg);
+                        if (sel) {
+                            const idx = parseInt(sel) - 1;
+                            if (dirs[idx]) {
+                                document.getElementById('destino').value = dirs[idx].direccion;
+                                if (dirs[idx].lat && dirs[idx].lng) {
+                                    destinoCoords = { lat: dirs[idx].lat, lng: dirs[idx].lng };
+                                }
                                 verificarOrigenDestino();
                             }
                         }
@@ -603,20 +733,54 @@
             }
         }
         
-        function verificarOrigenDestino() {
+        async function verificarOrigenDestino() {
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
             
             if (origen && destino) {
                 document.getElementById('categoriasSection').classList.remove('hidden');
-                document.getElementById('precioSection').classList.remove('hidden');
-                document.getElementById('btnSolicitar').classList.remove('hidden');
                 cargarCategorias();
-                actualizarPrecio();
+                
+                // Calcular precio real
+                if (origenCoords && destinoCoords) {
+                    await calcularPrecioReal();
+                } else {
+                    document.getElementById('precioSection').classList.remove('hidden');
+                    document.getElementById('btnSolicitar').classList.remove('hidden');
+                    actualizarPrecio();
+                }
             } else {
                 document.getElementById('categoriasSection').classList.add('hidden');
                 document.getElementById('precioSection').classList.add('hidden');
                 document.getElementById('btnSolicitar').classList.add('hidden');
+            }
+        }
+        
+        async function calcularPrecioReal() {
+            try {
+                const res = await fetch('/api/viajes/calcular-precio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        origen_coords: origenCoords,
+                        destino_coords: destinoCoords,
+                        categoria: categoriaSeleccionada
+                    })
+                });
+                const data = await res.json();
+                if (data.precio) {
+                    document.getElementById('precioEstimado').innerHTML = `${data.precio} CUP`;
+                    let detalle = '';
+                    if (data.recargos.nocturno > 0) detalle += `🌙 +${data.recargos.nocturno}% nocturno `;
+                    if (data.recargos.lluvia > 0) detalle += `☔ +${data.recargos.lluvia}% lluvia `;
+                    if (detalle === '') detalle = `📏 ${data.distancia} km | ⏱️ ${data.tiempo} min`;
+                    document.getElementById('precioDetalle').innerHTML = detalle;
+                    document.getElementById('precioSection').classList.remove('hidden');
+                    document.getElementById('btnSolicitar').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error calculando precio:', error);
+                actualizarPrecio();
             }
         }
         
@@ -626,7 +790,7 @@
                 <div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" onclick="seleccionarCategoria('${cat.id}')">
                     <div class="categoria-icon">${cat.icono}</div>
                     <div class="categoria-nombre">${cat.nombre}</div>
-                    <div class="categoria-precio">${cat.precio} CUP</div>
+                    <div class="categoria-precio">${cat.precioKm} CUP/km</div>
                 </div>
             `).join('');
         }
@@ -634,11 +798,15 @@
         function seleccionarCategoria(catId) {
             categoriaSeleccionada = catId;
             cargarCategorias();
-            actualizarPrecio();
+            if (origenCoords && destinoCoords) {
+                calcularPrecioReal();
+            } else {
+                actualizarPrecio();
+            }
         }
         
         function actualizarPrecio() {
-            let precio = preciosBase[categoriaSeleccionada] || 100;
+            let precio = preciosBase[categoriaSeleccionada] * 5 || 100;
             document.getElementById('precioEstimado').innerHTML = `${precio} CUP`;
         }
         
@@ -692,16 +860,22 @@
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
-                    // Ocultar pantallas de autenticación
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('registroScreen').classList.add('hidden');
-                    // Mostrar sección de viaje
                     document.getElementById('seccionViaje').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
                     iniciarMapaFondo();
                     cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
+                    
+                    // Registrar para notificaciones push
+                    if (window.OneSignalDeferred) {
+                        OneSignalDeferred.push(function(OneSignal) {
+                            OneSignal.sendTag('user_id', data.usuario.id);
+                            OneSignal.sendTag('user_name', data.usuario.nombre);
+                        });
+                    }
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
@@ -714,17 +888,17 @@
             const ci = document.getElementById('regCi').value;
             const telefono = document.getElementById('regTelefono').value;
             const email = document.getElementById('regEmail').value;
+            const telefonoEmergencia = document.getElementById('regTelefonoEmergencia').value;
+            
             if (!usuario || !password || !nombre || !apellidos || !ci) { mostrarNotificacion('Complete campos obligatorios', 'error'); return; }
             try {
-                const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email }) });
+                const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia: telefonoEmergencia }) });
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
-                    // Ocultar pantallas de autenticación
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('registroScreen').classList.add('hidden');
-                    // Mostrar sección de viaje
                     document.getElementById('seccionViaje').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
                     iniciarMapaFondo();
@@ -740,7 +914,7 @@
                 const data = await res.json();
                 if (data.usuario) {
                     const u = data.usuario;
-                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre} ${u.apellidos || ''}</strong><br>CI: ${u.ci || '-'}<br>Tel: ${u.telefono || '-'}<br>Email: ${u.email || '-'}<br>Usuario: ${u.usuario}`;
+                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre} ${u.apellidos || ''}</strong><br>CI: ${u.ci || '-'}<br>Tel: ${u.telefono || '-'}<br>Email: ${u.email || '-'}<br>Usuario: ${u.usuario}<br><strong>📞 Emergencia:</strong> ${u.telefono_emergencia || 'No registrado'}`;
                 }
             } catch (error) { document.getElementById('perfilInfo').innerHTML = 'Error'; }
         }
@@ -749,9 +923,10 @@
             const nombre = prompt('Nuevo nombre:');
             const telefono = prompt('Nuevo teléfono:');
             const email = prompt('Nuevo email:');
-            if (!nombre && !telefono && !email) return;
+            const telefonoEmergencia = prompt('Teléfono de emergencia:');
+            if (!nombre && !telefono && !email && !telefonoEmergencia) return;
             try {
-                await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email }) });
+                await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email, telefono_emergencia: telefonoEmergencia }) });
                 mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil();
             } catch (error) { mostrarNotificacion('Error', 'error'); }
         }
@@ -773,7 +948,7 @@
             const nombre = prompt('Nombre (ej: Casa, Trabajo):');
             const direccion = prompt('Dirección:');
             if (nombre && direccion) {
-                await fetch('/api/direcciones', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, direccion }) });
+                await fetch('/api/direcciones', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, direccion, lat: ubicacionActual.lat, lng: ubicacionActual.lng }) });
                 cargarDirecciones();
             }
         }
@@ -787,10 +962,25 @@
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
             if (!origen || !destino) { mostrarNotificacion('Complete origen y destino', 'error'); return; }
+            
+            if (!origenCoords) {
+                mostrarNotificacion('Selecciona el origen en el mapa o usa tu ubicación', 'error');
+                return;
+            }
+            if (!destinoCoords) {
+                mostrarNotificacion('Selecciona el destino en el mapa', 'error');
+                return;
+            }
+            
             const btn = document.getElementById('btnSolicitar');
             btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Buscando...';
             try {
-                const res = await fetch('/api/viajes/solicitar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ origen, destino, categoria: categoriaSeleccionada }) });
+                const res = await fetch('/api/viajes/solicitar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ 
+                    origen, destino, 
+                    origen_coords: origenCoords, 
+                    destino_coords: destinoCoords, 
+                    categoria: categoriaSeleccionada 
+                }) });
                 const data = await res.json();
                 if (data.exito) {
                     viajeActual = data.viaje;
@@ -800,6 +990,8 @@
                     mostrarNotificacion('✅ Taxi solicitado', 'exito');
                     document.getElementById('origen').value = '';
                     document.getElementById('destino').value = '';
+                    origenCoords = null;
+                    destinoCoords = null;
                     document.getElementById('categoriasSection').classList.add('hidden');
                     document.getElementById('precioSection').classList.add('hidden');
                     document.getElementById('btnSolicitar').classList.add('hidden');
@@ -843,6 +1035,41 @@
             }
         }
         
+        // ============= PÁNICO =============
+        function abrirPanico() {
+            document.getElementById('modalPanico').classList.add('open');
+        }
+        
+        function cerrarPanico() {
+            document.getElementById('modalPanico').classList.remove('open');
+        }
+        
+        async function activarPanicoConfirmado() {
+            cerrarPanico();
+            mostrarNotificacion('Enviando alerta de emergencia...', 'exito');
+            
+            try {
+                const res = await fetch('/api/panico/activar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    mostrarNotificacion('Alerta enviada. Ayuda en camino.', 'exito');
+                    if (data.llamar_a) {
+                        if (confirm(`¿Deseas llamar al número de emergencia ${data.llamar_a}?`)) {
+                            window.location.href = `tel:${data.llamar_a}`;
+                        }
+                    }
+                } else {
+                    mostrarNotificacion('Error al enviar alerta', 'error');
+                }
+            } catch (error) {
+                mostrarNotificacion('Error de conexión', 'error');
+            }
+        }
+        
         async function cancelarViaje() { 
             if (!confirm('¿Cancelar este viaje?')) return; 
             await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); 
@@ -874,16 +1101,17 @@
                 const viajes = data.viajes || [];
                 if (viajes.length === 0) { document.getElementById('historialLista').innerHTML = '<p class="text-center">No hay viajes</p>'; }
                 else {
-                    document.getElementById('historialLista').innerHTML = viajes.map(v => `<div class="viaje-item"><div><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado}</div><div>${v.precio_final || v.precio_base} CUP</div></div>`).join('');
+                    document.getElementById('historialLista').innerHTML = viajes.map(v => `<div class="viaje-item"><div><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado} | ${v.distancia ? v.distancia + 'km' : ''}</div><div>${v.precio_final || v.precio_base} CUP</div></div>`).join('');
                 }
             } catch(e) { document.getElementById('historialLista').innerHTML = 'Error'; }
         }
         
         function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
         
+        // Event listeners
         document.getElementById('destino').addEventListener('input', verificarOrigenDestino);
         
-        // Inicialización - si hay token, mostrar sección viaje
+        // Inicialización
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionViaje').classList.remove('hidden');
