@@ -4,63 +4,243 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LLévame - Cliente</title>
+    
+    <!-- Leaflet CSS (mapas) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; padding-bottom: 80px; }
         
-        .header { background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1920') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+        }
+        
+        /* Overlay oscuro para que el texto sea legible */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 0;
+        }
+        
+        /* Todo el contenido por encima del overlay */
+        .header, .container, .notification {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
         .header h1 { font-size: 24px; }
-        .header p { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+        .header p { font-size: 12px; opacity: 0.8; margin-top: 5px; }
         
         .container { max-width: 500px; margin: 0 auto; padding: 20px; }
         
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .card h2 { font-size: 18px; margin-bottom: 15px; color: #333; }
-        .card h3 { font-size: 16px; margin-bottom: 10px; color: #666; }
+        /* Tarjetas transparentes con blur */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
         
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; background: white; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #333; }
+        .card h3 { font-size: 16px; margin-bottom: 10px; color: #555; }
+        
+        input, select {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+        }
+        
         input:focus { outline: none; border-color: #FF9800; }
         
-        button { width: 100%; padding: 14px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
-        button:active { transform: scale(0.98); }
-        button.secondary { background: #666; }
-        button.danger { background: #f44336; }
-        button.success { background: #4CAF50; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
         
-        .categorias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
-        .categoria-card { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
-        .categoria-card.selected { border-color: #FF9800; background: #FFF3E0; }
+        button:active { transform: scale(0.98); }
+        button.secondary { background: linear-gradient(135deg, #666, #555); }
+        button.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        button.success { background: linear-gradient(135deg, #4CAF50, #388E3C); }
+        
+        /* Categorías */
+        .categorias {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .categoria-card {
+            background: rgba(249, 249, 249, 0.9);
+            border: 2px solid rgba(238, 238, 238, 0.8);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .categoria-card.selected {
+            border-color: #FF9800;
+            background: rgba(255, 243, 224, 0.95);
+        }
+        
         .categoria-icon { font-size: 28px; display: block; margin-bottom: 5px; }
         .categoria-nombre { font-size: 12px; font-weight: bold; }
         .categoria-precio { font-size: 11px; color: #FF9800; margin-top: 3px; }
         
-        .precio-box { background: #FFF3E0; border-radius: 12px; padding: 15px; text-align: center; margin: 15px 0; }
+        /* Precio */
+        .precio-box {
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin: 15px 0;
+        }
         .precio-box .label { font-size: 12px; color: #666; }
         .precio-box .valor { font-size: 28px; font-weight: bold; color: #FF9800; }
         
-        .viaje-activo { background: #e3f2fd; border-left: 4px solid #2196F3; }
-        .mapa { height: 150px; background: #e0e0e0; border-radius: 12px; margin: 15px 0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px; }
+        /* Mapa */
+        .mapa-container {
+            margin: 15px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #mapa { height: 250px; width: 100%; background: #e0e0e0; }
         
+        /* Viaje activo */
+        .viaje-activo { background: rgba(227, 242, 253, 0.95); border-left: 4px solid #2196F3; }
+        
+        /* Calificación */
         .stars { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
         .star { font-size: 30px; cursor: pointer; color: #ddd; }
         .star.active { color: #FF9800; }
         
-        .direccion-item { background: #f5f5f5; padding: 10px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .viaje-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        /* Direcciones */
+        .direccion-item {
+            background: rgba(245, 245, 245, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .viaje-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(238, 238, 238, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .viaje-item:last-child { border-bottom: none; }
         
-        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: white; border-radius: 12px; padding: 5px; }
-        .tab { flex: 1; text-align: center; padding: 10px; background: none; color: #666; font-weight: normal; }
-        .tab.active { background: #FF9800; color: white; border-radius: 10px; }
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 5px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: none;
+            color: #666;
+            font-weight: normal;
+            box-shadow: none;
+        }
+        .tab.active {
+            background: #FF9800;
+            color: white;
+            border-radius: 10px;
+        }
         
-        .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; line-height: 1.6; margin-bottom: 10px; }
+        /* Perfil */
+        .perfil-info {
+            background: rgba(240, 240, 240, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
         
-        .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #333; color: white; padding: 14px; border-radius: 12px; text-align: center; z-index: 1000; animation: slideUp 0.3s ease; }
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(51, 51, 51, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
         @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .hidden { display: none; }
-        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Botón ubicación actual */
+        .btn-ubicacion {
+            background: #2196F3;
+            padding: 8px;
+            margin-top: 5px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +250,7 @@
     </div>
 
     <div class="container" id="app">
+        <!-- Pantalla de bienvenida -->
         <div id="authScreen">
             <div class="card">
                 <h2>🔐 Bienvenido</h2>
@@ -78,6 +259,7 @@
             </div>
         </div>
 
+        <!-- Pantalla de login -->
         <div id="loginScreen" class="hidden">
             <div class="card">
                 <h2>Iniciar sesión</h2>
@@ -88,6 +270,7 @@
             </div>
         </div>
 
+        <!-- Pantalla de registro -->
         <div id="registroScreen" class="hidden">
             <div class="card">
                 <h2>Registro de Cliente</h2>
@@ -103,6 +286,7 @@
             </div>
         </div>
 
+        <!-- Pantalla principal -->
         <div id="mainScreen" class="hidden">
             <div class="tabs">
                 <button class="tab active" onclick="cambiarTab('viaje')">🚖 Viaje</button>
@@ -110,15 +294,27 @@
                 <button class="tab" onclick="cambiarTab('perfil')">👤 Perfil</button>
             </div>
 
+            <!-- Tab Viaje -->
             <div id="tabViaje">
+                <!-- Mapa -->
+                <div class="card">
+                    <h3>🗺️ Tu ubicación</h3>
+                    <div class="mapa-container">
+                        <div id="mapa"></div>
+                    </div>
+                    <button class="btn-ubicacion" onclick="obtenerUbicacionActual()">📍 Usar mi ubicación actual</button>
+                </div>
+
+                <!-- Direcciones frecuentes -->
                 <div class="card">
                     <h3>📍 Mis direcciones</h3>
                     <div id="direccionesLista"></div>
                     <button onclick="agregarDireccion()" class="secondary" style="margin-top: 10px; background: #999;">+ Agregar dirección</button>
                 </div>
 
+                <!-- Pedir taxi -->
                 <div class="card">
-                    <h3>📍 Pedir Taxi</h3>
+                    <h3>🚕 Pedir Taxi</h3>
                     <input type="text" id="origen" placeholder="¿Dónde estás?">
                     <input type="text" id="destino" placeholder="¿A dónde vas?">
                     
@@ -132,14 +328,18 @@
                     <button id="btnSolicitar" onclick="solicitarTaxi()">Solicitar Taxi</button>
                 </div>
 
+                <!-- Viaje activo -->
                 <div class="card viaje-activo" id="viajeActivoCard" style="display: none;">
                     <h3>🚖 Viaje en curso</h3>
                     <div id="viajeActivoInfo"></div>
-                    <div class="mapa" id="mapaChofer">🗺️ Ubicación del chofer aparecerá aquí</div>
+                    <div class="mapa-container" id="mapaChoferContainer" style="display: none;">
+                        <div id="mapaChofer"></div>
+                    </div>
                     <button id="btnCancelarViaje" onclick="cancelarViaje()" class="danger">Cancelar viaje</button>
                 </div>
             </div>
 
+            <!-- Tab Historial -->
             <div id="tabHistorial" class="hidden">
                 <div class="card">
                     <h3>📋 Mis viajes</h3>
@@ -147,6 +347,7 @@
                 </div>
             </div>
 
+            <!-- Tab Perfil -->
             <div id="tabPerfil" class="hidden">
                 <div class="card">
                     <h3>👤 Mi perfil</h3>
@@ -166,6 +367,10 @@
         let viajeActual = null;
         let intervaloTimer = null;
         let calificacionSeleccionada = 0;
+        let mapaActual = null;
+        let marcadorActual = null;
+        let mapaChoferActual = null;
+        let ubicacionCliente = { lat: 23.1365, lng: -82.3589 }; // Centro de La Habana por defecto
         
         const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
         const categorias = [
@@ -177,9 +382,73 @@
             { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
         ];
 
+        // ============= INICIALIZAR MAPA =============
+        function iniciarMapa() {
+            if (mapaActual) return;
+            mapaActual = L.map('mapa').setView([ubicacionCliente.lat, ubicacionCliente.lng], 15);
+            
+            // Usar estilo de mapa detallado (OpenStreetMap con CartoDB)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19,
+                minZoom: 12
+            }).addTo(mapaActual);
+            
+            // Agregar marcador del cliente
+            marcadorActual = L.marker([ubicacionCliente.lat, ubicacionCliente.lng], {
+                icon: L.divIcon({ html: '🚕', iconSize: [30, 30], className: 'marcador-cliente' })
+            }).addTo(mapaActual);
+            marcadorActual.bindPopup('Tu ubicación').openPopup();
+        }
+        
+        function actualizarMarcadorCliente(lat, lng) {
+            ubicacionCliente = { lat, lng };
+            if (marcadorActual) {
+                marcadorActual.setLatLng([lat, lng]);
+                mapaActual.setView([lat, lng], 15);
+                marcadorActual.bindPopup('Tu ubicación').openPopup();
+            }
+        }
+        
+        function iniciarMapaChofer(lat, lng) {
+            if (mapaChoferActual) {
+                mapaChoferActual.remove();
+            }
+            mapaChoferActual = L.map('mapaChofer').setView([lat, lng], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(mapaChoferActual);
+            
+            L.marker([lat, lng], {
+                icon: L.divIcon({ html: '🚖', iconSize: [30, 30], className: 'marcador-chofer' })
+            }).addTo(mapaChoferActual).bindPopup('Chofer').openPopup();
+        }
+        
+        function obtenerUbicacionActual() {
+            if (navigator.geolocation) {
+                mostrarNotificacion('Obteniendo ubicación...', 'exito');
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    actualizarMarcadorCliente(lat, lng);
+                    document.getElementById('origen').value = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+                    mostrarNotificacion('Ubicación obtenida', 'exito');
+                }, error => {
+                    mostrarNotificacion('Error al obtener ubicación. Activa el GPS', 'error');
+                });
+            } else {
+                mostrarNotificacion('Tu navegador no soporta geolocalización', 'error');
+            }
+        }
+        
+        // ============= FUNCIONES PRINCIPALES =============
         function init() {
             cargarCategorias();
             cargarDirecciones();
+            iniciarMapa();
             document.getElementById('origen').addEventListener('input', actualizarPrecio);
             document.getElementById('destino').addEventListener('input', actualizarPrecio);
         }
@@ -218,6 +487,7 @@
             if (tab === 'viaje') {
                 document.getElementById('tabViaje').classList.remove('hidden');
                 document.querySelectorAll('.tab')[0].classList.add('active');
+                setTimeout(() => mapaActual?.invalidateSize(), 100);
             } else if (tab === 'historial') {
                 document.getElementById('tabHistorial').classList.remove('hidden');
                 document.querySelectorAll('.tab')[1].classList.add('active');
@@ -382,7 +652,10 @@
             let estadoTexto = '', estadoColor = '';
             switch(viajeActual.estado) {
                 case 'buscando_chofer': estadoTexto = '🔄 Buscando chofer...'; estadoColor = '#FF9800'; break;
-                case 'aceptado': estadoTexto = '✅ Chofer asignado. En camino'; estadoColor = '#4CAF50'; break;
+                case 'aceptado': estadoTexto = '✅ Chofer asignado. En camino'; estadoColor = '#4CAF50'; 
+                    document.getElementById('mapaChoferContainer').style.display = 'block';
+                    setTimeout(() => iniciarMapaChofer(23.1365, -82.3589), 100);
+                    break;
                 case 'en_curso': estadoTexto = '🚗 En camino a tu destino'; estadoColor = '#2196F3'; break;
                 case 'completado': estadoTexto = '🏁 Viaje completado'; estadoColor = '#9E9E9E'; detenerSeguimiento(); setTimeout(() => { document.getElementById('viajeActivoCard').style.display = 'none'; cargarHistorial(); }, 3000); break;
                 default: estadoTexto = viajeActual.estado;
