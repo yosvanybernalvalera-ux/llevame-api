@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LLévame - Cliente</title>
     
-    <!-- Leaflet CSS (mapas) -->
+    <!-- Leaflet (mapa ligero) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -15,63 +15,127 @@
         body {
             font-family: system-ui, -apple-system, sans-serif;
             min-height: 100vh;
-            background: url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?q=80&w=1920') no-repeat center center fixed;
-            background-size: cover;
             position: relative;
+            overflow-x: hidden;
         }
         
-        /* Overlay oscuro para que el texto sea legible */
-        body::before {
-            content: '';
+        /* Mapa de fondo */
+        #background-map {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
             z-index: 0;
         }
         
-        /* Todo el contenido por encima del overlay */
-        .header, .container, .notification {
-            position: relative;
+        /* Overlay semitransparente para legibilidad */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1;
         }
         
+        /* Contenido por encima */
+        .header, .container, .modal {
+            position: relative;
+            z-index: 2;
+        }
+        
         .header {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(10px);
-            color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
             border-bottom: 1px solid rgba(255,255,255,0.2);
         }
         
-        .header h1 { font-size: 24px; }
-        .header p { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: white;
+            width: auto;
+            padding: 0;
+        }
         
-        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .header h1 { font-size: 20px; color: white; }
+        .header h1 span { color: #FF9800; }
+        .user-info { font-size: 12px; color: rgba(255,255,255,0.7); }
         
-        /* Tarjetas transparentes con blur */
+        /* Menú lateral */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            transition: left 0.3s ease;
+            padding: 70px 20px 20px;
+        }
+        
+        .side-menu.open { left: 0; }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+            display: none;
+        }
+        .menu-overlay.open { display: block; }
+        
+        .menu-item {
+            padding: 15px;
+            color: white;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .menu-item:active { background: rgba(255,255,255,0.1); }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 70px);
+        }
+        
+        /* Tarjetas */
         .card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
         }
         
         .card h2 { font-size: 18px; margin-bottom: 15px; color: #333; }
-        .card h3 { font-size: 16px; margin-bottom: 10px; color: #555; }
         
-        input, select {
+        input {
             width: 100%;
             padding: 14px;
-            margin: 10px 0;
+            margin: 8px 0;
             border: 1px solid #ddd;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 16px;
             background: white;
         }
@@ -81,176 +145,172 @@
         button {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #FF9800, #F57C00);
+            background: #FF9800;
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s;
         }
         
-        button:active { transform: scale(0.98); }
-        button.secondary { background: linear-gradient(135deg, #666, #555); }
-        button.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
-        button.success { background: linear-gradient(135deg, #4CAF50, #388E3C); }
+        button.secondary { background: #666; }
+        button.danger { background: #f44336; }
+        button.outline {
+            background: transparent;
+            border: 2px solid #FF9800;
+            color: #FF9800;
+        }
         
-        /* Categorías */
+        /* Botones de selección de ubicación */
+        .ubicacion-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .ubicacion-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+        }
+        
+        /* Modal del mapa */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+        }
+        .modal.open { display: flex; }
+        .modal-header {
+            background: #1a1a2e;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-map {
+            flex: 1;
+            width: 100%;
+        }
+        .modal-footer {
+            padding: 15px;
+            background: white;
+        }
+        
         .categorias {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin: 15px 0;
         }
-        
         .categoria-card {
-            background: rgba(249, 249, 249, 0.9);
-            border: 2px solid rgba(238, 238, 238, 0.8);
-            border-radius: 12px;
-            padding: 12px;
+            background: #f9f9f9;
+            border: 2px solid #eee;
+            border-radius: 14px;
+            padding: 10px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
         }
-        
         .categoria-card.selected {
             border-color: #FF9800;
-            background: rgba(255, 243, 224, 0.95);
+            background: #FFF3E0;
         }
+        .categoria-icon { font-size: 24px; }
+        .categoria-nombre { font-size: 11px; font-weight: bold; }
         
-        .categoria-icon { font-size: 28px; display: block; margin-bottom: 5px; }
-        .categoria-nombre { font-size: 12px; font-weight: bold; }
-        .categoria-precio { font-size: 11px; color: #FF9800; margin-top: 3px; }
-        
-        /* Precio */
         .precio-box {
-            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-            border-radius: 12px;
-            padding: 15px;
+            background: #FFF3E0;
+            border-radius: 14px;
+            padding: 12px;
             text-align: center;
             margin: 15px 0;
         }
-        .precio-box .label { font-size: 12px; color: #666; }
         .precio-box .valor { font-size: 28px; font-weight: bold; color: #FF9800; }
         
-        /* Mapa */
-        .mapa-container {
-            margin: 15px 0;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        #mapa { height: 250px; width: 100%; background: #e0e0e0; }
-        
-        /* Viaje activo */
-        .viaje-activo { background: rgba(227, 242, 253, 0.95); border-left: 4px solid #2196F3; }
-        
-        /* Calificación */
-        .stars { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
-        .star { font-size: 30px; cursor: pointer; color: #ddd; }
-        .star.active { color: #FF9800; }
-        
-        /* Direcciones */
         .direccion-item {
-            background: rgba(245, 245, 245, 0.9);
+            background: #f5f5f5;
             padding: 10px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
             cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         
-        .viaje-item {
-            padding: 12px;
-            border-bottom: 1px solid rgba(238, 238, 238, 0.8);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .viaje-item:last-child { border-bottom: none; }
+        .viaje-activo { background: #e3f2fd; }
+        .viaje-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .perfil-info { background: #f5f5f5; padding: 15px; border-radius: 14px; line-height: 1.6; margin-bottom: 15px; }
         
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 5px;
-        }
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            background: none;
-            color: #666;
-            font-weight: normal;
-            box-shadow: none;
-        }
-        .tab.active {
-            background: #FF9800;
-            color: white;
-            border-radius: 10px;
-        }
-        
-        /* Perfil */
-        .perfil-info {
-            background: rgba(240, 240, 240, 0.9);
-            padding: 15px;
-            border-radius: 12px;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-        
-        /* Notificaciones */
         .notification {
             position: fixed;
             bottom: 20px;
             left: 20px;
             right: 20px;
-            background: rgba(51, 51, 51, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.9);
             color: white;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 14px;
             text-align: center;
             z-index: 1000;
-            animation: slideUp 0.3s ease;
         }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .hidden { display: none; }
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border: 2px solid #fff;
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        /* Botón ubicación actual */
-        .btn-ubicacion {
-            background: #2196F3;
-            padding: 8px;
-            margin-top: 5px;
-            font-size: 14px;
-        }
+        .mt-10 { margin-top: 10px; }
+        .text-center { text-align: center; }
     </style>
 </head>
 <body>
+    <!-- Mapa de fondo -->
+    <div id="background-map"></div>
+    <div class="overlay"></div>
+    
+    <!-- Modal para seleccionar ubicación en mapa -->
+    <div id="modalMapa" class="modal">
+        <div class="modal-header">
+            <span>Selecciona tu ubicación en el mapa</span>
+            <button onclick="cerrarModalMapa()" style="width: auto; background: none; font-size: 24px;">✖</button>
+        </div>
+        <div id="modalMap" class="modal-map"></div>
+        <div class="modal-footer">
+            <button onclick="confirmarUbicacionMapa()">✓ Usar esta ubicación</button>
+        </div>
+    </div>
+    
     <div class="header">
-        <h1>🚕 LLévame</h1>
-        <p id="userName">Tu taxi en Cuba</p>
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <h1>LLé<span>vame</span></h1>
+        <div class="user-info" id="userName"></div>
+    </div>
+    
+    <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-item" onclick="cambiarSeccion('viaje')">🚖 Solicitar Viaje</div>
+        <div class="menu-item" onclick="cambiarSeccion('historial')">📋 Mis Viajes</div>
+        <div class="menu-item" onclick="cambiarSeccion('perfil')">👤 Mi Perfil</div>
+        <div class="menu-item" onclick="cerrarSesion()">🚪 Cerrar Sesión</div>
     </div>
 
     <div class="container" id="app">
-        <!-- Pantalla de bienvenida -->
+        <!-- Auth screens -->
         <div id="authScreen">
             <div class="card">
                 <h2>🔐 Bienvenido</h2>
@@ -259,7 +319,6 @@
             </div>
         </div>
 
-        <!-- Pantalla de login -->
         <div id="loginScreen" class="hidden">
             <div class="card">
                 <h2>Iniciar sesión</h2>
@@ -270,15 +329,14 @@
             </div>
         </div>
 
-        <!-- Pantalla de registro -->
         <div id="registroScreen" class="hidden">
             <div class="card">
-                <h2>Registro de Cliente</h2>
+                <h2>Registro</h2>
                 <input type="text" id="regUsuario" placeholder="Usuario *">
                 <input type="password" id="regPassword" placeholder="Contraseña *">
                 <input type="text" id="regNombre" placeholder="Nombre *">
                 <input type="text" id="regApellidos" placeholder="Apellidos *">
-                <input type="text" id="regCi" placeholder="Carnet de Identidad *">
+                <input type="text" id="regCi" placeholder="CI *">
                 <input type="tel" id="regTelefono" placeholder="Teléfono">
                 <input type="email" id="regEmail" placeholder="Email">
                 <button onclick="registro()">Registrarme</button>
@@ -286,75 +344,59 @@
             </div>
         </div>
 
-        <!-- Pantalla principal -->
-        <div id="mainScreen" class="hidden">
-            <div class="tabs">
-                <button class="tab active" onclick="cambiarTab('viaje')">🚖 Viaje</button>
-                <button class="tab" onclick="cambiarTab('historial')">📋 Historial</button>
-                <button class="tab" onclick="cambiarTab('perfil')">👤 Perfil</button>
-            </div>
-
-            <!-- Tab Viaje -->
-            <div id="tabViaje">
-                <!-- Mapa -->
-                <div class="card">
-                    <h3>🗺️ Tu ubicación</h3>
-                    <div class="mapa-container">
-                        <div id="mapa"></div>
-                    </div>
-                    <button class="btn-ubicacion" onclick="obtenerUbicacionActual()">📍 Usar mi ubicación actual</button>
+        <!-- Sección Viaje -->
+        <div id="seccionViaje">
+            <div class="card">
+                <h2>📍 ¿A dónde vas?</h2>
+                
+                <input type="text" id="origen" placeholder="Origen" readonly>
+                <div class="ubicacion-buttons">
+                    <button onclick="seleccionarOrigenMapa()">🗺️ Mapa</button>
+                    <button onclick="seleccionarOrigenDirecciones()">📌 Mis direcciones</button>
+                    <button onclick="escribirOrigenManual()">✏️ Escribir</button>
                 </div>
-
-                <!-- Direcciones frecuentes -->
-                <div class="card">
-                    <h3>📍 Mis direcciones</h3>
-                    <div id="direccionesLista"></div>
-                    <button onclick="agregarDireccion()" class="secondary" style="margin-top: 10px; background: #999;">+ Agregar dirección</button>
-                </div>
-
-                <!-- Pedir taxi -->
-                <div class="card">
-                    <h3>🚕 Pedir Taxi</h3>
-                    <input type="text" id="origen" placeholder="¿Dónde estás?">
-                    <input type="text" id="destino" placeholder="¿A dónde vas?">
-                    
+                
+                <input type="text" id="destino" placeholder="Destino">
+                
+                <div id="categoriasSection" class="hidden">
                     <div class="categorias" id="categorias"></div>
-                    
+                </div>
+                
+                <div id="precioSection" class="hidden">
                     <div class="precio-box">
-                        <div class="label">Precio estimado</div>
                         <div class="valor" id="precioEstimado">-- CUP</div>
                     </div>
-                    
-                    <button id="btnSolicitar" onclick="solicitarTaxi()">Solicitar Taxi</button>
                 </div>
-
-                <!-- Viaje activo -->
-                <div class="card viaje-activo" id="viajeActivoCard" style="display: none;">
-                    <h3>🚖 Viaje en curso</h3>
-                    <div id="viajeActivoInfo"></div>
-                    <div class="mapa-container" id="mapaChoferContainer" style="display: none;">
-                        <div id="mapaChofer"></div>
-                    </div>
-                    <button id="btnCancelarViaje" onclick="cancelarViaje()" class="danger">Cancelar viaje</button>
-                </div>
+                
+                <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
             </div>
 
-            <!-- Tab Historial -->
-            <div id="tabHistorial" class="hidden">
-                <div class="card">
-                    <h3>📋 Mis viajes</h3>
-                    <div id="historialLista">Cargando...</div>
-                </div>
+            <div class="card viaje-activo" id="viajeActivoCard" style="display: none;">
+                <h3>🚖 Viaje en curso</h3>
+                <div id="viajeActivoInfo"></div>
+                <button onclick="cancelarViaje()" class="danger mt-10">Cancelar</button>
             </div>
+        </div>
 
-            <!-- Tab Perfil -->
-            <div id="tabPerfil" class="hidden">
-                <div class="card">
-                    <h3>👤 Mi perfil</h3>
-                    <div id="perfilInfo" class="perfil-info">Cargando...</div>
-                    <button onclick="editarPerfil()" style="background: #2196F3;">Editar perfil</button>
-                    <button onclick="cerrarSesion()" class="danger" style="margin-top: 10px;">Cerrar sesión</button>
-                </div>
+        <!-- Sección Historial -->
+        <div id="seccionHistorial" class="hidden">
+            <div class="card">
+                <h2>📋 Mis viajes</h2>
+                <div id="historialLista">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Sección Perfil -->
+        <div id="seccionPerfil" class="hidden">
+            <div class="card">
+                <h2>👤 Mi perfil</h2>
+                <div id="perfilInfo" class="perfil-info">Cargando...</div>
+                <button onclick="editarPerfil()" style="background:#2196F3">Editar</button>
+            </div>
+            <div class="card">
+                <h2>📍 Direcciones</h2>
+                <div id="direccionesLista"></div>
+                <button onclick="agregarDireccion()" class="outline mt-10">+ Agregar</button>
             </div>
         </div>
     </div>
@@ -366,11 +408,10 @@
         let categoriaSeleccionada = 'economico';
         let viajeActual = null;
         let intervaloTimer = null;
-        let calificacionSeleccionada = 0;
-        let mapaActual = null;
-        let marcadorActual = null;
-        let mapaChoferActual = null;
-        let ubicacionCliente = { lat: 23.1365, lng: -82.3589 }; // Centro de La Habana por defecto
+        let mapaFondo = null;
+        let mapaModal = null;
+        let ubicacionSeleccionada = null;
+        let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         
         const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
         const categorias = [
@@ -382,123 +423,148 @@
             { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
         ];
 
-        // ============= INICIALIZAR MAPA =============
-        function iniciarMapa() {
-            if (mapaActual) return;
-            mapaActual = L.map('mapa').setView([ubicacionCliente.lat, ubicacionCliente.lng], 15);
-            
-            // Usar estilo de mapa detallado (OpenStreetMap con CartoDB)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        // ============= MAPAS =============
+        function iniciarMapaFondo() {
+            if (mapaFondo) return;
+            mapaFondo = L.map('background-map').setView([ubicacionActual.lat, ubicacionActual.lng], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap',
                 subdomains: 'abcd',
-                maxZoom: 19,
-                minZoom: 12
-            }).addTo(mapaActual);
+                maxZoom: 18
+            }).addTo(mapaFondo);
             
-            // Agregar marcador del cliente
-            marcadorActual = L.marker([ubicacionCliente.lat, ubicacionCliente.lng], {
-                icon: L.divIcon({ html: '🚕', iconSize: [30, 30], className: 'marcador-cliente' })
-            }).addTo(mapaActual);
-            marcadorActual.bindPopup('Tu ubicación').openPopup();
-        }
-        
-        function actualizarMarcadorCliente(lat, lng) {
-            ubicacionCliente = { lat, lng };
-            if (marcadorActual) {
-                marcadorActual.setLatLng([lat, lng]);
-                mapaActual.setView([lat, lng], 15);
-                marcadorActual.bindPopup('Tu ubicación').openPopup();
-            }
-        }
-        
-        function iniciarMapaChofer(lat, lng) {
-            if (mapaChoferActual) {
-                mapaChoferActual.remove();
-            }
-            mapaChoferActual = L.map('mapaChofer').setView([lat, lng], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(mapaChoferActual);
-            
-            L.marker([lat, lng], {
-                icon: L.divIcon({ html: '🚖', iconSize: [30, 30], className: 'marcador-chofer' })
-            }).addTo(mapaChoferActual).bindPopup('Chofer').openPopup();
-        }
-        
-        function obtenerUbicacionActual() {
+            // Intentar obtener ubicación real
             if (navigator.geolocation) {
-                mostrarNotificacion('Obteniendo ubicación...', 'exito');
-                navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    actualizarMarcadorCliente(lat, lng);
-                    document.getElementById('origen').value = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
-                    mostrarNotificacion('Ubicación obtenida', 'exito');
-                }, error => {
-                    mostrarNotificacion('Error al obtener ubicación. Activa el GPS', 'error');
-                });
-            } else {
-                mostrarNotificacion('Tu navegador no soporta geolocalización', 'error');
+                navigator.geolocation.getCurrentPosition(pos => {
+                    ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    mapaFondo.setView([ubicacionActual.lat, ubicacionActual.lng], 15);
+                }, null, { enableHighAccuracy: true });
             }
         }
         
-        // ============= FUNCIONES PRINCIPALES =============
-        function init() {
-            cargarCategorias();
-            cargarDirecciones();
-            iniciarMapa();
-            document.getElementById('origen').addEventListener('input', actualizarPrecio);
-            document.getElementById('destino').addEventListener('input', actualizarPrecio);
+        function abrirMapaSeleccion() {
+            document.getElementById('modalMapa').classList.add('open');
+            setTimeout(() => {
+                if (mapaModal) mapaModal.remove();
+                mapaModal = L.map('modalMap').setView([ubicacionActual.lat, ubicacionActual.lng], 16);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap',
+                    subdomains: 'abcd'
+                }).addTo(mapaModal);
+                
+                let marcador = L.marker([ubicacionActual.lat, ubicacionActual.lng]).addTo(mapaModal);
+                mapaModal.on('click', (e) => {
+                    marcador.setLatLng(e.latlng);
+                    ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng };
+                });
+            }, 100);
         }
-
+        
+        function cerrarModalMapa() {
+            document.getElementById('modalMapa').classList.remove('open');
+            if (mapaModal) mapaModal.remove();
+            ubicacionSeleccionada = null;
+        }
+        
+        function confirmarUbicacionMapa() {
+            if (ubicacionSeleccionada) {
+                document.getElementById('origen').value = `📍 ${ubicacionSeleccionada.lat.toFixed(4)}, ${ubicacionSeleccionada.lng.toFixed(4)}`;
+                cerrarModalMapa();
+                verificarOrigenDestino();
+                mostrarNotificacion('Ubicación seleccionada', 'exito');
+            } else {
+                mostrarNotificacion('Toca el mapa para seleccionar', 'error');
+            }
+        }
+        
+        // ============= SELECCIÓN DE ORIGEN =============
+        function seleccionarOrigenMapa() { abrirMapaSeleccion(); }
+        
+        function seleccionarOrigenDirecciones() {
+            fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(res => res.json())
+                .then(data => {
+                    const dirs = data.direcciones || [];
+                    if (dirs.length === 0) {
+                        mostrarNotificacion('No hay direcciones guardadas', 'error');
+                    } else {
+                        let msg = 'Selecciona una dirección:\n\n';
+                        dirs.forEach((d, i) => { msg += `${i+1}. ${d.nombre}: ${d.direccion}\n`; });
+                        const sel = prompt(msg);
+                        if (sel) {
+                            const idx = parseInt(sel) - 1;
+                            if (dirs[idx]) {
+                                document.getElementById('origen').value = dirs[idx].direccion;
+                                verificarOrigenDestino();
+                            }
+                        }
+                    }
+                });
+        }
+        
+        function escribirOrigenManual() {
+            const dir = prompt('Escribe tu ubicación:');
+            if (dir) {
+                document.getElementById('origen').value = dir;
+                verificarOrigenDestino();
+            }
+        }
+        
+        function verificarOrigenDestino() {
+            const origen = document.getElementById('origen').value;
+            const destino = document.getElementById('destino').value;
+            
+            if (origen && destino) {
+                document.getElementById('categoriasSection').classList.remove('hidden');
+                document.getElementById('precioSection').classList.remove('hidden');
+                document.getElementById('btnSolicitar').classList.remove('hidden');
+                cargarCategorias();
+                actualizarPrecio();
+            } else {
+                document.getElementById('categoriasSection').classList.add('hidden');
+                document.getElementById('precioSection').classList.add('hidden');
+                document.getElementById('btnSolicitar').classList.add('hidden');
+            }
+        }
+        
         function cargarCategorias() {
             const container = document.getElementById('categorias');
             container.innerHTML = categorias.map(cat => `
                 <div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" onclick="seleccionarCategoria('${cat.id}')">
-                    <span class="categoria-icon">${cat.icono}</span>
-                    <span class="categoria-nombre">${cat.nombre}</span>
-                    <span class="categoria-precio">${cat.precio} CUP</span>
+                    <div class="categoria-icon">${cat.icono}</div>
+                    <div class="categoria-nombre">${cat.nombre}</div>
+                    <div style="font-size:10px;color:#FF9800">${cat.precio} CUP</div>
                 </div>
             `).join('');
         }
-
+        
         function seleccionarCategoria(catId) {
             categoriaSeleccionada = catId;
             cargarCategorias();
             actualizarPrecio();
         }
-
+        
         function actualizarPrecio() {
-            const origen = document.getElementById('origen').value;
-            const destino = document.getElementById('destino').value;
             let precio = preciosBase[categoriaSeleccionada] || 100;
-            if (origen && destino) precio = precio + (origen.length + destino.length) * 2;
             document.getElementById('precioEstimado').innerHTML = `${precio} CUP`;
         }
-
-        function cambiarTab(tab) {
-            document.getElementById('tabViaje').classList.add('hidden');
-            document.getElementById('tabHistorial').classList.add('hidden');
-            document.getElementById('tabPerfil').classList.add('hidden');
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            
-            if (tab === 'viaje') {
-                document.getElementById('tabViaje').classList.remove('hidden');
-                document.querySelectorAll('.tab')[0].classList.add('active');
-                setTimeout(() => mapaActual?.invalidateSize(), 100);
-            } else if (tab === 'historial') {
-                document.getElementById('tabHistorial').classList.remove('hidden');
-                document.querySelectorAll('.tab')[1].classList.add('active');
-                cargarHistorial();
-            } else if (tab === 'perfil') {
-                document.getElementById('tabPerfil').classList.remove('hidden');
-                document.querySelectorAll('.tab')[2].classList.add('active');
-                cargarPerfil();
-            }
+        
+        // ============= MENÚ =============
+        function toggleMenu() {
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('open');
         }
-
+        
+        function cambiarSeccion(seccion) {
+            toggleMenu();
+            document.getElementById('seccionViaje').classList.add('hidden');
+            document.getElementById('seccionHistorial').classList.add('hidden');
+            document.getElementById('seccionPerfil').classList.add('hidden');
+            document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden');
+            if (seccion === 'historial') cargarHistorial();
+            if (seccion === 'perfil') { cargarPerfil(); cargarDirecciones(); }
+        }
+        
         function mostrarNotificacion(msg, tipo) {
             const notif = document.getElementById('notification');
             notif.textContent = msg;
@@ -506,43 +572,41 @@
             notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
             setTimeout(() => notif.classList.add('hidden'), 3000);
         }
-
+        
         function mostrarLogin() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
         }
-
+        
         function mostrarRegistro() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('registroScreen').classList.remove('hidden');
         }
-
+        
         function volver() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('registroScreen').classList.add('hidden');
             document.getElementById('authScreen').classList.remove('hidden');
         }
-
+        
         async function login() {
             const usuario = document.getElementById('loginUsuario').value;
             const password = document.getElementById('loginPassword').value;
-            if (!usuario || !password) { mostrarNotificacion('Completa usuario y contraseña', 'error'); return; }
-            
+            if (!usuario || !password) { mostrarNotificacion('Complete campos', 'error'); return; }
             try {
                 const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password }) });
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
-                    document.getElementById('mainScreen').classList.remove('hidden');
                     document.getElementById('authScreen').classList.add('hidden');
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('userName').innerHTML = `👤 ${data.usuario.nombre}`;
-                    init(); cargarPerfil(); cargarHistorial();
+                    document.getElementById('userName').innerHTML = `👤 ${data.usuario.nombre.split(' ')[0]}`;
+                    iniciarMapaFondo();
+                    cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
-
+        
         async function registro() {
             const usuario = document.getElementById('regUsuario').value;
             const password = document.getElementById('regPassword').value;
@@ -551,65 +615,58 @@
             const ci = document.getElementById('regCi').value;
             const telefono = document.getElementById('regTelefono').value;
             const email = document.getElementById('regEmail').value;
-            
-            if (!usuario || !password || !nombre || !apellidos || !ci) { mostrarNotificacion('Completa los campos obligatorios (*)', 'error'); return; }
-            
+            if (!usuario || !password || !nombre || !apellidos || !ci) { mostrarNotificacion('Complete campos obligatorios', 'error'); return; }
             try {
                 const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email }) });
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
-                    document.getElementById('mainScreen').classList.remove('hidden');
                     document.getElementById('authScreen').classList.add('hidden');
-                    document.getElementById('registroScreen').classList.add('hidden');
-                    document.getElementById('userName').innerHTML = `👤 ${data.usuario.nombre}`;
-                    init(); cargarPerfil(); cargarHistorial();
-                    mostrarNotificacion('Registro exitoso. Bienvenido', 'exito');
-                } else { mostrarNotificacion(data.error || 'Error al registrar', 'error'); }
+                    document.getElementById('userName').innerHTML = `👤 ${data.usuario.nombre.split(' ')[0]}`;
+                    iniciarMapaFondo();
+                    cargarPerfil(); cargarHistorial(); cargarDirecciones();
+                    mostrarNotificacion('Registro exitoso', 'exito');
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
-
+        
         async function cargarPerfil() {
             try {
                 const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
                 if (data.usuario) {
                     const u = data.usuario;
-                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>CI: ${u.ci || 'No registrado'}<br>Teléfono: ${u.telefono || 'No registrado'}<br>Email: ${u.email || 'No registrado'}<br>Usuario: ${u.usuario}<br>Tipo: ${u.rol === 'admin' ? 'Administrador' : 'Cliente'}`;
+                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre} ${u.apellidos || ''}</strong><br>CI: ${u.ci || '-'}<br>Tel: ${u.telefono || '-'}<br>Email: ${u.email || '-'}<br>Usuario: ${u.usuario}`;
                 }
-            } catch (error) { document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; }
+            } catch (error) { document.getElementById('perfilInfo').innerHTML = 'Error'; }
         }
-
+        
         async function editarPerfil() {
-            const nuevoNombre = prompt('Nuevo nombre:');
-            const nuevoTelefono = prompt('Nuevo teléfono:');
-            const nuevoEmail = prompt('Nuevo email:');
-            if (!nuevoNombre && !nuevoTelefono && !nuevoEmail) return;
+            const nombre = prompt('Nuevo nombre:');
+            const telefono = prompt('Nuevo teléfono:');
+            const email = prompt('Nuevo email:');
+            if (!nombre && !telefono && !email) return;
             try {
-                const res = await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre: nuevoNombre, telefono: nuevoTelefono, email: nuevoEmail }) });
-                const data = await res.json();
-                if (data.exito) { mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil(); }
-                else { mostrarNotificacion(data.error || 'Error al actualizar', 'error'); }
-            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+                await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email }) });
+                mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil();
+            } catch (error) { mostrarNotificacion('Error', 'error'); }
         }
-
+        
         async function cargarDirecciones() {
             try {
                 const res = await fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
-                const direcciones = data.direcciones || [];
-                const listaDiv = document.getElementById('direccionesLista');
-                if (direcciones.length === 0) { listaDiv.innerHTML = '<p>No hay direcciones guardadas</p>'; }
+                const dirs = data.direcciones || [];
+                const div = document.getElementById('direccionesLista');
+                if (dirs.length === 0) { div.innerHTML = '<p class="text-center">No hay direcciones</p>'; }
                 else {
-                    listaDiv.innerHTML = direcciones.map(d => `<div class="direccion-item" onclick="usarDireccion('${d.direccion}')"><span>📍 ${d.nombre}: ${d.direccion}</span><span style="color:#f44336;" onclick="event.stopPropagation();eliminarDireccion(${d.id})">✖</span></div>`).join('');
+                    div.innerHTML = dirs.map(d => `<div class="direccion-item"><span>📍 ${d.nombre}: ${d.direccion}</span><span style="color:#f44336" onclick="eliminarDireccion(${d.id})">✖</span></div>`).join('');
                 }
-            } catch (error) { console.error('Error:', error); }
+            } catch(e) {}
         }
-
-        function usarDireccion(direccion) { document.getElementById('origen').value = direccion; actualizarPrecio(); }
         
         async function agregarDireccion() {
-            const nombre = prompt('Nombre de la dirección (ej: Casa, Trabajo):');
+            const nombre = prompt('Nombre (ej: Casa):');
             const direccion = prompt('Dirección:');
             if (nombre && direccion) {
                 await fetch('/api/direcciones', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, direccion }) });
@@ -621,15 +678,13 @@
             await fetch(`/api/direcciones/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
             cargarDirecciones();
         }
-
+        
         async function solicitarTaxi() {
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
-            if (!origen || !destino) { mostrarNotificacion('Completa origen y destino', 'error'); return; }
-            
+            if (!origen || !destino) { mostrarNotificacion('Complete origen y destino', 'error'); return; }
             const btn = document.getElementById('btnSolicitar');
-            btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Buscando chofer...';
-            
+            btn.disabled = true; btn.innerHTML = '<span class="loading"></span>';
             try {
                 const res = await fetch('/api/viajes/solicitar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ origen, destino, categoria: categoriaSeleccionada }) });
                 const data = await res.json();
@@ -641,54 +696,57 @@
                     mostrarNotificacion('✅ Taxi solicitado', 'exito');
                     document.getElementById('origen').value = '';
                     document.getElementById('destino').value = '';
+                    document.getElementById('categoriasSection').classList.add('hidden');
+                    document.getElementById('precioSection').classList.add('hidden');
+                    document.getElementById('btnSolicitar').classList.add('hidden');
                     cargarHistorial();
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
-            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Solicitar Taxi'; }
+            } catch(e) { mostrarNotificacion('Error', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = 'Confirmar Taxi'; }
         }
-
+        
         function actualizarEstadoUI() {
             if (!viajeActual) return;
-            let estadoTexto = '', estadoColor = '';
+            let texto = '';
             switch(viajeActual.estado) {
-                case 'buscando_chofer': estadoTexto = '🔄 Buscando chofer...'; estadoColor = '#FF9800'; break;
-                case 'aceptado': estadoTexto = '✅ Chofer asignado. En camino'; estadoColor = '#4CAF50'; 
-                    document.getElementById('mapaChoferContainer').style.display = 'block';
-                    setTimeout(() => iniciarMapaChofer(23.1365, -82.3589), 100);
-                    break;
-                case 'en_curso': estadoTexto = '🚗 En camino a tu destino'; estadoColor = '#2196F3'; break;
-                case 'completado': estadoTexto = '🏁 Viaje completado'; estadoColor = '#9E9E9E'; detenerSeguimiento(); setTimeout(() => { document.getElementById('viajeActivoCard').style.display = 'none'; cargarHistorial(); }, 3000); break;
-                default: estadoTexto = viajeActual.estado;
+                case 'buscando_chofer': texto = '🔄 Buscando chofer...'; break;
+                case 'aceptado': texto = '✅ Chofer en camino'; break;
+                case 'en_curso': texto = '🚗 En camino'; break;
+                case 'completado': texto = '🏁 Viaje completado'; detenerSeguimiento(); setTimeout(() => { document.getElementById('viajeActivoCard').style.display = 'none'; cargarHistorial(); }, 3000); break;
+                default: texto = viajeActual.estado;
             }
-            document.getElementById('viajeActivoInfo').innerHTML = `<div style="color: ${estadoColor}; font-weight: bold; margin-bottom: 10px;">${estadoTexto}</div><div>📍 ${viajeActual.origen} → ${viajeActual.destino}</div><div>💰 ${viajeActual.precio_base} CUP</div><div>🚗 ${viajeActual.categoria}</div>`;
-            if (viajeActual.estado === 'completado' && !document.getElementById('stars')) {
-                document.getElementById('viajeActivoInfo').innerHTML += `<div style="text-align: center; margin-top: 15px;"><p>¿Cómo fue tu viaje?</p><div class="stars" id="stars">${[1,2,3,4,5].map(i => `<span class="star" onclick="calificar(${i})">★</span>`).join('')}</div><button onclick="enviarCalificacion()" class="success">Enviar calificación</button></div>`;
-            }
+            document.getElementById('viajeActivoInfo').innerHTML = `<div style="font-weight:bold">${texto}</div><div>${viajeActual.origen} → ${viajeActual.destino}</div><div>💰 ${viajeActual.precio_base} CUP</div>`;
         }
-
-        function calificar(puntos) { calificacionSeleccionada = puntos; document.querySelectorAll('.star').forEach((star, i) => { if (i < puntos) star.classList.add('active'); else star.classList.remove('active'); }); }
-        async function enviarCalificacion() { if (calificacionSeleccionada > 0) { await fetch(`/api/viajes/calificar/${viajeActual.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ puntuacion: calificacionSeleccionada }) }); mostrarNotificacion(`¡Gracias por calificar ${calificacionSeleccionada} estrellas!`, 'exito'); } }
-
-        async function cancelarViaje() { if (!confirm('¿Cancelar este viaje?')) return; await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); mostrarNotificacion('Viaje cancelado', 'exito'); document.getElementById('viajeActivoCard').style.display = 'none'; viajeActual = null; detenerSeguimiento(); }
         
-        async function consultarEstado() { if (!viajeActual) return; try { const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActual = data.viaje; actualizarEstadoUI(); } } catch (error) { console.error('Error:', error); } }
+        async function cancelarViaje() { if (!confirm('¿Cancelar?')) return; await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); mostrarNotificacion('Cancelado', 'exito'); document.getElementById('viajeActivoCard').style.display = 'none'; viajeActual = null; detenerSeguimiento(); }
+        
+        async function consultarEstado() { if (!viajeActual) return; try { const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActual = data.viaje; actualizarEstadoUI(); } } catch(e) {} }
         
         function iniciarSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(consultarEstado, 5000); }
         function detenerSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = null; }
-
+        
         async function cargarHistorial() {
             try {
                 const res = await fetch('/api/viajes/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
                 const viajes = data.viajes || [];
-                if (viajes.length === 0) { document.getElementById('historialLista').innerHTML = '<p>No hay viajes aún</p>'; }
-                else { document.getElementById('historialLista').innerHTML = viajes.map(v => `<div class="viaje-item"><div><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado}</div><div>${v.precio_final || v.precio_base} CUP</div></div>`).join(''); }
-            } catch (error) { document.getElementById('historialLista').innerHTML = 'Error al cargar'; }
+                if (viajes.length === 0) { document.getElementById('historialLista').innerHTML = '<p class="text-center">No hay viajes</p>'; }
+                else {
+                    document.getElementById('historialLista').innerHTML = viajes.map(v => `<div class="viaje-item"><div><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado}</div><div>${v.precio_final || v.precio_base} CUP</div></div>`).join('');
+                }
+            } catch(e) { document.getElementById('historialLista').innerHTML = 'Error'; }
         }
-
+        
         function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
-
-        if (token) { document.getElementById('mainScreen').classList.remove('hidden'); document.getElementById('authScreen').classList.add('hidden'); init(); cargarPerfil(); cargarHistorial(); }
+        
+        document.getElementById('destino').addEventListener('input', verificarOrigenDestino);
+        
+        if (token) {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('userName').innerHTML = '👤 Cliente';
+            iniciarMapaFondo();
+            cargarPerfil(); cargarHistorial(); cargarDirecciones();
+        }
     </script>
 </body>
 </html>
