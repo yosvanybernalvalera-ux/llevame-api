@@ -11,7 +11,100 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        /* Tarjeta principal con efecto cristal */
+.card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    border-radius: 32px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    transition: transform 0.2s;
+}
+
+/* Asegurar texto legible dentro del card */
+.card h2, .card h3, .card .input-label {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.card .input-label {
+    color: rgba(255,255,255,0.9);
+}
+
+/* Inputs dentro del card - más transparentes */
+.card input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #1a1a2e;
+}
+
+.card input:focus {
+    border-color: #FF9800;
+    background: white;
+}
+
+.card input::placeholder {
+    color: #999;
+}
+
+/* Botones de selección dentro del card */
+.card .ubicacion-buttons button {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+
+.card .ubicacion-buttons button:active {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* Categorías dentro del card */
+.card .categoria-card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #333;
+}
+
+.card .categoria-card.selected {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    color: white;
+    border-color: rgba(255,255,255,0.5);
+}
+
+.card .categoria-card.selected .categoria-precio {
+    color: rgba(255,255,255,0.9);
+}
+
+/* Precio box */
+.card .precio-box {
+    background: rgba(255, 152, 0, 0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 16px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.card .precio-box .label {
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 1px;
+}
+
+.card .precio-box .valor {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Botón principal */
+.card button:not(.ubicacion-buttons button) {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    color: white;
+    border: none;
+}
         body {
             font-family: system-ui, -apple-system, sans-serif;
             min-height: 100vh;
