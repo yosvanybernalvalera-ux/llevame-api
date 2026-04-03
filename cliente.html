@@ -7,39 +7,77 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; padding-bottom: 80px; }
+        
         .header { background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 24px; }
+        .header p { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+        
         .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; }
-        button { width: 100%; padding: 14px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #333; }
+        .card h3 { font-size: 16px; margin-bottom: 10px; color: #666; }
+        
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; background: white; }
+        input:focus { outline: none; border-color: #FF9800; }
+        
+        button { width: 100%; padding: 14px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
         button.danger { background: #f44336; }
-        .hidden { display: none; }
-        .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #333; color: white; padding: 14px; border-radius: 12px; text-align: center; z-index: 1000; }
-        .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; margin-top: 10px; line-height: 1.6; }
-        .categorias { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 15px 0; }
-        .categoria-card { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; }
+        button.success { background: #4CAF50; }
+        
+        .categorias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+        .categoria-card { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
         .categoria-card.selected { border-color: #FF9800; background: #FFF3E0; }
-        .viaje-item { padding: 12px; border-bottom: 1px solid #eee; }
+        .categoria-icon { font-size: 28px; display: block; margin-bottom: 5px; }
+        .categoria-nombre { font-size: 12px; font-weight: bold; }
+        .categoria-precio { font-size: 11px; color: #FF9800; margin-top: 3px; }
+        
+        .precio-box { background: #FFF3E0; border-radius: 12px; padding: 15px; text-align: center; margin: 15px 0; }
+        .precio-box .label { font-size: 12px; color: #666; }
+        .precio-box .valor { font-size: 28px; font-weight: bold; color: #FF9800; }
+        
+        .viaje-activo { background: #e3f2fd; border-left: 4px solid #2196F3; }
+        .mapa { height: 150px; background: #e0e0e0; border-radius: 12px; margin: 15px 0; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px; }
+        
+        .stars { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+        .star { font-size: 30px; cursor: pointer; color: #ddd; }
+        .star.active { color: #FF9800; }
+        
+        .direccion-item { background: #f5f5f5; padding: 10px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .viaje-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .viaje-item:last-child { border-bottom: none; }
+        
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: white; border-radius: 12px; padding: 5px; }
+        .tab { flex: 1; text-align: center; padding: 10px; background: none; color: #666; font-weight: normal; }
+        .tab.active { background: #FF9800; color: white; border-radius: 10px; }
+        
+        .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; line-height: 1.6; margin-bottom: 10px; }
+        
+        .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #333; color: white; padding: 14px; border-radius: 12px; text-align: center; z-index: 1000; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .hidden { display: none; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🚕 LLévame</h1>
-        <p>Tu taxi en Cuba</p>
+        <p id="userName">Tu taxi en Cuba</p>
     </div>
 
     <div class="container" id="app">
-        <!-- Pantalla de bienvenida -->
         <div id="authScreen">
             <div class="card">
+                <h2>🔐 Bienvenido</h2>
                 <button onclick="mostrarLogin()">Iniciar sesión</button>
                 <button onclick="mostrarRegistro()" class="secondary" style="margin-top: 10px;">Registrarme</button>
             </div>
         </div>
 
-        <!-- Pantalla de login -->
         <div id="loginScreen" class="hidden">
             <div class="card">
                 <h2>Iniciar sesión</h2>
@@ -50,7 +88,6 @@
             </div>
         </div>
 
-        <!-- Pantalla de registro -->
         <div id="registroScreen" class="hidden">
             <div class="card">
                 <h2>Registro de Cliente</h2>
@@ -66,44 +103,57 @@
             </div>
         </div>
 
-        <!-- Pantalla principal (después de login) -->
         <div id="mainScreen" class="hidden">
-            <!-- Solicitar taxi -->
-            <div class="card">
-                <h3>📍 Pedir Taxi</h3>
-                <input type="text" id="origen" placeholder="¿Dónde estás?">
-                <input type="text" id="destino" placeholder="¿A dónde vas?">
-                
-                <div class="categorias" id="categorias">
-                    <div class="categoria-card selected" onclick="seleccionarCategoria('economico')">🚗 Económico</div>
-                    <div class="categoria-card" onclick="seleccionarCategoria('confort')">🚙 Confort</div>
-                    <div class="categoria-card" onclick="seleccionarCategoria('clasico')">🚘 Clásico</div>
-                    <div class="categoria-card" onclick="seleccionarCategoria('lujo')">✨ Lujo</div>
-                    <div class="categoria-card" onclick="seleccionarCategoria('moto')">🏍️ Moto</div>
-                    <div class="categoria-card" onclick="seleccionarCategoria('triciclo')">🛺 Triciclo</div>
+            <div class="tabs">
+                <button class="tab active" onclick="cambiarTab('viaje')">🚖 Viaje</button>
+                <button class="tab" onclick="cambiarTab('historial')">📋 Historial</button>
+                <button class="tab" onclick="cambiarTab('perfil')">👤 Perfil</button>
+            </div>
+
+            <div id="tabViaje">
+                <div class="card">
+                    <h3>📍 Mis direcciones</h3>
+                    <div id="direccionesLista"></div>
+                    <button onclick="agregarDireccion()" class="secondary" style="margin-top: 10px; background: #999;">+ Agregar dirección</button>
                 </div>
-                
-                <button onclick="solicitarTaxi()">Solicitar Taxi</button>
+
+                <div class="card">
+                    <h3>📍 Pedir Taxi</h3>
+                    <input type="text" id="origen" placeholder="¿Dónde estás?">
+                    <input type="text" id="destino" placeholder="¿A dónde vas?">
+                    
+                    <div class="categorias" id="categorias"></div>
+                    
+                    <div class="precio-box">
+                        <div class="label">Precio estimado</div>
+                        <div class="valor" id="precioEstimado">-- CUP</div>
+                    </div>
+                    
+                    <button id="btnSolicitar" onclick="solicitarTaxi()">Solicitar Taxi</button>
+                </div>
+
+                <div class="card viaje-activo" id="viajeActivoCard" style="display: none;">
+                    <h3>🚖 Viaje en curso</h3>
+                    <div id="viajeActivoInfo"></div>
+                    <div class="mapa" id="mapaChofer">🗺️ Ubicación del chofer aparecerá aquí</div>
+                    <button id="btnCancelarViaje" onclick="cancelarViaje()" class="danger">Cancelar viaje</button>
+                </div>
             </div>
 
-            <!-- Viaje activo -->
-            <div class="card" id="viajeActivoCard" style="display: none;">
-                <h3>🚖 Viaje en curso</h3>
-                <div id="viajeActivoInfo"></div>
+            <div id="tabHistorial" class="hidden">
+                <div class="card">
+                    <h3>📋 Mis viajes</h3>
+                    <div id="historialLista">Cargando...</div>
+                </div>
             </div>
 
-            <!-- Historial -->
-            <div class="card">
-                <h3>📋 Mis viajes</h3>
-                <div id="historialLista">Cargando...</div>
-            </div>
-
-            <!-- Perfil -->
-            <div class="card">
-                <h3>👤 Mi perfil</h3>
-                <div id="perfilInfo" class="perfil-info">Cargando...</div>
-                <button onclick="editarPerfil()" style="margin-top: 10px; background: #2196F3;">Editar perfil</button>
-                <button onclick="cerrarSesion()" class="danger" style="margin-top: 10px; background: #f44336;">Cerrar sesión</button>
+            <div id="tabPerfil" class="hidden">
+                <div class="card">
+                    <h3>👤 Mi perfil</h3>
+                    <div id="perfilInfo" class="perfil-info">Cargando...</div>
+                    <button onclick="editarPerfil()" style="background: #2196F3;">Editar perfil</button>
+                    <button onclick="cerrarSesion()" class="danger" style="margin-top: 10px;">Cerrar sesión</button>
+                </div>
             </div>
         </div>
     </div>
@@ -111,11 +161,73 @@
     <div id="notification" class="notification hidden"></div>
 
     <script>
-        const API_URL = '';
         let token = localStorage.getItem('token');
         let categoriaSeleccionada = 'economico';
         let viajeActual = null;
         let intervaloTimer = null;
+        let calificacionSeleccionada = 0;
+        
+        const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
+        const categorias = [
+            { id: 'economico', nombre: 'Económico', icono: '🚗', precio: 100 },
+            { id: 'confort', nombre: 'Confort', icono: '🚙', precio: 150 },
+            { id: 'clasico', nombre: 'Clásico', icono: '🚘', precio: 200 },
+            { id: 'lujo', nombre: 'Lujo', icono: '✨', precio: 300 },
+            { id: 'moto', nombre: 'Moto', icono: '🏍️', precio: 80 },
+            { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
+        ];
+
+        function init() {
+            cargarCategorias();
+            cargarDirecciones();
+            document.getElementById('origen').addEventListener('input', actualizarPrecio);
+            document.getElementById('destino').addEventListener('input', actualizarPrecio);
+        }
+
+        function cargarCategorias() {
+            const container = document.getElementById('categorias');
+            container.innerHTML = categorias.map(cat => `
+                <div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" onclick="seleccionarCategoria('${cat.id}')">
+                    <span class="categoria-icon">${cat.icono}</span>
+                    <span class="categoria-nombre">${cat.nombre}</span>
+                    <span class="categoria-precio">${cat.precio} CUP</span>
+                </div>
+            `).join('');
+        }
+
+        function seleccionarCategoria(catId) {
+            categoriaSeleccionada = catId;
+            cargarCategorias();
+            actualizarPrecio();
+        }
+
+        function actualizarPrecio() {
+            const origen = document.getElementById('origen').value;
+            const destino = document.getElementById('destino').value;
+            let precio = preciosBase[categoriaSeleccionada] || 100;
+            if (origen && destino) precio = precio + (origen.length + destino.length) * 2;
+            document.getElementById('precioEstimado').innerHTML = `${precio} CUP`;
+        }
+
+        function cambiarTab(tab) {
+            document.getElementById('tabViaje').classList.add('hidden');
+            document.getElementById('tabHistorial').classList.add('hidden');
+            document.getElementById('tabPerfil').classList.add('hidden');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            if (tab === 'viaje') {
+                document.getElementById('tabViaje').classList.remove('hidden');
+                document.querySelectorAll('.tab')[0].classList.add('active');
+            } else if (tab === 'historial') {
+                document.getElementById('tabHistorial').classList.remove('hidden');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                cargarHistorial();
+            } else if (tab === 'perfil') {
+                document.getElementById('tabPerfil').classList.remove('hidden');
+                document.querySelectorAll('.tab')[2].classList.add('active');
+                cargarPerfil();
+            }
+        }
 
         function mostrarNotificacion(msg, tipo) {
             const notif = document.getElementById('notification');
@@ -123,15 +235,6 @@
             notif.classList.remove('hidden');
             notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
             setTimeout(() => notif.classList.add('hidden'), 3000);
-        }
-
-        function seleccionarCategoria(cat) {
-            categoriaSeleccionada = cat;
-            document.querySelectorAll('.categoria-card').forEach((el, i) => {
-                const cats = ['economico', 'confort', 'clasico', 'lujo', 'moto', 'triciclo'];
-                if (cats[i] === cat) el.classList.add('selected');
-                else el.classList.remove('selected');
-            });
         }
 
         function mostrarLogin() {
@@ -153,35 +256,21 @@
         async function login() {
             const usuario = document.getElementById('loginUsuario').value;
             const password = document.getElementById('loginPassword').value;
-            
-            if (!usuario || !password) {
-                mostrarNotificacion('Completa usuario y contraseña', 'error');
-                return;
-            }
+            if (!usuario || !password) { mostrarNotificacion('Completa usuario y contraseña', 'error'); return; }
             
             try {
-                const res = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, password })
-                });
+                const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password }) });
                 const data = await res.json();
-                
                 if (data.token) {
-                    token = data.token;
-                    localStorage.setItem('token', token);
+                    token = data.token; localStorage.setItem('token', token);
                     document.getElementById('mainScreen').classList.remove('hidden');
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('loginScreen').classList.add('hidden');
-                    cargarPerfil();
-                    cargarHistorial();
+                    document.getElementById('userName').innerHTML = `👤 ${data.usuario.nombre}`;
+                    init(); cargarPerfil(); cargarHistorial();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
-                } else {
-                    mostrarNotificacion(data.error || 'Error al iniciar sesión', 'error');
-                }
-            } catch (error) {
-                mostrarNotificacion('Error de conexión', 'error');
-            }
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
 
         async function registro() {
@@ -193,147 +282,140 @@
             const telefono = document.getElementById('regTelefono').value;
             const email = document.getElementById('regEmail').value;
             
-            if (!usuario || !password || !nombre || !apellidos || !ci) {
-                mostrarNotificacion('Completa los campos obligatorios (*)', 'error');
-                return;
-            }
+            if (!usuario || !password || !nombre || !apellidos || !ci) { mostrarNotificacion('Completa los campos obligatorios (*)', 'error'); return; }
             
             try {
-                const res = await fetch('/api/registro', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email })
-                });
+                const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email }) });
                 const data = await res.json();
-                
                 if (data.token) {
-                    token = data.token;
-                    localStorage.setItem('token', token);
+                    token = data.token; localStorage.setItem('token', token);
                     document.getElementById('mainScreen').classList.remove('hidden');
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('registroScreen').classList.add('hidden');
-                    cargarPerfil();
-                    cargarHistorial();
+                    document.getElementById('userName').innerHTML = `👤 ${data.usuario.nombre}`;
+                    init(); cargarPerfil(); cargarHistorial();
                     mostrarNotificacion('Registro exitoso. Bienvenido', 'exito');
-                } else {
-                    mostrarNotificacion(data.error || 'Error al registrar', 'error');
-                }
-            } catch (error) {
-                mostrarNotificacion('Error de conexión', 'error');
-            }
+                } else { mostrarNotificacion(data.error || 'Error al registrar', 'error'); }
+            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
 
         async function cargarPerfil() {
             try {
-                const res = await fetch('/api/perfil', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
+                const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
-                
                 if (data.usuario) {
                     const u = data.usuario;
-                    document.getElementById('perfilInfo').innerHTML = `
-                        <strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>
-                        CI: ${u.ci || 'No registrado'}<br>
-                        Teléfono: ${u.telefono || 'No registrado'}<br>
-                        Email: ${u.email || 'No registrado'}<br>
-                        Usuario: ${u.usuario}<br>
-                        Tipo: ${u.rol === 'admin' ? 'Administrador' : 'Cliente'}
-                    `;
+                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>CI: ${u.ci || 'No registrado'}<br>Teléfono: ${u.telefono || 'No registrado'}<br>Email: ${u.email || 'No registrado'}<br>Usuario: ${u.usuario}<br>Tipo: ${u.rol === 'admin' ? 'Administrador' : 'Cliente'}`;
                 }
-            } catch (error) {
-                document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil';
-            }
+            } catch (error) { document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; }
         }
 
         async function editarPerfil() {
             const nuevoNombre = prompt('Nuevo nombre:');
             const nuevoTelefono = prompt('Nuevo teléfono:');
             const nuevoEmail = prompt('Nuevo email:');
-            
             if (!nuevoNombre && !nuevoTelefono && !nuevoEmail) return;
-            
             try {
-                await fetch('/api/perfil', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ nombre: nuevoNombre, telefono: nuevoTelefono, email: nuevoEmail })
-                });
-                mostrarNotificacion('Perfil actualizado', 'exito');
-                cargarPerfil();
-            } catch (error) {
-                mostrarNotificacion('Error al actualizar', 'error');
+                const res = await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre: nuevoNombre, telefono: nuevoTelefono, email: nuevoEmail }) });
+                const data = await res.json();
+                if (data.exito) { mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil(); }
+                else { mostrarNotificacion(data.error || 'Error al actualizar', 'error'); }
+            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+        }
+
+        async function cargarDirecciones() {
+            try {
+                const res = await fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                const direcciones = data.direcciones || [];
+                const listaDiv = document.getElementById('direccionesLista');
+                if (direcciones.length === 0) { listaDiv.innerHTML = '<p>No hay direcciones guardadas</p>'; }
+                else {
+                    listaDiv.innerHTML = direcciones.map(d => `<div class="direccion-item" onclick="usarDireccion('${d.direccion}')"><span>📍 ${d.nombre}: ${d.direccion}</span><span style="color:#f44336;" onclick="event.stopPropagation();eliminarDireccion(${d.id})">✖</span></div>`).join('');
+                }
+            } catch (error) { console.error('Error:', error); }
+        }
+
+        function usarDireccion(direccion) { document.getElementById('origen').value = direccion; actualizarPrecio(); }
+        
+        async function agregarDireccion() {
+            const nombre = prompt('Nombre de la dirección (ej: Casa, Trabajo):');
+            const direccion = prompt('Dirección:');
+            if (nombre && direccion) {
+                await fetch('/api/direcciones', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, direccion }) });
+                cargarDirecciones();
             }
+        }
+        
+        async function eliminarDireccion(id) {
+            await fetch(`/api/direcciones/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+            cargarDirecciones();
         }
 
         async function solicitarTaxi() {
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
+            if (!origen || !destino) { mostrarNotificacion('Completa origen y destino', 'error'); return; }
             
-            if (!origen || !destino) {
-                mostrarNotificacion('Completa origen y destino', 'error');
-                return;
-            }
+            const btn = document.getElementById('btnSolicitar');
+            btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Buscando chofer...';
             
             try {
-                const res = await fetch('/api/viajes/solicitar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ origen, destino, categoria: categoriaSeleccionada })
-                });
+                const res = await fetch('/api/viajes/solicitar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ origen, destino, categoria: categoriaSeleccionada }) });
                 const data = await res.json();
-                
                 if (data.exito) {
                     viajeActual = data.viaje;
-                    mostrarNotificacion('✅ Taxi solicitado. Espera confirmación', 'exito');
+                    document.getElementById('viajeActivoCard').style.display = 'block';
+                    actualizarEstadoUI();
+                    iniciarSeguimiento();
+                    mostrarNotificacion('✅ Taxi solicitado', 'exito');
                     document.getElementById('origen').value = '';
                     document.getElementById('destino').value = '';
                     cargarHistorial();
-                } else {
-                    mostrarNotificacion(data.error || 'Error al solicitar taxi', 'error');
-                }
-            } catch (error) {
-                mostrarNotificacion('Error de conexión', 'error');
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = 'Solicitar Taxi'; }
+        }
+
+        function actualizarEstadoUI() {
+            if (!viajeActual) return;
+            let estadoTexto = '', estadoColor = '';
+            switch(viajeActual.estado) {
+                case 'buscando_chofer': estadoTexto = '🔄 Buscando chofer...'; estadoColor = '#FF9800'; break;
+                case 'aceptado': estadoTexto = '✅ Chofer asignado. En camino'; estadoColor = '#4CAF50'; break;
+                case 'en_curso': estadoTexto = '🚗 En camino a tu destino'; estadoColor = '#2196F3'; break;
+                case 'completado': estadoTexto = '🏁 Viaje completado'; estadoColor = '#9E9E9E'; detenerSeguimiento(); setTimeout(() => { document.getElementById('viajeActivoCard').style.display = 'none'; cargarHistorial(); }, 3000); break;
+                default: estadoTexto = viajeActual.estado;
+            }
+            document.getElementById('viajeActivoInfo').innerHTML = `<div style="color: ${estadoColor}; font-weight: bold; margin-bottom: 10px;">${estadoTexto}</div><div>📍 ${viajeActual.origen} → ${viajeActual.destino}</div><div>💰 ${viajeActual.precio_base} CUP</div><div>🚗 ${viajeActual.categoria}</div>`;
+            if (viajeActual.estado === 'completado' && !document.getElementById('stars')) {
+                document.getElementById('viajeActivoInfo').innerHTML += `<div style="text-align: center; margin-top: 15px;"><p>¿Cómo fue tu viaje?</p><div class="stars" id="stars">${[1,2,3,4,5].map(i => `<span class="star" onclick="calificar(${i})">★</span>`).join('')}</div><button onclick="enviarCalificacion()" class="success">Enviar calificación</button></div>`;
             }
         }
+
+        function calificar(puntos) { calificacionSeleccionada = puntos; document.querySelectorAll('.star').forEach((star, i) => { if (i < puntos) star.classList.add('active'); else star.classList.remove('active'); }); }
+        async function enviarCalificacion() { if (calificacionSeleccionada > 0) { await fetch(`/api/viajes/calificar/${viajeActual.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ puntuacion: calificacionSeleccionada }) }); mostrarNotificacion(`¡Gracias por calificar ${calificacionSeleccionada} estrellas!`, 'exito'); } }
+
+        async function cancelarViaje() { if (!confirm('¿Cancelar este viaje?')) return; await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); mostrarNotificacion('Viaje cancelado', 'exito'); document.getElementById('viajeActivoCard').style.display = 'none'; viajeActual = null; detenerSeguimiento(); }
+        
+        async function consultarEstado() { if (!viajeActual) return; try { const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActual = data.viaje; actualizarEstadoUI(); } } catch (error) { console.error('Error:', error); } }
+        
+        function iniciarSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(consultarEstado, 5000); }
+        function detenerSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = null; }
 
         async function cargarHistorial() {
             try {
-                const res = await fetch('/api/viajes/mis-viajes', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
+                const res = await fetch('/api/viajes/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
                 const viajes = data.viajes || [];
-                
-                if (viajes.length === 0) {
-                    document.getElementById('historialLista').innerHTML = '<p>No hay viajes aún</p>';
-                } else {
-                    document.getElementById('historialLista').innerHTML = viajes.map(v => `
-                        <div class="viaje-item">
-                            <strong>${v.origen} → ${v.destino}</strong><br>
-                            ${new Date(v.creado_en).toLocaleString()}<br>
-                            Estado: ${v.estado} | Precio: ${v.precio_final || v.precio_base} CUP
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                document.getElementById('historialLista').innerHTML = 'Error al cargar historial';
-            }
+                if (viajes.length === 0) { document.getElementById('historialLista').innerHTML = '<p>No hay viajes aún</p>'; }
+                else { document.getElementById('historialLista').innerHTML = viajes.map(v => `<div class="viaje-item"><div><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado}</div><div>${v.precio_final || v.precio_base} CUP</div></div>`).join(''); }
+            } catch (error) { document.getElementById('historialLista').innerHTML = 'Error al cargar'; }
         }
 
-        function cerrarSesion() {
-            localStorage.removeItem('token');
-            token = null;
-            location.reload();
-        }
+        function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
 
-        // Inicializar
-        if (token) {
-            document.getElementById('mainScreen').classList.remove('hidden');
-            document.getElementById('authScreen').classList.add('hidden');
-            cargarPerfil();
-            cargarHistorial();
-        }
+        if (token) { document.getElementById('mainScreen').classList.remove('hidden'); document.getElementById('authScreen').classList.add('hidden'); init(); cargarPerfil(); cargarHistorial(); }
     </script>
 </body>
 </html>
