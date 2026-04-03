@@ -29,19 +29,19 @@
             z-index: 0;
         }
         
-        /* Overlay más suave */
+        /* Overlay más oscuro */
         .overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(3px);
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
             z-index: 1;
         }
         
-        /* Contenido */
+        /* Contenido principal */
         .header, .container, .modal {
             position: relative;
             z-index: 2;
@@ -49,7 +49,7 @@
         
         /* Header moderno */
         .header {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(20px);
             padding: 15px 20px;
             display: flex;
@@ -68,21 +68,19 @@
             color: white;
             width: auto;
             padding: 0;
-            opacity: 0.9;
         }
         
         .header h1 {
             font-size: 22px;
             color: white;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
         .header h1 span { color: #FF9800; }
         
         .user-info {
             font-size: 12px;
-            color: rgba(255,255,255,0.8);
-            background: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.2);
             padding: 5px 12px;
             border-radius: 20px;
         }
@@ -94,12 +92,11 @@
             left: -280px;
             width: 280px;
             height: 100%;
-            background: rgba(0, 0, 0, 0.92);
+            background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(20px);
             z-index: 200;
-            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: left 0.3s ease;
             padding: 80px 20px 20px;
-            border-right: 1px solid rgba(255,255,255,0.1);
         }
         
         .side-menu.open { left: 0; }
@@ -112,7 +109,6 @@
             background: rgba(0,0,0,0.4);
             z-index: 150;
             display: none;
-            backdrop-filter: blur(5px);
         }
         .menu-overlay.open { display: block; }
         
@@ -126,10 +122,8 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            transition: background 0.2s;
         }
         .menu-item:active { background: rgba(255,255,255,0.1); }
-        .menu-item .icon { font-size: 22px; }
         
         .container {
             max-width: 500px;
@@ -138,7 +132,7 @@
             min-height: calc(100vh - 70px);
         }
         
-        /* Tarjeta principal con glassmorphism */
+        /* Tarjetas estilo glassmorphism */
         .card {
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
@@ -147,7 +141,6 @@
             margin-bottom: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             border: 1px solid rgba(255,255,255,0.3);
-            transition: transform 0.2s;
         }
         
         .card h2 {
@@ -155,10 +148,8 @@
             margin-bottom: 20px;
             color: #1a1a2e;
             font-weight: 600;
-            letter-spacing: -0.3px;
         }
         
-        /* Inputs modernos */
         .input-group {
             margin-bottom: 20px;
         }
@@ -178,14 +169,11 @@
             border-radius: 20px;
             font-size: 16px;
             background: white;
-            transition: all 0.2s;
-            font-weight: 500;
         }
         
         input:focus {
             outline: none;
             border-color: #FF9800;
-            box-shadow: 0 0 0 3px rgba(255,152,0,0.15);
         }
         
         input[readonly] {
@@ -204,18 +192,12 @@
             flex: 1;
             padding: 10px;
             font-size: 12px;
-            font-weight: 500;
             border-radius: 14px;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0,0,0,0.08);
             border: 1px solid rgba(0,0,0,0.1);
             color: #333;
         }
         
-        .ubicacion-buttons button:active {
-            transform: scale(0.97);
-        }
-        
-        /* Botón principal */
         button {
             width: 100%;
             padding: 16px;
@@ -226,7 +208,6 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
         }
         
         button:active { transform: scale(0.98); }
@@ -236,7 +217,22 @@
             background: transparent;
             border: 2px solid #FF9800;
             color: #FF9800;
-            box-shadow: none;
+        }
+        button.small {
+            padding: 10px;
+            font-size: 13px;
+        }
+        
+        /* Botones de acción en viaje */
+        .acciones-viaje {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .acciones-viaje button {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
         }
         
         /* Categorías */
@@ -254,7 +250,6 @@
             padding: 12px 8px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
         }
         
         .categoria-card.selected {
@@ -263,8 +258,8 @@
         }
         
         .categoria-icon { font-size: 28px; display: block; margin-bottom: 5px; }
-        .categoria-nombre { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
-        .categoria-precio { font-size: 11px; color: #FF9800; font-weight: 600; }
+        .categoria-nombre { font-size: 12px; font-weight: 600; }
+        .categoria-precio { font-size: 11px; color: #FF9800; margin-top: 3px; }
         
         /* Precio */
         .precio-box {
@@ -274,7 +269,6 @@
             text-align: center;
             margin: 20px 0;
         }
-        .precio-box .label { font-size: 12px; color: #666; letter-spacing: 1px; }
         .precio-box .valor { font-size: 36px; font-weight: 800; color: #FF9800; }
         
         /* Modal del mapa */
@@ -344,10 +338,9 @@
             border-radius: 28px;
             text-align: center;
             z-index: 1000;
-            font-weight: 500;
         }
         
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .loading {
             display: inline-block;
             width: 18px;
@@ -361,7 +354,6 @@
         
         .mt-10 { margin-top: 10px; }
         .text-center { text-align: center; }
-        .mb-20 { margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -391,22 +383,14 @@
     <!-- Menú lateral -->
     <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
     <div class="side-menu" id="sideMenu">
-        <div class="menu-item" onclick="cambiarSeccion('viaje')">
-            <span class="icon">🚖</span> Solicitar Viaje
-        </div>
-        <div class="menu-item" onclick="cambiarSeccion('historial')">
-            <span class="icon">📋</span> Mis Viajes
-        </div>
-        <div class="menu-item" onclick="cambiarSeccion('perfil')">
-            <span class="icon">👤</span> Mi Perfil
-        </div>
-        <div class="menu-item" onclick="cerrarSesion()">
-            <span class="icon">🚪</span> Cerrar Sesión
-        </div>
+        <div class="menu-item" onclick="cambiarSeccion('viaje')">🚖 Solicitar Viaje</div>
+        <div class="menu-item" onclick="cambiarSeccion('historial')">📋 Mis Viajes</div>
+        <div class="menu-item" onclick="cambiarSeccion('perfil')">👤 Mi Perfil</div>
+        <div class="menu-item" onclick="cerrarSesion()">🚪 Cerrar Sesión</div>
     </div>
 
     <div class="container" id="app">
-        <!-- Pantalla de bienvenida -->
+        <!-- Pantalla de bienvenida (visible solo sin sesión) -->
         <div id="authScreen">
             <div class="card">
                 <h2>🔐 Bienvenido</h2>
@@ -442,7 +426,7 @@
             </div>
         </div>
 
-        <!-- Sección Viaje (oculta inicialmente) -->
+        <!-- Sección Viaje -->
         <div id="seccionViaje" class="hidden">
             <div class="card">
                 <h2>📍 ¿A dónde vas?</h2>
@@ -468,7 +452,6 @@
                 
                 <div id="precioSection" class="hidden">
                     <div class="precio-box">
-                        <div class="label">PRECIO ESTIMADO</div>
                         <div class="valor" id="precioEstimado">-- CUP</div>
                     </div>
                 </div>
@@ -480,11 +463,16 @@
             <div class="card viaje-activo" id="viajeActivoCard" style="display: none;">
                 <h2 style="font-size: 18px; margin-bottom: 12px;">🚖 Viaje en curso</h2>
                 <div id="viajeActivoInfo"></div>
+                <div id="tiempoEstimado" style="font-size: 12px; color: #666; margin-top: 8px;"></div>
+                <div class="acciones-viaje">
+                    <button class="small" onclick="llamarChofer()">📞 Llamar chofer</button>
+                    <button class="small" onclick="compartirViaje()">📤 Compartir viaje</button>
+                </div>
                 <button onclick="cancelarViaje()" class="danger mt-10">Cancelar viaje</button>
             </div>
         </div>
 
-        <!-- Sección Historial (oculta inicialmente) -->
+        <!-- Sección Historial -->
         <div id="seccionHistorial" class="hidden">
             <div class="card">
                 <h2>📋 Mis viajes</h2>
@@ -492,7 +480,7 @@
             </div>
         </div>
 
-        <!-- Sección Perfil (oculta inicialmente) -->
+        <!-- Sección Perfil -->
         <div id="seccionPerfil" class="hidden">
             <div class="card">
                 <h2>👤 Mi perfil</h2>
@@ -668,6 +656,7 @@
             document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden');
             if (seccion === 'historial') cargarHistorial();
             if (seccion === 'perfil') { cargarPerfil(); cargarDirecciones(); }
+            if (seccion === 'viaje' && mapaFondo) { setTimeout(() => mapaFondo.invalidateSize(), 100); }
         }
         
         function mostrarNotificacion(msg, tipo) {
@@ -703,9 +692,13 @@
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
+                    // Ocultar pantallas de autenticación
                     document.getElementById('authScreen').classList.add('hidden');
-                    document.getElementById('userName').innerHTML = `${data.usuario.nombre.split(' ')[0]}`;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('registroScreen').classList.add('hidden');
+                    // Mostrar sección de viaje
                     document.getElementById('seccionViaje').classList.remove('hidden');
+                    document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
                     iniciarMapaFondo();
                     cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
@@ -727,9 +720,13 @@
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
+                    // Ocultar pantallas de autenticación
                     document.getElementById('authScreen').classList.add('hidden');
-                    document.getElementById('userName').innerHTML = `${data.usuario.nombre.split(' ')[0]}`;
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('registroScreen').classList.add('hidden');
+                    // Mostrar sección de viaje
                     document.getElementById('seccionViaje').classList.remove('hidden');
+                    document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
                     iniciarMapaFondo();
                     cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion('Registro exitoso', 'exito');
@@ -767,7 +764,7 @@
                 const div = document.getElementById('direccionesLista');
                 if (dirs.length === 0) { div.innerHTML = '<p class="text-center">No hay direcciones</p>'; }
                 else {
-                    div.innerHTML = dirs.map(d => `<div class="direccion-item"><span>📍 ${d.nombre}: ${d.direccion}</span><span style="color:#f44336; font-size:18px;" onclick="eliminarDireccion(${d.id})">✖</span></div>`).join('');
+                    div.innerHTML = dirs.map(d => `<div class="direccion-item"><span>📍 ${d.nombre}: ${d.direccion}</span><span style="color:#f44336;" onclick="eliminarDireccion(${d.id})">✖</span></div>`).join('');
                 }
             } catch(e) {}
         }
@@ -814,20 +811,58 @@
         
         function actualizarEstadoUI() {
             if (!viajeActual) return;
-            let texto = '';
+            let texto = '', tiempo = '';
             switch(viajeActual.estado) {
-                case 'buscando_chofer': texto = '🔄 Buscando chofer...'; break;
-                case 'aceptado': texto = '✅ Chofer en camino'; break;
-                case 'en_curso': texto = '🚗 En camino a tu destino'; break;
+                case 'buscando_chofer': texto = '🔄 Buscando chofer...'; tiempo = '⏱️ Tiempo estimado: 2-5 minutos'; break;
+                case 'aceptado': texto = '✅ Chofer en camino'; tiempo = '⏱️ Llegada estimada: 5-10 minutos'; break;
+                case 'en_curso': texto = '🚗 En camino a tu destino'; tiempo = '⏱️ Llegada estimada: 10-15 minutos'; break;
                 case 'completado': texto = '🏁 Viaje completado'; detenerSeguimiento(); setTimeout(() => { document.getElementById('viajeActivoCard').style.display = 'none'; cargarHistorial(); }, 3000); break;
                 default: texto = viajeActual.estado;
             }
-            document.getElementById('viajeActivoInfo').innerHTML = `<div style="font-weight:600; margin-bottom:8px;">${texto}</div><div>📍 ${viajeActual.origen} → ${viajeActual.destino}</div><div>💰 ${viajeActual.precio_base} CUP</div>`;
+            document.getElementById('viajeActivoInfo').innerHTML = `<div style="font-weight:600;">${texto}</div><div>📍 ${viajeActual.origen} → ${viajeActual.destino}</div><div>💰 ${viajeActual.precio_base} CUP</div>`;
+            document.getElementById('tiempoEstimado').innerHTML = tiempo;
         }
         
-        async function cancelarViaje() { if (!confirm('¿Cancelar este viaje?')) return; await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); mostrarNotificacion('Viaje cancelado', 'exito'); document.getElementById('viajeActivoCard').style.display = 'none'; viajeActual = null; detenerSeguimiento(); }
+        function llamarChofer() {
+            if (viajeActual && viajeActual.chofer_telefono) {
+                window.location.href = `tel:${viajeActual.chofer_telefono}`;
+            } else {
+                mostrarNotificacion('Número del chofer no disponible aún', 'error');
+            }
+        }
         
-        async function consultarEstado() { if (!viajeActual) return; try { const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActual = data.viaje; actualizarEstadoUI(); } } catch(e) {} }
+        function compartirViaje() {
+            if (viajeActual) {
+                const texto = `🚕 Estoy en un viaje con LLévame\n📍 Origen: ${viajeActual.origen}\n🎯 Destino: ${viajeActual.destino}\n💰 Precio: ${viajeActual.precio_base} CUP`;
+                if (navigator.share) {
+                    navigator.share({ title: 'Mi viaje LLévame', text: texto });
+                } else {
+                    navigator.clipboard.writeText(texto);
+                    mostrarNotificacion('Información del viaje copiada', 'exito');
+                }
+            }
+        }
+        
+        async function cancelarViaje() { 
+            if (!confirm('¿Cancelar este viaje?')) return; 
+            await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); 
+            mostrarNotificacion('Viaje cancelado', 'exito'); 
+            document.getElementById('viajeActivoCard').style.display = 'none'; 
+            viajeActual = null; 
+            detenerSeguimiento(); 
+        }
+        
+        async function consultarEstado() { 
+            if (!viajeActual) return; 
+            try { 
+                const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); 
+                const data = await res.json(); 
+                if (data.viaje) { 
+                    viajeActual = data.viaje; 
+                    actualizarEstadoUI(); 
+                } 
+            } catch(e) {} 
+        }
         
         function iniciarSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(consultarEstado, 5000); }
         function detenerSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = null; }
@@ -848,10 +883,11 @@
         
         document.getElementById('destino').addEventListener('input', verificarOrigenDestino);
         
+        // Inicialización - si hay token, mostrar sección viaje
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('userName').innerHTML = 'Cliente';
             document.getElementById('seccionViaje').classList.remove('hidden');
+            document.getElementById('userName').innerHTML = 'Cliente';
             iniciarMapaFondo();
             cargarPerfil(); cargarHistorial(); cargarDirecciones();
         }
