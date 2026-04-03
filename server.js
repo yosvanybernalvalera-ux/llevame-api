@@ -22,6 +22,7 @@ const pool = new Pool({
 // ============= CREAR TABLAS =============
 const crearTablas = async () => {
   try {
+    // Tabla de usuarios
     await pool.query(`
       CREATE TABLE IF NOT EXISTS usuarios (
         id SERIAL PRIMARY KEY,
@@ -30,13 +31,14 @@ const crearTablas = async () => {
         nombre TEXT NOT NULL,
         apellidos TEXT,
         ci TEXT,
-        telefono TEXT,
-        email TEXT,
+        telefono TEXT UNIQUE,
+        email TEXT UNIQUE,
         rol TEXT DEFAULT 'cliente',
         creado_en TIMESTAMP DEFAULT NOW()
       )
     `);
     
+    // Tabla de viajes
     await pool.query(`
       CREATE TABLE IF NOT EXISTS viajes (
         id SERIAL PRIMARY KEY,
@@ -50,6 +52,30 @@ const crearTablas = async () => {
         precio_final INTEGER,
         creado_en TIMESTAMP DEFAULT NOW(),
         completado_en TIMESTAMP
+      )
+    `);
+    
+    // Tabla de direcciones frecuentes
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS direcciones (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER REFERENCES usuarios(id),
+        nombre TEXT NOT NULL,
+        direccion TEXT NOT NULL,
+        creado_en TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    // Tabla de calificaciones
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS calificaciones (
+        id SERIAL PRIMARY KEY,
+        viaje_id INTEGER REFERENCES viajes(id),
+        cliente_id INTEGER REFERENCES usuarios(id),
+        chofer_id INTEGER REFERENCES usuarios(id),
+        puntuacion INTEGER CHECK (puntuacion >= 1 AND puntuacion <= 5),
+        comentario TEXT,
+        creado_en TIMESTAMP DEFAULT NOW()
       )
     `);
     
@@ -75,13 +101,29 @@ const verificarToken = (req, res, next) => {
   }
 };
 
-// ============= ENDPOINTS =============
+// ============= ENDPOINTS DE USUARIO =============
 
-// Registro
+// Registro con validación de email y teléfono únicos
 app.post('/api/registro', async (req, res) => {
   const { usuario, password, nombre, apellidos, ci, telefono, email } = req.body;
   
   try {
+    // Verificar si el email ya existe (si se proporcionó)
+    if (email) {
+      const emailExistente = await pool.query('SELECT id FROM usuarios WHERE email = $1', [email]);
+      if (emailExistente.rows.length > 0) {
+        return res.status(400).json({ error: 'El email ya está registrado' });
+      }
+    }
+    
+    // Verificar si el teléfono ya existe (si se proporcionó)
+    if (telefono) {
+      const telefonoExistente = await pool.query('SELECT id FROM usuarios WHERE telefono = $1', [telefono]);
+      if (telefonoExistente.rows.length > 0) {
+        return res.status(400).json({ error: 'El teléfono ya está registrado' });
+      }
+    }
+    
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
       `INSERT INTO usuarios (usuario, password, nombre, apellidos, ci, telefono, email)
@@ -99,7 +141,15 @@ app.post('/api/registro', async (req, res) => {
     res.json({ exito: true, token, usuario: result.rows[0] });
   } catch (error) {
     if (error.code === '23505') {
-      res.status(400).json({ error: 'El usuario ya existe' });
+      if (error.constraint === 'usuarios_usuario_key') {
+        res.status(400).json({ error: 'El usuario ya existe' });
+      } else if (error.constraint === 'usuarios_email_key') {
+        res.status(400).json({ error: 'El email ya está registrado' });
+      } else if (error.constraint === 'usuarios_telefono_key') {
+        res.status(400).json({ error: 'El teléfono ya está registrado' });
+      } else {
+        res.status(400).json({ error: 'Ya existe un usuario con esos datos' });
+      }
     } else {
       res.status(500).json({ error: 'Error al registrar' });
     }
@@ -175,6 +225,28 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
   const { nombre, telefono, email } = req.body;
   
   try {
+    // Verificar si el nuevo email ya existe (si cambió)
+    if (email) {
+      const emailExistente = await pool.query(
+        'SELECT id FROM usuarios WHERE email = $1 AND id != $2',
+        [email, req.usuario.id]
+      );
+      if (emailExistente.rows.length > 0) {
+        return res.status(400).json({ error: 'El email ya está registrado por otro usuario' });
+      }
+    }
+    
+    // Verificar si el nuevo teléfono ya existe (si cambió)
+    if (telefono) {
+      const telefonoExistente = await pool.query(
+        'SELECT id FROM usuarios WHERE telefono = $1 AND id != $2',
+        [telefono, req.usuario.id]
+      );
+      if (telefonoExistente.rows.length > 0) {
+        return res.status(400).json({ error: 'El teléfono ya está registrado por otro usuario' });
+      }
+    }
+    
     await pool.query(
       'UPDATE usuarios SET nombre = COALESCE($1, nombre), telefono = COALESCE($2, telefono), email = COALESCE($3, email) WHERE id = $4',
       [nombre, telefono, email, req.usuario.id]
@@ -185,12 +257,58 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
   }
 });
 
+// ============= ENDPOINTS DE DIRECCIONES =============
+
+// Obtener direcciones del usuario
+app.get('/api/direcciones', verificarToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM direcciones WHERE usuario_id = $1 ORDER BY creado_en DESC',
+      [req.usuario.id]
+    );
+    res.json({ direcciones: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener direcciones' });
+  }
+});
+
+// Agregar dirección
+app.post('/api/direcciones', verificarToken, async (req, res) => {
+  const { nombre, direccion } = req.body;
+  
+  try {
+    const result = await pool.query(
+      'INSERT INTO direcciones (usuario_id, nombre, direccion) VALUES ($1, $2, $3) RETURNING *',
+      [req.usuario.id, nombre, direccion]
+    );
+    res.json({ exito: true, direccion: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al agregar dirección' });
+  }
+});
+
+// Eliminar dirección
+app.delete('/api/direcciones/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    await pool.query('DELETE FROM direcciones WHERE id = $1 AND usuario_id = $2', [id, req.usuario.id]);
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar dirección' });
+  }
+});
+
+// ============= ENDPOINTS DE VIAJES =============
+
 // Solicitar viaje
 app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
   const { origen, destino, categoria } = req.body;
   
   try {
-    const precioBase = 100; // Temporal, después se calcula por distancia
+    // Calcular precio base según categoría
+    const precios = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
+    const precioBase = precios[categoria] || 100;
     
     const result = await pool.query(
       `INSERT INTO viajes (cliente_id, origen, destino, categoria, estado, precio_base)
@@ -202,6 +320,41 @@ app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
     res.json({ exito: true, viaje: result.rows[0] });
   } catch (error) {
     res.status(500).json({ error: 'Error al solicitar viaje' });
+  }
+});
+
+// Obtener estado de un viaje
+app.get('/api/viajes/estado/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await pool.query('SELECT * FROM viajes WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Viaje no encontrado' });
+    }
+    res.json({ viaje: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener estado' });
+  }
+});
+
+// Cancelar viaje
+app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await pool.query(
+      'UPDATE viajes SET estado = $1 WHERE id = $2 AND cliente_id = $3 AND estado IN ($4, $5) RETURNING *',
+      ['cancelado', id, req.usuario.id, 'buscando_chofer', 'aceptado']
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'No se puede cancelar el viaje' });
+    }
+    
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cancelar viaje' });
   }
 });
 
@@ -218,12 +371,40 @@ app.get('/api/viajes/mis-viajes', verificarToken, async (req, res) => {
   }
 });
 
-// Ruta raíz
+// Calificar viaje
+app.post('/api/viajes/calificar/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  const { puntuacion, comentario } = req.body;
+  
+  try {
+    // Obtener el viaje y verificar que esté completado
+    const viaje = await pool.query('SELECT * FROM viajes WHERE id = $1 AND cliente_id = $2', [id, req.usuario.id]);
+    if (viaje.rows.length === 0) {
+      return res.status(404).json({ error: 'Viaje no encontrado' });
+    }
+    
+    if (viaje.rows[0].estado !== 'completado') {
+      return res.status(400).json({ error: 'Solo se pueden calificar viajes completados' });
+    }
+    
+    await pool.query(
+      `INSERT INTO calificaciones (viaje_id, cliente_id, chofer_id, puntuacion, comentario)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, req.usuario.id, viaje.rows[0].chofer_id, puntuacion, comentario]
+    );
+    
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al calificar viaje' });
+  }
+});
+
+// ============= RUTA RAÍZ =============
 app.get('/', (req, res) => {
   res.json({ mensaje: '🚕 LLévame API funcionando', version: '2.0' });
 });
 
-// Panel admin (simple)
+// ============= PANEL ADMIN =============
 app.get('/admin/login', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -298,7 +479,7 @@ app.get('/admin/dashboard', (req, res) => {
       <div class="card">
         <h2>Bienvenido al panel de administración</h2>
         <p>Aquí podrás gestionar choferes, viajes y configuraciones.</p>
-        <p>✅ Versión base funcionando correctamente</p>
+        <p>✅ Versión completa funcionando</p>
       </div>
       <script>
         const token = localStorage.getItem('token');
@@ -310,7 +491,7 @@ app.get('/admin/dashboard', (req, res) => {
   `);
 });
 
-// Iniciar servidor
+// ============= INICIAR SERVIDOR =============
 app.listen(PORT, () => {
   console.log(`🚕 LLévame API corriendo en puerto ${PORT}`);
 });
