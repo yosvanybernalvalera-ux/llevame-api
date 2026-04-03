@@ -9,6 +9,19 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+// Ruta raíz
+app.get('/', (req, res) => {
+  res.json({ 
+    mensaje: '🚕 LLévame API funcionando',
+    version: '1.0',
+    endpoints: {
+      admin: '/admin/login',
+      api: '/api/viajes/solicitar',
+      estado: '/api/viajes/estado/:id'
+    }
+  });
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
