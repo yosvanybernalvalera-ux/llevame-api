@@ -144,15 +144,29 @@
             }
         }
 
-        function cargarPerfil(usuario) {
+      async function cargarPerfilDesdeAPI() {
+    try {
+        const res = await fetch('/api/perfil', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (data.usuario) {
+            const u = data.usuario;
             document.getElementById('perfilInfo').innerHTML = `
-                <strong>${usuario.nombre} ${usuario.apellidos}</strong><br>
-                CI: ${usuario.ci}<br>
-                Tel: ${usuario.telefono || 'No'}<br>
-                Email: ${usuario.email || 'No'}<br>
-                Usuario: ${usuario.usuario}
+                <strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>
+                CI: ${u.ci || 'No registrado'}<br>
+                Teléfono: ${u.telefono || 'No registrado'}<br>
+                Email: ${u.email || 'No registrado'}<br>
+                Usuario: ${u.usuario}
+                <button onclick="editarPerfil()" style="margin-top: 10px; background: #2196F3;">Editar perfil</button>
             `;
         }
+    } catch (error) {
+        console.error('Error al cargar perfil:', error);
+        document.getElementById('perfilInfo').innerHTML = '<p>Error al cargar perfil</p>';
+    }
+}
 
         async function solicitarTaxi() {
             const origen = document.getElementById('origen').value;
