@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LLévame - Chofer</title>
     
-    <!-- Leaflet (mapa ligero) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -16,7 +15,6 @@
             font-family: system-ui, -apple-system, sans-serif;
             min-height: 100vh;
             background: linear-gradient(135deg, #1a1a2e, #16213e);
-            position: relative;
         }
         
         .header {
@@ -116,29 +114,23 @@
             color: #1a1a2e;
         }
         
-        .card h3 {
-            font-size: 16px;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
         input, select {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             margin: 8px 0;
             border: 1px solid #ddd;
-            border-radius: 14px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 14px;
         }
         
         button {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: #FF9800;
             color: white;
             border: none;
-            border-radius: 14px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -146,7 +138,6 @@
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
         button.danger { background: #f44336; }
-        button.success { background: #4CAF50; }
         button.outline {
             background: transparent;
             border: 2px solid #FF9800;
@@ -163,11 +154,11 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 14px;
+            font-size: 13px;
         }
         
         .estado-display {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             text-align: center;
             margin: 10px 0;
@@ -177,19 +168,17 @@
         
         .viaje-card {
             background: #f9f9f9;
-            padding: 15px;
-            border-radius: 16px;
+            padding: 12px;
+            border-radius: 12px;
             margin-bottom: 10px;
             cursor: pointer;
-            border-left: 4px solid #FF9800;
+            border-left: 3px solid #FF9800;
         }
-        .viaje-card:active { background: #f0f0f0; }
         
         .ganancias {
             display: flex;
             gap: 15px;
             text-align: center;
-            margin: 15px 0;
         }
         .ganancia-item {
             flex: 1;
@@ -198,16 +187,49 @@
             border-radius: 12px;
         }
         .ganancia-valor {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #FF9800;
         }
         
+        .perfil-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 12px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 { margin-bottom: 15px; }
+        
         .hidden { display: none; }
         .loading {
             display: inline-block;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border: 2px solid #fff;
             border-radius: 50%;
             border-top-color: transparent;
@@ -222,23 +244,10 @@
             right: 20px;
             background: rgba(0,0,0,0.9);
             color: white;
-            padding: 14px;
-            border-radius: 14px;
+            padding: 12px;
+            border-radius: 12px;
             text-align: center;
             z-index: 1000;
-        }
-        
-        .perfil-info {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 14px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        
-        .viaje-item {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
         }
         
         .mt-10 { margin-top: 10px; }
@@ -281,12 +290,10 @@
             </div>
         </div>
 
-        <!-- Pantalla de registro de vehículo -->
-        <div id="registroVehiculoScreen" class="hidden">
-            <div class="card">
-                <h2>Registrar vehículo</h2>
-                <p style="color:#666; margin-bottom:15px;">¿Ya tienes cuenta? Inicia sesión primero. ¿Eres nuevo? Regístrate como cliente primero.</p>
-                
+        <!-- Modal de registro de vehículo -->
+        <div id="modalVehiculo" class="modal">
+            <div class="modal-content">
+                <h3>Registrar/Editar vehículo</h3>
                 <select id="tipoVehiculo" onchange="cambiarTipoVehiculo()">
                     <option value="auto">Auto</option>
                     <option value="moto">Moto</option>
@@ -294,7 +301,7 @@
                 </select>
                 
                 <div id="camposAuto">
-                    <input type="text" id="autoMarca" placeholder="Marca/Modelo (ej: Lada 2105)">
+                    <input type="text" id="autoMarca" placeholder="Marca/Modelo">
                     <input type="text" id="autoColor" placeholder="Color">
                     <input type="text" id="autoMatricula" placeholder="Matrícula (chapa)">
                 </div>
@@ -321,7 +328,7 @@
                 </div>
                 
                 <div id="categoriasAuto">
-                    <p>Categorías que ofreces:</p>
+                    <p>Categorías:</p>
                     <div class="checkbox-group">
                         <label><input type="checkbox" value="economico"> Económico</label>
                         <label><input type="checkbox" value="confort"> Confort</label>
@@ -330,14 +337,26 @@
                     </div>
                 </div>
                 
-                <button onclick="registrarVehiculo()">Registrar vehículo</button>
-                <button onclick="volver()" class="secondary" style="margin-top: 12px;">Volver</button>
+                <button onclick="guardarVehiculo()">Guardar vehículo</button>
+                <button onclick="cerrarModalVehiculo()" class="secondary mt-10">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Modal de editar perfil -->
+        <div id="modalPerfil" class="modal">
+            <div class="modal-content">
+                <h3>Editar perfil</h3>
+                <input type="text" id="editNombre" placeholder="Nombre">
+                <input type="tel" id="editTelefono" placeholder="Teléfono">
+                <input type="email" id="editEmail" placeholder="Email">
+                <input type="tel" id="editEmergencia" placeholder="Teléfono de emergencia">
+                <button onclick="guardarPerfil()">Guardar cambios</button>
+                <button onclick="cerrarModalPerfil()" class="secondary mt-10">Cancelar</button>
             </div>
         </div>
 
         <!-- Sección Principal -->
         <div id="seccionPrincipal" class="hidden">
-            <!-- Estado del chofer -->
             <div class="card">
                 <h2>📊 Mi estado</h2>
                 <div class="estado-display" id="estadoDisplay">🟢 Disponible</div>
@@ -345,7 +364,6 @@
                 <div id="aprobacionMsg" class="hidden" style="color:#FF9800; margin-top:10px;">⏳ Esperando aprobación del administrador</div>
             </div>
             
-            <!-- Ganancias -->
             <div class="card">
                 <h2>💰 Ganancias</h2>
                 <div class="ganancias">
@@ -354,24 +372,21 @@
                         <div class="ganancia-valor" id="gananciasHoy">0 CUP</div>
                     </div>
                     <div class="ganancia-item">
-                        <div>Esta semana</div>
+                        <div>Semana</div>
                         <div class="ganancia-valor" id="gananciasSemana">0 CUP</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Viajes disponibles -->
             <div class="card" id="viajesSection">
                 <h2>📋 Viajes disponibles</h2>
                 <div id="listaViajes">Cargando...</div>
             </div>
             
-            <!-- Viaje activo -->
             <div class="card" id="viajeActivoCard" style="display: none;">
                 <h2>🚖 Viaje en curso</h2>
                 <div id="viajeActivoInfo"></div>
-                <div id="mapaViaje" style="height: 200px; margin: 15px 0; border-radius: 12px; background: #e0e0e0;"></div>
-                <button id="btnIniciar" class="hidden" onclick="iniciarViaje()">🚗 Llegué al cliente - Iniciar viaje</button>
+                <button id="btnIniciar" class="hidden" onclick="iniciarViaje()">🚗 Iniciar viaje</button>
                 <button id="btnFinalizar" class="hidden" onclick="finalizarViaje()">✅ Finalizar viaje</button>
             </div>
         </div>
@@ -389,12 +404,12 @@
             <div class="card">
                 <h2>👤 Mi perfil</h2>
                 <div id="perfilInfo" class="perfil-info">Cargando...</div>
-                <button onclick="editarPerfil()" style="background: #2196F3;">Editar perfil</button>
+                <button onclick="abrirModalPerfil()" style="background: #2196F3;">Editar perfil</button>
             </div>
             <div class="card">
                 <h2>🚗 Mi vehículo</h2>
                 <div id="vehiculoInfo" class="perfil-info">Cargando...</div>
-                <button onclick="editarVehiculo()" class="outline">Editar vehículo</button>
+                <button onclick="abrirModalVehiculo()" class="outline">Editar vehículo</button>
             </div>
         </div>
     </div>
@@ -406,10 +421,10 @@
         let estadoActual = 'disponible';
         let viajeActivo = null;
         let intervaloTimer = null;
-        let mapaViaje = null;
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
+        let datosUsuario = null;
         
-        // ============= INICIALIZACIÓN =============
+        // ============= MENÚ =============
         function toggleMenu() {
             document.getElementById('sideMenu').classList.toggle('open');
             document.getElementById('menuOverlay').classList.toggle('open');
@@ -440,13 +455,82 @@
         
         function mostrarRegistroVehiculo() {
             document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('registroVehiculoScreen').classList.remove('hidden');
+            abrirModalVehiculo();
         }
         
         function volver() {
             document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('registroVehiculoScreen').classList.add('hidden');
             document.getElementById('authScreen').classList.remove('hidden');
+        }
+        
+        // ============= LOGIN =============
+        async function login() {
+            const usuario = document.getElementById('loginUsuario').value;
+            const password = document.getElementById('loginPassword').value;
+            if (!usuario || !password) { mostrarNotificacion('Complete campos', 'error'); return; }
+            
+            try {
+                const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password }) });
+                const data = await res.json();
+                if (data.token) {
+                    token = data.token; localStorage.setItem('token', token);
+                    datosUsuario = data.usuario;
+                    document.getElementById('authScreen').classList.add('hidden');
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('seccionPrincipal').classList.remove('hidden');
+                    document.getElementById('userName').innerHTML = datosUsuario.nombre.split(' ')[0];
+                    cargarDatosChofer();
+                    iniciarActualizacionUbicacion();
+                    mostrarNotificacion(`Bienvenido ${datosUsuario.nombre}`, 'exito');
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+        }
+        
+        // ============= MODAL PERFIL =============
+        function abrirModalPerfil() {
+            if (datosUsuario) {
+                document.getElementById('editNombre').value = datosUsuario.nombre || '';
+                document.getElementById('editTelefono').value = datosUsuario.telefono || '';
+                document.getElementById('editEmail').value = datosUsuario.email || '';
+                document.getElementById('editEmergencia').value = datosUsuario.telefono_emergencia || '';
+            }
+            document.getElementById('modalPerfil').classList.add('open');
+        }
+        
+        function cerrarModalPerfil() {
+            document.getElementById('modalPerfil').classList.remove('open');
+        }
+        
+        async function guardarPerfil() {
+            const nombre = document.getElementById('editNombre').value;
+            const telefono = document.getElementById('editTelefono').value;
+            const email = document.getElementById('editEmail').value;
+            const telefonoEmergencia = document.getElementById('editEmergencia').value;
+            
+            try {
+                const res = await fetch('/api/perfil', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ nombre, telefono, email, telefono_emergencia: telefonoEmergencia })
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    mostrarNotificacion('Perfil actualizado', 'exito');
+                    cerrarModalPerfil();
+                    cargarPerfil();
+                    if (nombre) datosUsuario.nombre = nombre;
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch(e) { mostrarNotificacion('Error', 'error'); }
+        }
+        
+        // ============= MODAL VEHÍCULO =============
+        function abrirModalVehiculo() {
+            document.getElementById('modalVehiculo').classList.add('open');
+            cargarDatosVehiculoEnModal();
+        }
+        
+        function cerrarModalVehiculo() {
+            document.getElementById('modalVehiculo').classList.remove('open');
         }
         
         function cambiarTipoVehiculo() {
@@ -466,36 +550,42 @@
             }
         }
         
-        // ============= LOGIN Y REGISTRO =============
-        async function login() {
-            const usuario = document.getElementById('loginUsuario').value;
-            const password = document.getElementById('loginPassword').value;
-            if (!usuario || !password) { mostrarNotificacion('Complete campos', 'error'); return; }
-            
+        async function cargarDatosVehiculoEnModal() {
             try {
-                const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password }) });
+                const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
-                if (data.token) {
-                    token = data.token; localStorage.setItem('token', token);
-                    document.getElementById('authScreen').classList.add('hidden');
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('seccionPrincipal').classList.remove('hidden');
-                    document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
-                    cargarDatosChofer();
-                    iniciarActualizacionUbicacion();
-                    mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
-                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
-            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+                if (data.vehiculo) {
+                    const v = data.vehiculo;
+                    document.getElementById('tipoVehiculo').value = v.tipo || 'auto';
+                    cambiarTipoVehiculo();
+                    
+                    if (v.tipo === 'auto') {
+                        document.getElementById('autoMarca').value = v.marca_modelo || '';
+                        document.getElementById('autoColor').value = v.color || '';
+                        document.getElementById('autoMatricula').value = v.matricula || '';
+                        if (v.categorias) {
+                            const cats = JSON.parse(v.categorias);
+                            document.querySelectorAll('#categoriasAuto input').forEach(cb => {
+                                cb.checked = cats.includes(cb.value);
+                            });
+                        }
+                    } else if (v.tipo === 'moto') {
+                        document.getElementById('motoMarca').value = v.marca_modelo || '';
+                        document.getElementById('motoColor').value = v.color || '';
+                        document.getElementById('motoMatricula').value = v.matricula || '';
+                        document.getElementById('motoCirculacion').value = v.circulacion || '';
+                        document.getElementById('motoTipo').value = v.tipo_moto || 'combustion';
+                    } else if (v.tipo === 'triciclo') {
+                        document.getElementById('tricicloMarca').value = v.marca_modelo || '';
+                        document.getElementById('tricicloColor').value = v.color || '';
+                        document.getElementById('tricicloMatricula').value = v.matricula || '';
+                        document.getElementById('tricicloTipo').value = v.tipo_triciclo || 'pasajeros';
+                    }
+                }
+            } catch(e) {}
         }
         
-        async function registrarVehiculo() {
-            const tokenLocal = localStorage.getItem('token');
-            if (!tokenLocal) {
-                mostrarNotificacion('Primero inicia sesión con tu cuenta', 'error');
-                volver();
-                return;
-            }
-            
+        async function guardarVehiculo() {
             const tipo = document.getElementById('tipoVehiculo').value;
             let datos = { tipo };
             
@@ -527,14 +617,15 @@
             try {
                 const res = await fetch('/api/chofer/vehiculo', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokenLocal },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify(datos)
                 });
                 const data = await res.json();
                 if (data.exito) {
-                    mostrarNotificacion('Vehículo registrado. Espera aprobación del administrador', 'exito');
-                    volver();
-                } else { mostrarNotificacion(data.error || 'Error al registrar', 'error'); }
+                    mostrarNotificacion('Vehículo guardado. Espera aprobación', 'exito');
+                    cerrarModalVehiculo();
+                    cargarVehiculo();
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch(e) { mostrarNotificacion('Error de conexión', 'error'); }
         }
         
@@ -564,6 +655,49 @@
             } catch(e) {}
         }
         
+        async function cargarPerfil() {
+            try {
+                const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.usuario) {
+                    datosUsuario = data.usuario;
+                    document.getElementById('perfilInfo').innerHTML = `
+                        <strong>${data.usuario.nombre} ${data.usuario.apellidos || ''}</strong><br>
+                        CI: ${data.usuario.ci || '-'}<br>
+                        Tel: ${data.usuario.telefono || '-'}<br>
+                        Email: ${data.usuario.email || '-'}<br>
+                        Usuario: ${data.usuario.usuario}<br>
+                        Emergencia: ${data.usuario.telefono_emergencia || 'No registrado'}
+                    `;
+                }
+            } catch(e) {}
+        }
+        
+        async function cargarVehiculo() {
+            try {
+                const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.vehiculo) {
+                    const v = data.vehiculo;
+                    let categoriasTexto = '';
+                    if (v.categorias) {
+                        const cats = JSON.parse(v.categorias);
+                        categoriasTexto = cats.join(', ');
+                    }
+                    document.getElementById('vehiculoInfo').innerHTML = `
+                        <strong>Tipo:</strong> ${v.tipo}<br>
+                        <strong>Vehículo:</strong> ${v.marca_modelo || '-'}<br>
+                        <strong>Color:</strong> ${v.color || '-'}<br>
+                        <strong>Matrícula:</strong> ${v.matricula || '-'}<br>
+                        <strong>Categorías:</strong> ${categoriasTexto || '-'}<br>
+                        <strong>Estado:</strong> ${v.aprobado ? '✅ Aprobado' : '⏳ Pendiente'}
+                    `;
+                } else {
+                    document.getElementById('vehiculoInfo').innerHTML = '<p>No has registrado un vehículo</p>';
+                }
+            } catch(e) {}
+        }
+        
         async function cargarGanancias() {
             try {
                 const res = await fetch('/api/chofer/ganancias', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -589,7 +723,7 @@
             }
         }
         
-        // ============= VIAJES DISPONIBLES =============
+        // ============= VIAJES =============
         async function buscarViajesDisponibles() {
             if (estadoActual !== 'disponible') return;
             
@@ -604,8 +738,7 @@
                     listaDiv.innerHTML = viajes.map(v => `
                         <div class="viaje-card" onclick="aceptarViaje(${v.id})">
                             <div><strong>📍 ${v.origen}</strong> → ${v.destino}</div>
-                            <div>💰 ${v.precio_base} CUP</div>
-                            <div>🚗 ${v.categoria} | ${v.distancia ? v.distancia + 'km' : ''}</div>
+                            <div>💰 ${v.precio_base} CUP | 🚗 ${v.categoria}</div>
                             <div><small>Cliente: ${v.cliente_nombre || 'Cliente'}</small></div>
                         </div>
                     `).join('');
@@ -627,7 +760,7 @@
                     estadoActual = 'ocupado';
                     actualizarUIEstado();
                     await cargarViajeActivo(viajeId);
-                    mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito');
+                    mostrarNotificacion('Viaje aceptado', 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch(e) { mostrarNotificacion('Error', 'error'); }
         }
@@ -647,21 +780,8 @@
                         <div><strong>🎯 Destino:</strong> ${viajeActivo.destino}</div>
                         <div><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP</div>
                     `;
-                    iniciarMapaRuta();
                 }
             } catch(e) {}
-        }
-        
-        function iniciarMapaRuta() {
-            setTimeout(() => {
-                if (mapaViaje) mapaViaje.remove();
-                mapaViaje = L.map('mapaViaje').setView([ubicacionActual.lat, ubicacionActual.lng], 14);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '© OpenStreetMap',
-                    subdomains: 'abcd'
-                }).addTo(mapaViaje);
-                L.marker([ubicacionActual.lat, ubicacionActual.lng]).addTo(mapaViaje).bindPopup('Tu ubicación');
-            }, 100);
         }
         
         async function iniciarViaje() {
@@ -679,7 +799,7 @@
         }
         
         async function finalizarViaje() {
-            if (!confirm('¿Finalizar viaje y cobrar?')) return;
+            if (!confirm('¿Finalizar viaje?')) return;
             
             try {
                 const res = await fetch(`/api/chofer/finalizar-viaje/${viajeActivo.id}`, {
@@ -701,7 +821,6 @@
             } catch(e) { mostrarNotificacion('Error', 'error'); }
         }
         
-        // ============= ESTADO DEL CHOFER =============
         function toggleEstado() {
             estadoActual = estadoActual === 'disponible' ? 'ocupado' : 'disponible';
             actualizarUIEstado();
@@ -722,52 +841,6 @@
             }
         }
         
-        // ============= PERFIL Y VEHÍCULO =============
-        async function cargarPerfil() {
-            try {
-                const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                if (data.usuario) {
-                    const u = data.usuario;
-                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre} ${u.apellidos || ''}</strong><br>CI: ${u.ci || '-'}<br>Tel: ${u.telefono || '-'}<br>Email: ${u.email || '-'}<br>Usuario: ${u.usuario}`;
-                }
-            } catch(e) {}
-        }
-        
-        async function cargarVehiculo() {
-            try {
-                const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                if (data.vehiculo) {
-                    const v = data.vehiculo;
-                    document.getElementById('vehiculoInfo').innerHTML = `
-                        <strong>Tipo:</strong> ${v.tipo}<br>
-                        <strong>Vehículo:</strong> ${v.marca_modelo || '-'}<br>
-                        <strong>Color:</strong> ${v.color || '-'}<br>
-                        <strong>Matrícula:</strong> ${v.matricula || '-'}<br>
-                        <strong>Estado:</strong> ${v.aprobado ? '✅ Aprobado' : '⏳ Pendiente de aprobación'}
-                    `;
-                } else {
-                    document.getElementById('vehiculoInfo').innerHTML = '<p>No has registrado un vehículo</p>';
-                }
-            } catch(e) {}
-        }
-        
-        async function editarPerfil() {
-            const nombre = prompt('Nuevo nombre:');
-            const telefono = prompt('Nuevo teléfono:');
-            const email = prompt('Nuevo email:');
-            if (!nombre && !telefono && !email) return;
-            try {
-                await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email }) });
-                mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil();
-            } catch(e) { mostrarNotificacion('Error', 'error'); }
-        }
-        
-        function editarVehiculo() {
-            window.location.href = '/chofer.html?edit=true';
-        }
-        
         async function cargarHistorialViajes() {
             try {
                 const res = await fetch('/api/chofer/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -777,10 +850,10 @@
                     document.getElementById('historialViajes').innerHTML = '<p class="text-center">No hay viajes</p>';
                 } else {
                     document.getElementById('historialViajes').innerHTML = viajes.map(v => `
-                        <div class="viaje-item">
-                            <div><strong>${v.origen} → ${v.destino}</strong><br>
+                        <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                            <strong>${v.origen} → ${v.destino}</strong><br>
                             <small>${new Date(v.creado_en).toLocaleString()}</small><br>
-                            ${v.estado} | ${v.precio_final || v.precio_base} CUP</div>
+                            ${v.estado} | ${v.precio_final || v.precio_base} CUP
                         </div>
                     `).join('');
                 }
@@ -794,9 +867,9 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionPrincipal').classList.remove('hidden');
             document.getElementById('userName').innerHTML = 'Chofer';
-            cargarDatosChofer();
             cargarPerfil();
             cargarVehiculo();
+            cargarDatosChofer();
             iniciarActualizacionUbicacion();
         }
     </script>
