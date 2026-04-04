@@ -491,6 +491,31 @@ app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
   res.json({ exito: true });
 });
 
+//temporal
+// ============= ENDPOINT TEMPORAL PARA CREAR TABLAS =============
+app.post('/admin/crear-tablas', verificarToken, async (req, res) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vehiculos (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER UNIQUE,
+        tipo TEXT,
+        marca_modelo TEXT,
+        color TEXT,
+        matricula TEXT,
+        categorias JSONB,
+        aprobado BOOLEAN DEFAULT FALSE,
+        creado_en TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    res.json({ exito: true, mensaje: 'Tabla vehiculos creada correctamente' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+//temporal
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
