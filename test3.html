@@ -15,25 +15,34 @@
 <body>
     <div class="card">
         <h1>🚕 LLévame - Ejecutar SQL</h1>
-        <p>Este script agregará las columnas de ubicación a la tabla usuarios.</p>
         <pre>ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lat REAL;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
         
         <button onclick="ejecutarSQL()">Ejecutar SQL</button>
         <button onclick="verificarColumnas()">Verificar columnas</button>
         <button onclick="probarRegistroVehiculo()">Probar registro vehículo</button>
+        <button onclick="corregirTablaVehiculos()">Corregir tabla vehiculos</button>
         
         <h3>Resultado:</h3>
         <div id="resultado"></div>
     </div>
 
     <script>
-        // Primero, obtener token (necesitas estar logueado como admin)
-        async function getToken() {
+        async function getTokenAdmin() {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+            });
+            const data = await res.json();
+            return data.token;
+        }
+        
+        async function getTokenYosvany() {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
             });
             const data = await res.json();
             return data.token;
@@ -44,7 +53,7 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
             resultado.innerHTML = '<p>🔄 Ejecutando SQL...</p>';
             
             try {
-                const token = await getToken();
+                const token = await getTokenAdmin();
                 
                 const response = await fetch('/admin/ejecutar-sql', {
                     method: 'POST',
@@ -57,7 +66,6 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
                 
                 if (data.exito) {
                     resultado.innerHTML = '<p class="success">✅ SQL ejecutado correctamente</p>';
-                    resultado.innerHTML += '<p>Columnas ultima_ubicacion_lat y ultima_ubicacion_lng agregadas.</p>';
                 } else {
                     resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
                 }
@@ -71,7 +79,7 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
             resultado.innerHTML = '<p>🔄 Verificando columnas...</p>';
             
             try {
-                const token = await getToken();
+                const token = await getTokenAdmin();
                 
                 const response = await fetch('/admin/verificar-columnas', {
                     method: 'POST',
@@ -98,25 +106,52 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
             }
         }
         
-        async function probarRegistroVehiculo() {
+        async function corregirTablaVehiculos() {
             const resultado = document.getElementById('resultado');
-            resultado.innerHTML = '<p>🔄 Probando registro de vehículo con usuario Yosvany3105...</p>';
+            resultado.innerHTML = '<p>🔄 Corrigiendo tabla vehiculos...</p>';
             
             try {
-                // Login como Yosvany3105
-                const loginRes = await fetch('/api/login', {
+                const token = await getTokenAdmin();
+                
+                // Cambiar el tipo de datos de categorias a TEXT en lugar de JSONB
+                const response = await fetch('/admin/ejecutar-sql', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        sql: 'ALTER TABLE vehiculos ALTER COLUMN categorias TYPE TEXT;'
+                    })
                 });
-                const loginData = await loginRes.json();
+                const data = await response.json();
                 
-                if (!loginData.token) {
-                    resultado.innerHTML = '<p class="error">❌ Error de login con Yosvany3105</p>';
-                    return;
+                if (data.exito) {
+                    resultado.innerHTML = '<p class="success">✅ Tabla vehiculos corregida</p>';
+                    resultado.innerHTML += '<p>La columna categorias ahora es de tipo TEXT.</p>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
                 }
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            }
+        }
+        
+        async function probarRegistroVehiculo() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Probando registro de vehículo...</p>';
+            
+            try {
+                const token = await getTokenYosvany();
                 
-                const token = loginData.token;
+                // Primero, limpiar vehículo existente
+                await fetch('/admin/ejecutar-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + await getTokenAdmin() },
+                    body: JSON.stringify({
+                        sql: "DELETE FROM vehiculos WHERE usuario_id = (SELECT id FROM usuarios WHERE usuario = 'Yosvany3105');"
+                    })
+                });
+                
+                // Registrar vehículo con formato JSON correcto
+                const categoriasStr = '["economico","confort"]';
                 
                 const response = await fetch('/api/chofer/vehiculo', {
                     method: 'POST',
@@ -126,7 +161,7 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
                         marca_modelo: 'Lada 2105',
                         color: 'Rojo',
                         matricula: 'TEST123',
-                        categorias: ['economico', 'confort']
+                        categorias: categoriasStr
                     })
                 });
                 const data = await response.json();
