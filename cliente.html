@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>LLévame - Cliente</title>
     
-    <!-- Leaflet (mapa ligero) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -18,6 +17,7 @@
             background: linear-gradient(135deg, #1a1a2e, #16213e);
         }
         
+        /* Header */
         .header {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(20px);
@@ -28,6 +28,7 @@
             position: sticky;
             top: 0;
             border-bottom: 1px solid rgba(255,255,255,0.15);
+            z-index: 100;
         }
         
         .menu-btn {
@@ -54,6 +55,46 @@
             padding: 5px 12px;
             border-radius: 20px;
         }
+        
+        /* Menú lateral */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            transition: left 0.3s ease;
+            padding: 80px 20px 20px;
+        }
+        
+        .side-menu.open { left: 0; }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+            display: none;
+        }
+        .menu-overlay.open { display: block; }
+        
+        .menu-item {
+            padding: 14px 16px;
+            color: white;
+            font-size: 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .menu-item:active { background: rgba(255,255,255,0.1); }
         
         .container {
             max-width: 500px;
@@ -99,8 +140,10 @@
         
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
+        button.danger { background: #f44336; }
         
         .hidden { display: none; }
+        
         .notification {
             position: fixed;
             bottom: 20px;
@@ -114,12 +157,12 @@
             z-index: 1000;
         }
         
+        /* Mapa */
         .mapa-container {
-            height: 350px;
+            height: 400px;
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
-            margin: 15px 0;
             background: #e0e0e0;
         }
         #mapaModal {
@@ -127,10 +170,11 @@
             width: 100%;
         }
         
+        /* Botones de ubicación */
         .ubicacion-buttons {
             display: flex;
             gap: 10px;
-            margin-top: 8px;
+            margin-top: 5px;
             margin-bottom: 15px;
         }
         .ubicacion-buttons button {
@@ -139,18 +183,24 @@
             font-size: 12px;
         }
         
+        /* Sugerencias */
+        .input-wrapper {
+            position: relative;
+        }
         .sugerencias {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
             background: white;
             border: 1px solid #ddd;
             border-radius: 8px;
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
-            position: absolute;
             z-index: 1000;
-            width: calc(100% - 2px);
         }
         .sugerencia-item {
-            padding: 8px 12px;
+            padding: 10px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
             font-size: 12px;
@@ -159,10 +209,7 @@
             background: #f0f0f0;
         }
         
-        .input-wrapper {
-            position: relative;
-        }
-        
+        /* Modal */
         .modal {
             position: fixed;
             top: 0;
@@ -197,6 +244,7 @@
             border-radius: 0 0 12px 12px;
         }
         
+        /* Categorías */
         .categorias {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -219,6 +267,7 @@
         .categoria-nombre { font-size: 12px; font-weight: bold; }
         .categoria-precio { font-size: 11px; color: #FF9800; }
         
+        /* Precio */
         .precio-box {
             background: #FFF3E0;
             border-radius: 12px;
@@ -231,13 +280,40 @@
             font-weight: bold;
             color: #FF9800;
         }
+        
+        /* Perfil */
+        .perfil-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 12px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .viaje-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .mt-10 { margin-top: 10px; }
+        .text-center { text-align: center; }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <h1>LLé<span>vame</span></h1>
         <div class="user-info" id="userName"></div>
+    </div>
+    
+    <!-- Menú lateral -->
+    <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-item" onclick="cambiarSeccion('viaje')">🚖 Solicitar Viaje</div>
+        <div class="menu-item" onclick="cambiarSeccion('historial')">📋 Mis Viajes</div>
+        <div class="menu-item" onclick="cambiarSeccion('perfil')">👤 Mi Perfil</div>
+        <div class="menu-item" onclick="cerrarSesion()">🚪 Cerrar Sesión</div>
     </div>
 
     <div class="container" id="app">
@@ -282,7 +358,6 @@
             <div class="card">
                 <h2>📍 ¿A dónde vas?</h2>
                 
-                <!-- Origen -->
                 <div class="input-wrapper">
                     <input type="text" id="origen" placeholder="Origen" autocomplete="off">
                     <div id="sugerenciasOrigen" class="sugerencias hidden"></div>
@@ -292,7 +367,6 @@
                     <button onclick="usarUbicacionActual()">📍 Mi ubicación</button>
                 </div>
                 
-                <!-- Destino -->
                 <div class="input-wrapper">
                     <input type="text" id="destino" placeholder="Destino" autocomplete="off">
                     <div id="sugerenciasDestino" class="sugerencias hidden"></div>
@@ -312,6 +386,23 @@
                 </div>
                 
                 <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
+            </div>
+        </div>
+
+        <!-- Sección Historial -->
+        <div id="seccionHistorial" class="hidden">
+            <div class="card">
+                <h2>📋 Mis viajes</h2>
+                <div id="historialLista">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Sección Perfil -->
+        <div id="seccionPerfil" class="hidden">
+            <div class="card">
+                <h2>👤 Mi perfil</h2>
+                <div id="perfilInfo" class="perfil-info">Cargando...</div>
+                <button onclick="editarPerfil()" style="background: #2196F3;">Editar perfil</button>
             </div>
         </div>
 
@@ -341,6 +432,8 @@
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         let origenCoords = null;
         let destinoCoords = null;
+        let intervaloTimer = null;
+        let viajeActual = null;
         
         const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
         const categorias = [
@@ -352,8 +445,20 @@
             { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
         ];
 
+        // ============= MENÚ =============
         function toggleMenu() {
-            // Por ahora vacío
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('open');
+        }
+        
+        function cambiarSeccion(seccion) {
+            toggleMenu();
+            document.getElementById('seccionViaje').classList.add('hidden');
+            document.getElementById('seccionHistorial').classList.add('hidden');
+            document.getElementById('seccionPerfil').classList.add('hidden');
+            document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden');
+            if (seccion === 'historial') cargarHistorial();
+            if (seccion === 'perfil') cargarPerfil();
         }
         
         function mostrarNotificacion(msg, tipo) {
@@ -363,7 +468,7 @@
             notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
             setTimeout(() => notif.classList.add('hidden'), 3000);
         }
-
+        
         // ============= BÚSQUEDA DE DIRECCIONES =============
         async function buscarDirecciones(query, tipo) {
             if (query.length < 3) {
@@ -380,7 +485,7 @@
                 if (data.length > 0) {
                     sugerenciasDiv.innerHTML = data.map(item => `
                         <div class="sugerencia-item" onclick="seleccionarDireccion('${tipo}', '${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
-                            ${item.display_name.substring(0, 60)}...
+                            📍 ${item.display_name.substring(0, 60)}...
                         </div>
                     `).join('');
                     sugerenciasDiv.classList.remove('hidden');
@@ -388,12 +493,13 @@
                     sugerenciasDiv.classList.add('hidden');
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error en búsqueda:', error);
             }
         }
         
         function seleccionarDireccion(tipo, direccion, lat, lng) {
-            document.getElementById(tipo === 'Origen' ? 'origen' : 'destino').value = direccion;
+            const inputId = tipo === 'Origen' ? 'origen' : 'destino';
+            document.getElementById(inputId).value = direccion;
             if (tipo === 'Origen') {
                 origenCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
             } else {
@@ -425,6 +531,15 @@
                 mapaModal.on('click', (e) => {
                     marcador.setLatLng(e.latlng);
                     ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng };
+                    
+                    // Obtener dirección de las coordenadas
+                    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${e.latlng.lat}&lon=${e.latlng.lng}&format=json`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.display_name) {
+                                document.getElementById(modoSeleccion === 'origen' ? 'origen' : 'destino').value = data.display_name;
+                            }
+                        });
                 });
             }, 100);
         }
@@ -543,6 +658,8 @@
                     document.getElementById('registroScreen').classList.add('hidden');
                     document.getElementById('seccionViaje').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
+                    cargarPerfil();
+                    cargarHistorial();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
@@ -567,9 +684,39 @@
                     document.getElementById('registroScreen').classList.add('hidden');
                     document.getElementById('seccionViaje').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
+                    cargarPerfil();
+                    cargarHistorial();
                     mostrarNotificacion('Registro exitoso', 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+        }
+        
+        async function cargarPerfil() {
+            try {
+                const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.usuario) {
+                    const u = data.usuario;
+                    document.getElementById('perfilInfo').innerHTML = `
+                        <strong>${u.nombre || 'Sin nombre'} ${u.apellidos || ''}</strong><br>
+                        CI: ${u.ci || '-'}<br>
+                        Teléfono: ${u.telefono || '-'}<br>
+                        Email: ${u.email || '-'}<br>
+                        Usuario: ${u.usuario}
+                    `;
+                }
+            } catch (error) { document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; }
+        }
+        
+        async function editarPerfil() {
+            const nombre = prompt('Nuevo nombre:');
+            const telefono = prompt('Nuevo teléfono:');
+            const email = prompt('Nuevo email:');
+            if (!nombre && !telefono && !email) return;
+            try {
+                await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email }) });
+                mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil();
+            } catch (error) { mostrarNotificacion('Error', 'error'); }
         }
         
         async function solicitarTaxi() {
@@ -589,14 +736,19 @@
             const btn = document.getElementById('btnSolicitar');
             btn.disabled = true; btn.innerHTML = 'Buscando...';
             try {
-                const res = await fetch('/api/viajes/solicitar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ 
-                    origen, destino, 
-                    origen_coords: origenCoords, 
-                    destino_coords: destinoCoords, 
-                    categoria: categoriaSeleccionada 
-                }) });
+                const res = await fetch('/api/viajes/solicitar', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, 
+                    body: JSON.stringify({ 
+                        origen, destino, 
+                        origen_coords: origenCoords, 
+                        destino_coords: destinoCoords, 
+                        categoria: categoriaSeleccionada 
+                    }) 
+                });
                 const data = await res.json();
                 if (data.exito) {
+                    viajeActual = data.viaje;
                     mostrarNotificacion('✅ Taxi solicitado', 'exito');
                     document.getElementById('origen').value = '';
                     document.getElementById('destino').value = '';
@@ -605,16 +757,41 @@
                     document.getElementById('categoriasSection').classList.add('hidden');
                     document.getElementById('precioSection').classList.add('hidden');
                     document.getElementById('btnSolicitar').classList.add('hidden');
-                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
-            } catch(e) { mostrarNotificacion('Error', 'error'); }
+                    cargarHistorial();
+                } else { 
+                    mostrarNotificacion(data.error || 'Error al solicitar taxi', 'error'); 
+                }
+            } catch(e) { 
+                mostrarNotificacion('Error de conexión: ' + e.message, 'error'); 
+            }
             finally { btn.disabled = false; btn.innerHTML = 'Confirmar Taxi'; }
         }
+        
+        async function cargarHistorial() {
+            try {
+                const res = await fetch('/api/viajes/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                const viajes = data.viajes || [];
+                if (viajes.length === 0) {
+                    document.getElementById('historialLista').innerHTML = '<p class="text-center">No hay viajes aún</p>';
+                } else {
+                    document.getElementById('historialLista').innerHTML = viajes.map(v => `
+                        <div class="viaje-item">
+                            <strong>${v.origen} → ${v.destino}</strong><br>
+                            <small>${new Date(v.creado_en).toLocaleString()}</small><br>
+                            ${v.estado} | ${v.precio_final || v.precio_base} CUP
+                        </div>
+                    `).join('');
+                }
+            } catch(e) { document.getElementById('historialLista').innerHTML = 'Error al cargar historial'; }
+        }
+        
+        function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
         
         // Event listeners
         document.getElementById('origen').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Origen'));
         document.getElementById('destino').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Destino'));
         
-        // Ocultar sugerencias al hacer clic fuera
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-wrapper')) {
                 document.getElementById('sugerenciasOrigen')?.classList.add('hidden');
@@ -627,6 +804,8 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionViaje').classList.remove('hidden');
             document.getElementById('userName').innerHTML = 'Cliente';
+            cargarPerfil();
+            cargarHistorial();
         }
     </script>
 </body>
