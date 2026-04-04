@@ -9,56 +9,15 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- OneSignal para notificaciones push -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-                appId: "a40e9ef7-7475-4dce-8ba9-23d9dcb342a0",
-            });
-        });
-    </script>
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: system-ui, -apple-system, sans-serif;
             min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
         }
         
-        /* Mapa de fondo */
-        #background-map {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 0;
-        }
-        
-        /* Overlay más oscuro */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(4px);
-            z-index: 1;
-        }
-        
-        /* Contenido principal */
-        .header, .container, .modal, .modal-panico {
-            position: relative;
-            z-index: 2;
-        }
-        
-        /* Header moderno */
         .header {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(20px);
@@ -96,46 +55,6 @@
             border-radius: 20px;
         }
         
-        /* Menú lateral */
-        .side-menu {
-            position: fixed;
-            top: 0;
-            left: -280px;
-            width: 280px;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(20px);
-            z-index: 200;
-            transition: left 0.3s ease;
-            padding: 80px 20px 20px;
-        }
-        
-        .side-menu.open { left: 0; }
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 150;
-            display: none;
-        }
-        .menu-overlay.open { display: block; }
-        
-        .menu-item {
-            padding: 14px 16px;
-            color: white;
-            font-size: 16px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .menu-item:active { background: rgba(255,255,255,0.1); }
-        
         .container {
             max-width: 500px;
             margin: 0 auto;
@@ -143,317 +62,113 @@
             min-height: calc(100vh - 70px);
         }
         
-        /* Tarjetas estilo glassmorphism */
         .card {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(20px);
-            border-radius: 32px;
-            padding: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         
         .card h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
+            font-size: 18px;
+            margin-bottom: 15px;
             color: #1a1a2e;
-            font-weight: 600;
-        }
-        
-        .input-group {
-            margin-bottom: 20px;
-        }
-        
-        .input-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 6px;
-            display: block;
         }
         
         input, select {
             width: 100%;
-            padding: 16px 18px;
-            border: 1.5px solid rgba(0,0,0,0.08);
-            border-radius: 20px;
-            font-size: 16px;
-            background: white;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: #FF9800;
-        }
-        
-        input[readonly] {
-            background: #f8f8f8;
-            cursor: pointer;
-        }
-        
-        /* Botones de selección */
-        .ubicacion-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-        }
-        
-        .ubicacion-buttons button {
-            flex: 1;
-            padding: 10px;
-            font-size: 12px;
-            border-radius: 14px;
-            background: rgba(0,0,0,0.08);
-            border: 1px solid rgba(0,0,0,0.1);
-            color: #333;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 14px;
         }
         
         button {
             width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #FF9800, #F57C00);
+            padding: 12px;
+            background: #FF9800;
             color: white;
             border: none;
-            border-radius: 24px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
         }
         
         button:active { transform: scale(0.98); }
-        button.secondary { background: linear-gradient(135deg, #666, #555); }
-        button.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
-        button.outline {
-            background: transparent;
-            border: 2px solid #FF9800;
-            color: #FF9800;
-        }
-        button.small {
-            padding: 10px;
-            font-size: 13px;
-        }
-        button.panico {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: auto;
-            border-radius: 50px;
-            padding: 12px 20px;
-            font-size: 14px;
-            z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        button.secondary { background: #666; }
         
-        /* Botones de acción en viaje */
-        .acciones-viaje {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .acciones-viaje button {
-            flex: 1;
-            padding: 10px;
-            font-size: 13px;
-        }
-        
-        /* Categorías */
-        .categorias {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-        }
-        
-        .categoria-card {
-            background: rgba(255,255,255,0.9);
-            border: 2px solid rgba(0,0,0,0.05);
-            border-radius: 20px;
-            padding: 12px 8px;
-            text-align: center;
-            cursor: pointer;
-        }
-        
-        .categoria-card.selected {
-            border-color: #FF9800;
-            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-        }
-        
-        .categoria-icon { font-size: 28px; display: block; margin-bottom: 5px; }
-        .categoria-nombre { font-size: 12px; font-weight: 600; }
-        .categoria-precio { font-size: 11px; color: #FF9800; margin-top: 3px; }
-        
-        /* Precio */
-        .precio-box {
-            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-            border-radius: 24px;
-            padding: 16px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .precio-box .valor { font-size: 36px; font-weight: 800; color: #FF9800; }
-        .precio-detalle { font-size: 11px; color: #666; margin-top: 8px; }
-        
-        /* Modal del mapa */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-        }
-        .modal.open { display: flex; }
-        .modal-header {
-            background: #1a1a2e;
-            color: white;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-map { flex: 1; width: 100%; }
-        .modal-footer { padding: 16px; background: white; }
-        
-        /* Modal de pánico */
-        .modal-panico {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 400;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-panico.open { display: flex; }
-        .panico-card {
-            background: white;
-            border-radius: 32px;
-            padding: 30px;
-            max-width: 350px;
-            text-align: center;
-        }
-        .panico-card h2 { color: #f44336; margin-bottom: 20px; }
-        .panico-card p { margin-bottom: 20px; color: #666; }
-        .panico-buttons { display: flex; gap: 15px; }
-        .panico-buttons button { flex: 1; }
-        
-        /* Viaje activo */
-        .viaje-activo { background: rgba(227, 242, 253, 0.95); border-left: 4px solid #2196F3; }
-        
-        /* Direcciones */
-        .direccion-item {
-            background: rgba(245, 245, 245, 0.9);
-            padding: 12px 15px;
-            border-radius: 16px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        
-        .viaje-item {
-            padding: 12px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .perfil-info {
-            background: rgba(245, 245, 245, 0.9);
-            padding: 16px;
-            border-radius: 20px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        
+        .hidden { display: none; }
         .notification {
             position: fixed;
             bottom: 20px;
             left: 20px;
             right: 20px;
             background: rgba(0,0,0,0.9);
-            backdrop-filter: blur(10px);
             color: white;
-            padding: 14px 20px;
-            border-radius: 28px;
+            padding: 12px;
+            border-radius: 12px;
             text-align: center;
             z-index: 1000;
         }
         
-        .hidden { display: none !important; }
-        .loading {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
+        .mapa-container {
+            height: 300px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+            background: #e0e0e0;
+            position: relative;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        #mapaSeleccion {
+            height: 100%;
+            width: 100%;
+        }
         
-        .mt-10 { margin-top: 10px; }
-        .text-center { text-align: center; }
-        .row { display: flex; gap: 10px; }
-        .row button { flex: 1; }
+        .ubicacion-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .ubicacion-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .sugerencias {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: calc(100% - 24px);
+            margin-top: -8px;
+        }
+        .sugerencia-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .sugerencia-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
     </style>
 </head>
 <body>
-    <!-- Mapa de fondo -->
-    <div id="background-map"></div>
-    <div class="overlay"></div>
-    
-    <!-- Modal para seleccionar ubicación en mapa -->
-    <div id="modalMapa" class="modal">
-        <div class="modal-header">
-            <span style="font-weight: 600;">📍 Selecciona tu ubicación</span>
-            <button onclick="cerrarModalMapa()" style="width: auto; background: none; font-size: 24px;">✖</button>
-        </div>
-        <div id="modalMap" class="modal-map"></div>
-        <div class="modal-footer">
-            <button onclick="confirmarUbicacionMapa()">✓ Usar esta ubicación</button>
-        </div>
-    </div>
-    
-    <!-- Modal de pánico -->
-    <div id="modalPanico" class="modal-panico">
-        <div class="panico-card">
-            <h2>🆘 ¿ESTÁS SEGURO?</h2>
-            <p>Se enviará una alerta de emergencia con tu ubicación a los contactos configurados por el administrador.</p>
-            <div class="panico-buttons">
-                <button onclick="activarPanicoConfirmado()" style="background: #f44336;">Sí, activar</button>
-                <button onclick="cerrarPanico()" class="secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Botón de pánico flotante -->
-    <button class="panico" onclick="abrirPanico()">🆘</button>
-    
-    <!-- Header -->
     <div class="header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <h1>LLé<span>vame</span></h1>
         <div class="user-info" id="userName"></div>
-    </div>
-    
-    <!-- Menú lateral -->
-    <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
-    <div class="side-menu" id="sideMenu">
-        <div class="menu-item" onclick="cambiarSeccion('viaje')">🚖 Solicitar Viaje</div>
-        <div class="menu-item" onclick="cambiarSeccion('historial')">📋 Mis Viajes</div>
-        <div class="menu-item" onclick="cambiarSeccion('perfil')">👤 Mi Perfil</div>
-        <div class="menu-item" onclick="cerrarSesion()">🚪 Cerrar Sesión</div>
     </div>
 
     <div class="container" id="app">
@@ -488,7 +203,6 @@
                 <input type="text" id="regCi" placeholder="Carnet de Identidad *">
                 <input type="tel" id="regTelefono" placeholder="Teléfono">
                 <input type="email" id="regEmail" placeholder="Email">
-                <input type="tel" id="regTelefonoEmergencia" placeholder="Teléfono emergencia (opcional)">
                 <button onclick="registro()">Registrarme</button>
                 <button onclick="volver()" class="secondary" style="margin-top: 12px;">Volver</button>
             </div>
@@ -499,24 +213,23 @@
             <div class="card">
                 <h2>📍 ¿A dónde vas?</h2>
                 
-                <div class="input-group">
-                    <div class="input-label">Origen</div>
-                    <input type="text" id="origen" placeholder="Selecciona tu origen" readonly>
-                    <div class="ubicacion-buttons">
-                        <button onclick="seleccionarOrigenMapa()">🗺️ Mapa</button>
-                        <button onclick="seleccionarOrigenDirecciones()">📌 Direcciones</button>
-                        <button onclick="escribirOrigenManual()">✏️ Escribir</button>
-                        <button onclick="usarUbicacionActual()">📍 Actual</button>
-                    </div>
+                <!-- Origen -->
+                <div class="input-wrapper">
+                    <input type="text" id="origen" placeholder="Origen" autocomplete="off">
+                    <div id="sugerenciasOrigen" class="sugerencias hidden"></div>
+                </div>
+                <div class="ubicacion-buttons">
+                    <button onclick="abrirMapa('origen')">🗺️ Seleccionar en mapa</button>
+                    <button onclick="usarUbicacionActual()">📍 Mi ubicación</button>
                 </div>
                 
-                <div class="input-group">
-                    <div class="input-label">Destino</div>
-                    <input type="text" id="destino" placeholder="¿A dónde quieres ir?">
-                    <div class="ubicacion-buttons">
-                        <button onclick="seleccionarDestinoMapa()">🗺️ Mapa</button>
-                        <button onclick="usarDireccionesDestino()">📌 Direcciones</button>
-                    </div>
+                <!-- Destino -->
+                <div class="input-wrapper">
+                    <input type="text" id="destino" placeholder="Destino" autocomplete="off">
+                    <div id="sugerenciasDestino" class="sugerencias hidden"></div>
+                </div>
+                <div class="ubicacion-buttons">
+                    <button onclick="abrirMapa('destino')">🗺️ Seleccionar en mapa</button>
                 </div>
                 
                 <div id="categoriasSection" class="hidden">
@@ -526,89 +239,200 @@
                 <div id="precioSection" class="hidden">
                     <div class="precio-box">
                         <div class="valor" id="precioEstimado">-- CUP</div>
-                        <div class="precio-detalle" id="precioDetalle"></div>
                     </div>
                 </div>
                 
                 <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
             </div>
-
-            <!-- Viaje activo -->
-            <div class="card viaje-activo" id="viajeActivoCard" style="display: none;">
-                <h2 style="font-size: 18px; margin-bottom: 12px;">🚖 Viaje en curso</h2>
-                <div id="viajeActivoInfo"></div>
-                <div id="tiempoEstimado" style="font-size: 12px; color: #666; margin-top: 8px;"></div>
-                <div class="acciones-viaje">
-                    <button class="small" onclick="llamarChofer()">📞 Llamar chofer</button>
-                    <button class="small" onclick="compartirViaje()">📤 Compartir viaje</button>
-                </div>
-                <button onclick="cancelarViaje()" class="danger mt-10">Cancelar viaje</button>
-            </div>
         </div>
 
-        <!-- Sección Historial -->
-        <div id="seccionHistorial" class="hidden">
-            <div class="card">
-                <h2>📋 Mis viajes</h2>
-                <div id="historialLista">Cargando...</div>
+        <!-- Modal del mapa -->
+        <div id="modalMapa" class="modal hidden">
+            <div class="modal-header">
+                <span id="modalTitulo">Selecciona tu ubicación</span>
+                <button onclick="cerrarModalMapa()">✖</button>
             </div>
-        </div>
-
-        <!-- Sección Perfil -->
-        <div id="seccionPerfil" class="hidden">
-            <div class="card">
-                <h2>👤 Mi perfil</h2>
-                <div id="perfilInfo" class="perfil-info">Cargando...</div>
-                <button onclick="editarPerfil()" style="background: #2196F3;">Editar perfil</button>
+            <div class="mapa-container" style="height: 400px;">
+                <div id="mapaModal"></div>
             </div>
-            <div class="card">
-                <h2>📍 Direcciones guardadas</h2>
-                <div id="direccionesLista"></div>
-                <button onclick="agregarDireccion()" class="outline mt-10">+ Agregar dirección</button>
+            <div class="modal-footer">
+                <button onclick="confirmarUbicacionMapa()">✓ Usar esta ubicación</button>
             </div>
         </div>
     </div>
 
     <div id="notification" class="notification hidden"></div>
 
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .modal.open { display: flex; }
+        .modal-header {
+            background: #1a1a2e;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+        .modal-footer {
+            padding: 15px;
+            background: white;
+            border-radius: 0 0 12px 12px;
+        }
+        .categorias {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .categoria-card {
+            background: #f9f9f9;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .categoria-card.selected {
+            border-color: #FF9800;
+            background: #FFF3E0;
+        }
+        .precio-box {
+            background: #FFF3E0;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .precio-box .valor {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FF9800;
+        }
+    </style>
+
     <script>
         let token = localStorage.getItem('token');
         let categoriaSeleccionada = 'economico';
-        let viajeActual = null;
-        let intervaloTimer = null;
-        let mapaFondo = null;
         let mapaModal = null;
         let ubicacionSeleccionada = null;
-        let destinoSeleccionado = null;
+        let modoSeleccion = 'origen'; // 'origen' o 'destino'
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         let origenCoords = null;
         let destinoCoords = null;
         
-        const preciosBase = { economico: 15, confort: 20, clasico: 25, lujo: 35, moto: 10, triciclo: 8 };
+        const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
         const categorias = [
-            { id: 'economico', nombre: 'Económico', icono: '🚗', precioKm: 15 },
-            { id: 'confort', nombre: 'Confort', icono: '🚙', precioKm: 20 },
-            { id: 'clasico', nombre: 'Clásico', icono: '🚘', precioKm: 25 },
-            { id: 'lujo', nombre: 'Lujo', icono: '✨', precioKm: 35 },
-            { id: 'moto', nombre: 'Moto', icono: '🏍️', precioKm: 10 },
-            { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precioKm: 8 }
+            { id: 'economico', nombre: 'Económico', icono: '🚗', precio: 100 },
+            { id: 'confort', nombre: 'Confort', icono: '🚙', precio: 150 },
+            { id: 'clasico', nombre: 'Clásico', icono: '🚘', precio: 200 },
+            { id: 'lujo', nombre: 'Lujo', icono: '✨', precio: 300 },
+            { id: 'moto', nombre: 'Moto', icono: '🏍️', precio: 80 },
+            { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
         ];
 
-        // ============= MAPAS =============
-        function iniciarMapaFondo() {
-            if (mapaFondo) return;
-            mapaFondo = L.map('background-map').setView([ubicacionActual.lat, ubicacionActual.lng], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap',
-                subdomains: 'abcd',
-                maxZoom: 18
-            }).addTo(mapaFondo);
+        // ============= BÚSQUEDA DE DIRECCIONES =============
+        async function buscarDirecciones(query, tipo) {
+            if (query.length < 3) {
+                document.getElementById(`sugerencias${tipo}`).classList.add('hidden');
+                return;
+            }
             
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    mapaFondo.setView([ubicacionActual.lat, ubicacionActual.lng], 15);
-                }, null, { enableHighAccuracy: true });
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=cu`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const sugerenciasDiv = document.getElementById(`sugerencias${tipo}`);
+                if (data.length > 0) {
+                    sugerenciasDiv.innerHTML = data.map(item => `
+                        <div class="sugerencia-item" onclick="seleccionarDireccion('${tipo}', '${item.display_name}', ${item.lat}, ${item.lon})">
+                            ${item.display_name.substring(0, 60)}...
+                        </div>
+                    `).join('');
+                    sugerenciasDiv.classList.remove('hidden');
+                } else {
+                    sugerenciasDiv.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error en búsqueda:', error);
+            }
+        }
+        
+        function seleccionarDireccion(tipo, direccion, lat, lng) {
+            document.getElementById(tipo === 'origen' ? 'origen' : 'destino').value = direccion;
+            if (tipo === 'origen') {
+                origenCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            } else {
+                destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            }
+            document.getElementById(`sugerencias${tipo}`).classList.add('hidden');
+            verificarOrigenDestino();
+        }
+        
+        // ============= MAPA MODAL =============
+        function abrirMapa(tipo) {
+            modoSeleccion = tipo;
+            document.getElementById('modalTitulo').innerHTML = tipo === 'origen' ? '📍 Selecciona tu origen' : '🎯 Selecciona tu destino';
+            document.getElementById('modalMapa').classList.add('open');
+            
+            setTimeout(() => {
+                if (mapaModal) mapaModal.remove();
+                const center = tipo === 'origen' && origenCoords ? origenCoords : 
+                             tipo === 'destino' && destinoCoords ? destinoCoords : ubicacionActual;
+                mapaModal = L.map('mapaModal').setView([center.lat, center.lng], 16);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap',
+                    subdomains: 'abcd'
+                }).addTo(mapaModal);
+                
+                let marcador = L.marker([center.lat, center.lng]).addTo(mapaModal);
+                mapaModal.on('click', (e) => {
+                    marcador.setLatLng(e.latlng);
+                    ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng };
+                    
+                    // Obtener dirección de las coordenadas
+                    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${e.latlng.lat}&lon=${e.latlng.lng}&format=json`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.display_name) {
+                                document.getElementById(tipo === 'origen' ? 'origen' : 'destino').value = data.display_name;
+                            }
+                        });
+                });
+            }, 100);
+        }
+        
+        function cerrarModalMapa() {
+            document.getElementById('modalMapa').classList.remove('open');
+            if (mapaModal) mapaModal.remove();
+            ubicacionSeleccionada = null;
+        }
+        
+        function confirmarUbicacionMapa() {
+            if (ubicacionSeleccionada) {
+                if (modoSeleccion === 'origen') {
+                    origenCoords = ubicacionSeleccionada;
+                } else {
+                    destinoCoords = ubicacionSeleccionada;
+                }
+                cerrarModalMapa();
+                verificarOrigenDestino();
+                mostrarNotificacion('Ubicación seleccionada', 'exito');
+            } else {
+                mostrarNotificacion('Toca el mapa para seleccionar', 'error');
             }
         }
         
@@ -629,158 +453,21 @@
             }
         }
         
-        function abrirMapaSeleccion(tipo) {
-            window.tipoSeleccion = tipo;
-            document.getElementById('modalMapa').classList.add('open');
-            setTimeout(() => {
-                if (mapaModal) mapaModal.remove();
-                mapaModal = L.map('modalMap').setView([ubicacionActual.lat, ubicacionActual.lng], 16);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '© OpenStreetMap',
-                    subdomains: 'abcd'
-                }).addTo(mapaModal);
-                
-                let marcador = L.marker([ubicacionActual.lat, ubicacionActual.lng]).addTo(mapaModal);
-                mapaModal.on('click', (e) => {
-                    marcador.setLatLng(e.latlng);
-                    ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng };
-                });
-            }, 100);
-        }
-        
-        function seleccionarOrigenMapa() { abrirMapaSeleccion('origen'); }
-        function seleccionarDestinoMapa() { abrirMapaSeleccion('destino'); }
-        
-        function cerrarModalMapa() {
-            document.getElementById('modalMapa').classList.remove('open');
-            if (mapaModal) mapaModal.remove();
-            ubicacionSeleccionada = null;
-        }
-        
-        function confirmarUbicacionMapa() {
-            if (ubicacionSeleccionada) {
-                if (window.tipoSeleccion === 'origen') {
-                    origenCoords = ubicacionSeleccionada;
-                    document.getElementById('origen').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
-                } else if (window.tipoSeleccion === 'destino') {
-                    destinoCoords = ubicacionSeleccionada;
-                    document.getElementById('destino').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
-                }
-                cerrarModalMapa();
-                verificarOrigenDestino();
-                mostrarNotificacion('Ubicación seleccionada', 'exito');
-            } else {
-                mostrarNotificacion('Toca el mapa para seleccionar', 'error');
-            }
-        }
-        
-        // ============= SELECCIÓN DE ORIGEN/DESTINO =============
-        function seleccionarOrigenDirecciones() {
-            fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } })
-                .then(res => res.json())
-                .then(data => {
-                    const dirs = data.direcciones || [];
-                    if (dirs.length === 0) {
-                        mostrarNotificacion('No hay direcciones guardadas', 'error');
-                    } else {
-                        let msg = 'Selecciona una dirección:\n\n';
-                        dirs.forEach((d, i) => { msg += `${i+1}. ${d.nombre}: ${d.direccion}\n`; });
-                        const sel = prompt(msg);
-                        if (sel) {
-                            const idx = parseInt(sel) - 1;
-                            if (dirs[idx]) {
-                                document.getElementById('origen').value = dirs[idx].direccion;
-                                if (dirs[idx].lat && dirs[idx].lng) {
-                                    origenCoords = { lat: dirs[idx].lat, lng: dirs[idx].lng };
-                                }
-                                verificarOrigenDestino();
-                            }
-                        }
-                    }
-                });
-        }
-        
-        function usarDireccionesDestino() {
-            fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } })
-                .then(res => res.json())
-                .then(data => {
-                    const dirs = data.direcciones || [];
-                    if (dirs.length === 0) {
-                        mostrarNotificacion('No hay direcciones guardadas', 'error');
-                    } else {
-                        let msg = 'Selecciona un destino:\n\n';
-                        dirs.forEach((d, i) => { msg += `${i+1}. ${d.nombre}: ${d.direccion}\n`; });
-                        const sel = prompt(msg);
-                        if (sel) {
-                            const idx = parseInt(sel) - 1;
-                            if (dirs[idx]) {
-                                document.getElementById('destino').value = dirs[idx].direccion;
-                                if (dirs[idx].lat && dirs[idx].lng) {
-                                    destinoCoords = { lat: dirs[idx].lat, lng: dirs[idx].lng };
-                                }
-                                verificarOrigenDestino();
-                            }
-                        }
-                    }
-                });
-        }
-        
-        function escribirOrigenManual() {
-            const dir = prompt('Escribe tu ubicación:');
-            if (dir) {
-                document.getElementById('origen').value = dir;
-                verificarOrigenDestino();
-            }
-        }
-        
-        async function verificarOrigenDestino() {
+        // ============= FUNCIONES PRINCIPALES =============
+        function verificarOrigenDestino() {
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
             
             if (origen && destino) {
                 document.getElementById('categoriasSection').classList.remove('hidden');
+                document.getElementById('precioSection').classList.remove('hidden');
+                document.getElementById('btnSolicitar').classList.remove('hidden');
                 cargarCategorias();
-                
-                // Calcular precio real
-                if (origenCoords && destinoCoords) {
-                    await calcularPrecioReal();
-                } else {
-                    document.getElementById('precioSection').classList.remove('hidden');
-                    document.getElementById('btnSolicitar').classList.remove('hidden');
-                    actualizarPrecio();
-                }
+                actualizarPrecio();
             } else {
                 document.getElementById('categoriasSection').classList.add('hidden');
                 document.getElementById('precioSection').classList.add('hidden');
                 document.getElementById('btnSolicitar').classList.add('hidden');
-            }
-        }
-        
-        async function calcularPrecioReal() {
-            try {
-                const res = await fetch('/api/viajes/calcular-precio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({
-                        origen_coords: origenCoords,
-                        destino_coords: destinoCoords,
-                        categoria: categoriaSeleccionada
-                    })
-                });
-                const data = await res.json();
-                if (data.precio) {
-                    document.getElementById('precioEstimado').innerHTML = `${data.precio} CUP`;
-                    let detalle = '';
-                    if (data.recargos.nocturno > 0) detalle += `🌙 +${data.recargos.nocturno}% nocturno `;
-                    if (data.recargos.lluvia > 0) detalle += `☔ +${data.recargos.lluvia}% lluvia `;
-                    if (detalle === '') detalle = `📏 ${data.distancia} km | ⏱️ ${data.tiempo} min`;
-                    document.getElementById('precioDetalle').innerHTML = detalle;
-                    document.getElementById('precioSection').classList.remove('hidden');
-                    document.getElementById('btnSolicitar').classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error calculando precio:', error);
-                actualizarPrecio();
             }
         }
         
@@ -790,7 +477,7 @@
                 <div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" onclick="seleccionarCategoria('${cat.id}')">
                     <div class="categoria-icon">${cat.icono}</div>
                     <div class="categoria-nombre">${cat.nombre}</div>
-                    <div class="categoria-precio">${cat.precioKm} CUP/km</div>
+                    <div class="categoria-precio">${cat.precio} CUP</div>
                 </div>
             `).join('');
         }
@@ -798,33 +485,12 @@
         function seleccionarCategoria(catId) {
             categoriaSeleccionada = catId;
             cargarCategorias();
-            if (origenCoords && destinoCoords) {
-                calcularPrecioReal();
-            } else {
-                actualizarPrecio();
-            }
+            actualizarPrecio();
         }
         
         function actualizarPrecio() {
-            let precio = preciosBase[categoriaSeleccionada] * 5 || 100;
+            let precio = preciosBase[categoriaSeleccionada] || 100;
             document.getElementById('precioEstimado').innerHTML = `${precio} CUP`;
-        }
-        
-        // ============= MENÚ =============
-        function toggleMenu() {
-            document.getElementById('sideMenu').classList.toggle('open');
-            document.getElementById('menuOverlay').classList.toggle('open');
-        }
-        
-        function cambiarSeccion(seccion) {
-            toggleMenu();
-            document.getElementById('seccionViaje').classList.add('hidden');
-            document.getElementById('seccionHistorial').classList.add('hidden');
-            document.getElementById('seccionPerfil').classList.add('hidden');
-            document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden');
-            if (seccion === 'historial') cargarHistorial();
-            if (seccion === 'perfil') { cargarPerfil(); cargarDirecciones(); }
-            if (seccion === 'viaje' && mapaFondo) { setTimeout(() => mapaFondo.invalidateSize(), 100); }
         }
         
         function mostrarNotificacion(msg, tipo) {
@@ -833,6 +499,11 @@
             notif.classList.remove('hidden');
             notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
             setTimeout(() => notif.classList.add('hidden'), 3000);
+        }
+        
+        // ============= LOGIN Y REGISTRO =============
+        function toggleMenu() {
+            // Menú simplificado para este ejemplo
         }
         
         function mostrarLogin() {
@@ -865,17 +536,7 @@
                     document.getElementById('registroScreen').classList.add('hidden');
                     document.getElementById('seccionViaje').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
-                    iniciarMapaFondo();
-                    cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
-                    
-                    // Registrar usuario en OneSignal para notificaciones
-                    if (window.OneSignalDeferred) {
-                        OneSignalDeferred.push(async function(OneSignal) {
-                            await OneSignal.sendTag('user_id', data.usuario.id.toString());
-                            await OneSignal.sendTag('user_name', data.usuario.nombre);
-                        });
-                    }
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
@@ -888,11 +549,9 @@
             const ci = document.getElementById('regCi').value;
             const telefono = document.getElementById('regTelefono').value;
             const email = document.getElementById('regEmail').value;
-            const telefonoEmergencia = document.getElementById('regTelefonoEmergencia').value;
-            
             if (!usuario || !password || !nombre || !apellidos || !ci) { mostrarNotificacion('Complete campos obligatorios', 'error'); return; }
             try {
-                const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia: telefonoEmergencia }) });
+                const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password, nombre, apellidos, ci, telefono, email }) });
                 const data = await res.json();
                 if (data.token) {
                     token = data.token; localStorage.setItem('token', token);
@@ -901,69 +560,9 @@
                     document.getElementById('registroScreen').classList.add('hidden');
                     document.getElementById('seccionViaje').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = data.usuario.nombre.split(' ')[0];
-                    iniciarMapaFondo();
-                    cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion('Registro exitoso', 'exito');
-                    
-                    // Registrar usuario en OneSignal
-                    if (window.OneSignalDeferred) {
-                        OneSignalDeferred.push(async function(OneSignal) {
-                            await OneSignal.sendTag('user_id', data.usuario.id.toString());
-                            await OneSignal.sendTag('user_name', data.usuario.nombre);
-                        });
-                    }
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
-        }
-        
-        async function cargarPerfil() {
-            try {
-                const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                if (data.usuario) {
-                    const u = data.usuario;
-                    document.getElementById('perfilInfo').innerHTML = `<strong>${u.nombre} ${u.apellidos || ''}</strong><br>CI: ${u.ci || '-'}<br>Tel: ${u.telefono || '-'}<br>Email: ${u.email || '-'}<br>Usuario: ${u.usuario}<br><strong>📞 Emergencia:</strong> ${u.telefono_emergencia || 'No registrado'}`;
-                }
-            } catch (error) { document.getElementById('perfilInfo').innerHTML = 'Error'; }
-        }
-        
-        async function editarPerfil() {
-            const nombre = prompt('Nuevo nombre:');
-            const telefono = prompt('Nuevo teléfono:');
-            const email = prompt('Nuevo email:');
-            const telefonoEmergencia = prompt('Teléfono de emergencia:');
-            if (!nombre && !telefono && !email && !telefonoEmergencia) return;
-            try {
-                await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email, telefono_emergencia: telefonoEmergencia }) });
-                mostrarNotificacion('Perfil actualizado', 'exito'); cargarPerfil();
-            } catch (error) { mostrarNotificacion('Error', 'error'); }
-        }
-        
-        async function cargarDirecciones() {
-            try {
-                const res = await fetch('/api/direcciones', { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                const dirs = data.direcciones || [];
-                const div = document.getElementById('direccionesLista');
-                if (dirs.length === 0) { div.innerHTML = '<p class="text-center">No hay direcciones</p>'; }
-                else {
-                    div.innerHTML = dirs.map(d => `<div class="direccion-item"><span>📍 ${d.nombre}: ${d.direccion}</span><span style="color:#f44336;" onclick="eliminarDireccion(${d.id})">✖</span></div>`).join('');
-                }
-            } catch(e) {}
-        }
-        
-        async function agregarDireccion() {
-            const nombre = prompt('Nombre (ej: Casa, Trabajo):');
-            const direccion = prompt('Dirección:');
-            if (nombre && direccion) {
-                await fetch('/api/direcciones', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, direccion, lat: ubicacionActual.lat, lng: ubicacionActual.lng }) });
-                cargarDirecciones();
-            }
-        }
-        
-        async function eliminarDireccion(id) {
-            await fetch(`/api/direcciones/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
-            cargarDirecciones();
         }
         
         async function solicitarTaxi() {
@@ -981,7 +580,7 @@
             }
             
             const btn = document.getElementById('btnSolicitar');
-            btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Buscando...';
+            btn.disabled = true; btn.innerHTML = 'Buscando...';
             try {
                 const res = await fetch('/api/viajes/solicitar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ 
                     origen, destino, 
@@ -991,10 +590,6 @@
                 }) });
                 const data = await res.json();
                 if (data.exito) {
-                    viajeActual = data.viaje;
-                    document.getElementById('viajeActivoCard').style.display = 'block';
-                    actualizarEstadoUI();
-                    iniciarSeguimiento();
                     mostrarNotificacion('✅ Taxi solicitado', 'exito');
                     document.getElementById('origen').value = '';
                     document.getElementById('destino').value = '';
@@ -1003,129 +598,27 @@
                     document.getElementById('categoriasSection').classList.add('hidden');
                     document.getElementById('precioSection').classList.add('hidden');
                     document.getElementById('btnSolicitar').classList.add('hidden');
-                    cargarHistorial();
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch(e) { mostrarNotificacion('Error', 'error'); }
             finally { btn.disabled = false; btn.innerHTML = 'Confirmar Taxi'; }
         }
         
-        function actualizarEstadoUI() {
-            if (!viajeActual) return;
-            let texto = '', tiempo = '';
-            switch(viajeActual.estado) {
-                case 'buscando_chofer': texto = '🔄 Buscando chofer...'; tiempo = '⏱️ Tiempo estimado: 2-5 minutos'; break;
-                case 'aceptado': texto = '✅ Chofer en camino'; tiempo = '⏱️ Llegada estimada: 5-10 minutos'; break;
-                case 'en_curso': texto = '🚗 En camino a tu destino'; tiempo = '⏱️ Llegada estimada: 10-15 minutos'; break;
-                case 'completado': texto = '🏁 Viaje completado'; detenerSeguimiento(); setTimeout(() => { document.getElementById('viajeActivoCard').style.display = 'none'; cargarHistorial(); }, 3000); break;
-                default: texto = viajeActual.estado;
+        // Event listeners para búsqueda
+        document.getElementById('origen').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Origen'));
+        document.getElementById('destino').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Destino'));
+        
+        // Ocultar sugerencias al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.input-wrapper')) {
+                document.getElementById('sugerenciasOrigen').classList.add('hidden');
+                document.getElementById('sugerenciasDestino').classList.add('hidden');
             }
-            document.getElementById('viajeActivoInfo').innerHTML = `<div style="font-weight:600;">${texto}</div><div>📍 ${viajeActual.origen} → ${viajeActual.destino}</div><div>💰 ${viajeActual.precio_base} CUP</div>`;
-            document.getElementById('tiempoEstimado').innerHTML = tiempo;
-        }
+        });
         
-        function llamarChofer() {
-            if (viajeActual && viajeActual.chofer_telefono) {
-                window.location.href = `tel:${viajeActual.chofer_telefono}`;
-            } else {
-                mostrarNotificacion('Número del chofer no disponible aún', 'error');
-            }
-        }
-        
-        function compartirViaje() {
-            if (viajeActual) {
-                const texto = `🚕 Estoy en un viaje con LLévame\n📍 Origen: ${viajeActual.origen}\n🎯 Destino: ${viajeActual.destino}\n💰 Precio: ${viajeActual.precio_base} CUP`;
-                if (navigator.share) {
-                    navigator.share({ title: 'Mi viaje LLévame', text: texto });
-                } else {
-                    navigator.clipboard.writeText(texto);
-                    mostrarNotificacion('Información del viaje copiada', 'exito');
-                }
-            }
-        }
-        
-        // ============= PÁNICO =============
-        function abrirPanico() {
-            document.getElementById('modalPanico').classList.add('open');
-        }
-        
-        function cerrarPanico() {
-            document.getElementById('modalPanico').classList.remove('open');
-        }
-        
-        async function activarPanicoConfirmado() {
-            cerrarPanico();
-            mostrarNotificacion('Enviando alerta de emergencia...', 'exito');
-            
-            try {
-                const res = await fetch('/api/panico/activar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
-                });
-                const data = await res.json();
-                if (data.exito) {
-                    mostrarNotificacion('Alerta enviada. Ayuda en camino.', 'exito');
-                    if (data.llamar_a) {
-                        if (confirm(`¿Deseas llamar al número de emergencia ${data.llamar_a}?`)) {
-                            window.location.href = `tel:${data.llamar_a}`;
-                        }
-                    }
-                } else {
-                    mostrarNotificacion('Error al enviar alerta', 'error');
-                }
-            } catch (error) {
-                mostrarNotificacion('Error de conexión', 'error');
-            }
-        }
-        
-        async function cancelarViaje() { 
-            if (!confirm('¿Cancelar este viaje?')) return; 
-            await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); 
-            mostrarNotificacion('Viaje cancelado', 'exito'); 
-            document.getElementById('viajeActivoCard').style.display = 'none'; 
-            viajeActual = null; 
-            detenerSeguimiento(); 
-        }
-        
-        async function consultarEstado() { 
-            if (!viajeActual) return; 
-            try { 
-                const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); 
-                const data = await res.json(); 
-                if (data.viaje) { 
-                    viajeActual = data.viaje; 
-                    actualizarEstadoUI(); 
-                } 
-            } catch(e) {} 
-        }
-        
-        function iniciarSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(consultarEstado, 5000); }
-        function detenerSeguimiento() { if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = null; }
-        
-        async function cargarHistorial() {
-            try {
-                const res = await fetch('/api/viajes/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                const viajes = data.viajes || [];
-                if (viajes.length === 0) { document.getElementById('historialLista').innerHTML = '<p class="text-center">No hay viajes</p>'; }
-                else {
-                    document.getElementById('historialLista').innerHTML = viajes.map(v => `<div class="viaje-item"><div><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado} | ${v.distancia ? v.distancia + 'km' : ''}</div><div>${v.precio_final || v.precio_base} CUP</div></div>`).join('');
-                }
-            } catch(e) { document.getElementById('historialLista').innerHTML = 'Error'; }
-        }
-        
-        function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
-        
-        // Event listeners
-        document.getElementById('destino').addEventListener('input', verificarOrigenDestino);
-        
-        // Inicialización
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionViaje').classList.remove('hidden');
             document.getElementById('userName').innerHTML = 'Cliente';
-            iniciarMapaFondo();
-            cargarPerfil(); cargarHistorial(); cargarDirecciones();
         }
     </script>
 </body>
