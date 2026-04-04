@@ -478,9 +478,14 @@
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('seccionPrincipal').classList.remove('hidden');
-                    document.getElementById('userName').innerHTML = datosUsuario.nombre.split(' ')[0];
-                    cargarDatosChofer();
+                    document.getElementById('userName').innerHTML = datosUsuario.nombre ? datosUsuario.nombre.split(' ')[0] : 'Chofer';
+                    
+                    // Cargar todos los datos después del login
+                    await cargarPerfil();
+                    await cargarVehiculo();
+                    await cargarDatosChofer();
                     iniciarActualizacionUbicacion();
+                    
                     mostrarNotificacion(`Bienvenido ${datosUsuario.nombre}`, 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
@@ -517,8 +522,8 @@
                 if (data.exito) {
                     mostrarNotificacion('Perfil actualizado', 'exito');
                     cerrarModalPerfil();
-                    cargarPerfil();
-                    if (nombre) datosUsuario.nombre = nombre;
+                    await cargarPerfil();
+                    if (datosUsuario) datosUsuario.nombre = nombre;
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch(e) { mostrarNotificacion('Error', 'error'); }
         }
@@ -582,7 +587,7 @@
                         document.getElementById('tricicloTipo').value = v.tipo_triciclo || 'pasajeros';
                     }
                 }
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
         
         async function guardarVehiculo() {
@@ -624,7 +629,7 @@
                 if (data.exito) {
                     mostrarNotificacion('Vehículo guardado. Espera aprobación', 'exito');
                     cerrarModalVehiculo();
-                    cargarVehiculo();
+                    await cargarVehiculo();
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch(e) { mostrarNotificacion('Error de conexión', 'error'); }
         }
@@ -652,7 +657,7 @@
                     document.getElementById('aprobacionMsg').classList.remove('hidden');
                     document.getElementById('viajesSection').classList.add('hidden');
                 }
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
         
         async function cargarPerfil() {
@@ -662,15 +667,20 @@
                 if (data.usuario) {
                     datosUsuario = data.usuario;
                     document.getElementById('perfilInfo').innerHTML = `
-                        <strong>${data.usuario.nombre} ${data.usuario.apellidos || ''}</strong><br>
+                        <strong>${data.usuario.nombre || 'Sin nombre'} ${data.usuario.apellidos || ''}</strong><br>
                         CI: ${data.usuario.ci || '-'}<br>
-                        Tel: ${data.usuario.telefono || '-'}<br>
+                        Teléfono: ${data.usuario.telefono || '-'}<br>
                         Email: ${data.usuario.email || '-'}<br>
                         Usuario: ${data.usuario.usuario}<br>
                         Emergencia: ${data.usuario.telefono_emergencia || 'No registrado'}
                     `;
+                } else {
+                    document.getElementById('perfilInfo').innerHTML = 'No se pudieron cargar los datos';
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error(e);
+                document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil';
+            }
         }
         
         async function cargarVehiculo() {
@@ -695,15 +705,15 @@
                 } else {
                     document.getElementById('vehiculoInfo').innerHTML = '<p>No has registrado un vehículo</p>';
                 }
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
         
         async function cargarGanancias() {
             try {
                 const res = await fetch('/api/chofer/ganancias', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
-                document.getElementById('gananciasHoy').innerHTML = data.hoy + ' CUP';
-                document.getElementById('gananciasSemana').innerHTML = data.semana + ' CUP';
+                document.getElementById('gananciasHoy').innerHTML = (data.hoy || 0) + ' CUP';
+                document.getElementById('gananciasSemana').innerHTML = (data.semana || 0) + ' CUP';
             } catch(e) {}
         }
         
@@ -713,11 +723,13 @@
                 navigator.geolocation.watchPosition(async (position) => {
                     ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude };
                     if (estadoActual === 'disponible') {
-                        await fetch('/api/chofer/ubicacion', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
-                        });
+                        try {
+                            await fetch('/api/chofer/ubicacion', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
+                            });
+                        } catch(e) {}
                     }
                 }, null, { enableHighAccuracy: true });
             }
@@ -743,7 +755,7 @@
                         </div>
                     `).join('');
                 }
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
         
         async function aceptarViaje(viajeId) {
@@ -781,7 +793,7 @@
                         <div><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP</div>
                     `;
                 }
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
         
         async function iniciarViaje() {
@@ -857,20 +869,25 @@
                         </div>
                     `).join('');
                 }
-            } catch(e) {}
+            } catch(e) { console.error(e); }
         }
         
         function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
         
-        // Inicialización
+        // Inicialización - si hay token, cargar datos
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionPrincipal').classList.remove('hidden');
             document.getElementById('userName').innerHTML = 'Chofer';
-            cargarPerfil();
-            cargarVehiculo();
-            cargarDatosChofer();
-            iniciarActualizacionUbicacion();
+            
+            // Cargar todos los datos en paralelo
+            Promise.all([
+                cargarPerfil(),
+                cargarVehiculo(),
+                cargarDatosChofer()
+            ]).then(() => {
+                iniciarActualizacionUbicacion();
+            }).catch(e => console.error(e));
         }
     </script>
 </body>
