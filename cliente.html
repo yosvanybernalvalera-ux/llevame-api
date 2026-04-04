@@ -13,9 +13,9 @@
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
         window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(function(OneSignal) {
-            OneSignal.init({
-                appId: "12345678-90ab-cdef-1234-567890abcdef", // Reemplazar después
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+                appId: "a40e9ef7-7475-4dce-8ba9-23d9dcb342a0",
             });
         });
     </script>
@@ -869,11 +869,11 @@
                     cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
                     
-                    // Registrar para notificaciones push
+                    // Registrar usuario en OneSignal para notificaciones
                     if (window.OneSignalDeferred) {
-                        OneSignalDeferred.push(function(OneSignal) {
-                            OneSignal.sendTag('user_id', data.usuario.id);
-                            OneSignal.sendTag('user_name', data.usuario.nombre);
+                        OneSignalDeferred.push(async function(OneSignal) {
+                            await OneSignal.sendTag('user_id', data.usuario.id.toString());
+                            await OneSignal.sendTag('user_name', data.usuario.nombre);
                         });
                     }
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
@@ -904,6 +904,14 @@
                     iniciarMapaFondo();
                     cargarPerfil(); cargarHistorial(); cargarDirecciones();
                     mostrarNotificacion('Registro exitoso', 'exito');
+                    
+                    // Registrar usuario en OneSignal
+                    if (window.OneSignalDeferred) {
+                        OneSignalDeferred.push(async function(OneSignal) {
+                            await OneSignal.sendTag('user_id', data.usuario.id.toString());
+                            await OneSignal.sendTag('user_name', data.usuario.nombre);
+                        });
+                    }
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
