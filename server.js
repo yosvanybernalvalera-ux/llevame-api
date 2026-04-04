@@ -242,11 +242,11 @@ const crearTablas = async () => {
     if (panicoExistente.rows.length === 0) {
       await pool.query(`
         INSERT INTO configuraciones_panico (telefono_llamada, telefono_sms, mensaje)
-        VALUES ('+5355555555', '+5355555555', '🚨 ALERTA DE SEGURIDAD - LLévame\n\nUsuario: {nombre}\nTeléfono: {telefono}\nUbicación: https://maps.google.com/?q={lat},{lng}\nHora: {hora}')
+        VALUES ('+5355555555', '+5355555555', 'ALERTA DE SEGURIDAD - LLévame\n\nUsuario: {nombre}\nTelefono: {telefono}\nUbicacion: https://maps.google.com/?q={lat},{lng}\nHora: {hora}')
       `);
     }
     
-    console.log('✅ Tablas creadas/verificadas');
+    console.log('Tablas creadas/verificadas');
   } catch (error) {
     console.error('Error creando tablas:', error);
   }
@@ -262,14 +262,14 @@ app.post('/api/registro', async (req, res) => {
     if (email) {
       const emailExistente = await pool.query('SELECT id FROM usuarios WHERE email = $1', [email]);
       if (emailExistente.rows.length > 0) {
-        return res.status(400).json({ error: 'El email ya está registrado' });
+        return res.status(400).json({ error: 'El email ya esta registrado' });
       }
     }
     
     if (telefono) {
       const telefonoExistente = await pool.query('SELECT id FROM usuarios WHERE telefono = $1', [telefono]);
       if (telefonoExistente.rows.length > 0) {
-        return res.status(400).json({ error: 'El teléfono ya está registrado' });
+        return res.status(400).json({ error: 'El telefono ya esta registrado' });
       }
     }
     
@@ -337,7 +337,7 @@ app.post('/api/login', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error al iniciar sesión' });
+    res.status(500).json({ error: 'Error al iniciar sesion' });
   }
 });
 
@@ -360,14 +360,14 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
     if (email) {
       const emailExistente = await pool.query('SELECT id FROM usuarios WHERE email = $1 AND id != $2', [email, req.usuario.id]);
       if (emailExistente.rows.length > 0) {
-        return res.status(400).json({ error: 'El email ya está registrado' });
+        return res.status(400).json({ error: 'El email ya esta registrado' });
       }
     }
     
     if (telefono) {
       const telefonoExistente = await pool.query('SELECT id FROM usuarios WHERE telefono = $1 AND id != $2', [telefono, req.usuario.id]);
       if (telefonoExistente.rows.length > 0) {
-        return res.status(400).json({ error: 'El teléfono ya está registrado' });
+        return res.status(400).json({ error: 'El telefono ya esta registrado' });
       }
     }
     
@@ -406,7 +406,7 @@ app.post('/api/direcciones', verificarToken, async (req, res) => {
     );
     res.json({ exito: true, direccion: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ error: 'Error al agregar dirección' });
+    res.status(500).json({ error: 'Error al agregar direccion' });
   }
 });
 
@@ -416,7 +416,7 @@ app.delete('/api/direcciones/:id', verificarToken, async (req, res) => {
     await pool.query('DELETE FROM direcciones WHERE id = $1 AND usuario_id = $2', [id, req.usuario.id]);
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar dirección' });
+    res.status(500).json({ error: 'Error al eliminar direccion' });
   }
 });
 
@@ -550,10 +550,10 @@ app.post('/api/chofer/vehiculo', verificarToken, async (req, res) => {
     }
     await pool.query('UPDATE usuarios SET rol = $1 WHERE id = $2', [nuevoRol, req.usuario.id]);
     
-    res.json({ exito: true, mensaje: 'Vehículo registrado. Espera aprobación del administrador' });
+    res.json({ exito: true, mensaje: 'Vehiculo registrado. Espera aprobacion del administrador' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al registrar vehículo' });
+    res.status(500).json({ error: 'Error al registrar vehiculo' });
   }
 });
 
@@ -562,7 +562,7 @@ app.get('/api/chofer/vehiculo', verificarToken, async (req, res) => {
     const result = await pool.query('SELECT * FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
     res.json({ vehiculo: result.rows[0] || null });
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener vehículo' });
+    res.status(500).json({ error: 'Error al obtener vehiculo' });
   }
 });
 
@@ -707,18 +707,18 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
     );
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar ubicación' });
+    res.status(500).json({ error: 'Error al actualizar ubicacion' });
   }
 });
 
-// ============= ENDPOINTS DE PÁNICO =============
+// ============= ENDPOINTS DE PANICO =============
 
 app.get('/api/panico/config', verificarToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM configuraciones_panico WHERE id = 1');
     res.json({ config: result.rows[0] || {} });
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener configuración' });
+    res.status(500).json({ error: 'Error al obtener configuracion' });
   }
 });
 
@@ -730,7 +730,7 @@ app.post('/api/panico/activar', verificarToken, async (req, res) => {
     const config = await pool.query('SELECT * FROM configuraciones_panico WHERE id = 1');
     
     if (!config.rows[0] || !config.rows[0].activo) {
-      return res.json({ exito: true, mensaje: 'Sistema de pánico desactivado por el administrador' });
+      return res.json({ exito: true, mensaje: 'Sistema de panico desactivado por el administrador' });
     }
     
     const conf = config.rows[0];
@@ -745,7 +745,7 @@ app.post('/api/panico/activar', verificarToken, async (req, res) => {
       .replace('{hora}', new Date().toLocaleString());
     
     const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-    mensaje += `\n\n📍 Ver en mapa: ${mapsUrl}`;
+    mensaje += `\n\nVer en mapa: ${mapsUrl}`;
     
     await pool.query(`
       INSERT INTO logs_panico (usuario_id, lat, lng, mensaje, telefono_llamada, telefono_sms, creado_en)
@@ -754,13 +754,13 @@ app.post('/api/panico/activar', verificarToken, async (req, res) => {
     
     res.json({ 
       exito: true, 
-      mensaje: 'Alerta de pánico activada',
+      mensaje: 'Alerta de panico activada',
       llamar_a: conf.telefono_llamada,
       sms_a: conf.telefono_sms
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al activar pánico' });
+    res.status(500).json({ error: 'Error al activar panico' });
   }
 });
 
@@ -774,7 +774,7 @@ app.get('/admin/configuracion', verificarToken, async (req, res) => {
     result.rows.forEach(row => { config[row.clave] = row.valor; });
     res.json(config);
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener configuración' });
+    res.status(500).json({ error: 'Error al obtener configuracion' });
   }
 });
 
@@ -788,7 +788,7 @@ app.post('/admin/configuracion', verificarToken, async (req, res) => {
     );
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error al guardar configuración' });
+    res.status(500).json({ error: 'Error al guardar configuracion' });
   }
 });
 
@@ -803,13 +803,39 @@ app.post('/admin/panico/config', verificarToken, async (req, res) => {
     `, [telefono_llamada, telefono_sms, mensaje, activo]);
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error al guardar configuración' });
+    res.status(500).json({ error: 'Error al guardar configuracion' });
   }
 });
 
-// ============= RUTA RAÍZ =============
+app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  try {
+    const result = await pool.query(`
+      SELECT u.id as usuario_id, u.nombre, u.apellidos, u.telefono, v.*
+      FROM usuarios u
+      JOIN vehiculos v ON u.id = v.usuario_id
+      WHERE v.aprobado = FALSE AND u.rol IN ('chofer', 'ambos')
+    `);
+    res.json({ choferes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener choferes' });
+  }
+});
+
+app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  const { id } = req.params;
+  try {
+    await pool.query('UPDATE vehiculos SET aprobado = TRUE WHERE usuario_id = $1', [id]);
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al aprobar chofer' });
+  }
+});
+
+// ============= RUTA RAIZ =============
 app.get('/', (req, res) => {
-  res.json({ mensaje: '🚕 LLévame API funcionando', version: '3.0' });
+  res.json({ mensaje: 'LLevame API funcionando', version: '3.0' });
 });
 
 // ============= PANEL ADMIN (HTML) =============
@@ -820,7 +846,7 @@ app.get('/admin/login', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>LLévame - Admin</title>
+      <title>LLevame - Admin</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -832,11 +858,11 @@ app.get('/admin/login', (req, res) => {
     </head>
     <body>
       <div class="login-card">
-        <h1>🚕 LLévame - Admin</h1>
+        <h1>LLevame - Admin</h1>
         <form id="loginForm">
           <input type="text" id="username" placeholder="Usuario" required>
           <input type="password" id="password" placeholder="Contraseña" required>
-          <button type="submit">Iniciar sesión</button>
+          <button type="submit">Iniciar sesion</button>
         </form>
       </div>
       <script>
@@ -849,7 +875,7 @@ app.get('/admin/login', (req, res) => {
           if (data.token && data.usuario.rol === 'admin') {
             localStorage.setItem('token', data.token);
             window.location.href = '/admin/dashboard';
-          } else { alert('Credenciales inválidas o no eres administrador'); }
+          } else { alert('Credenciales invalidas o no eres administrador'); }
         };
       </script>
     </body>
@@ -864,7 +890,7 @@ app.get('/admin/dashboard', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>LLévame - Dashboard</title>
+      <title>LLevame - Dashboard</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; background: #f5f5f5; padding: 20px; }
@@ -880,12 +906,12 @@ app.get('/admin/dashboard', (req, res) => {
     </head>
     <body>
       <div class="header">
-        <h1>🚕 LLévame - Panel Admin</h1>
-        <button class="logout" onclick="logout()">Cerrar sesión</button>
+        <h1>LLevame - Panel Admin</h1>
+        <button class="logout" onclick="logout()">Cerrar sesion</button>
       </div>
       
       <div class="card">
-        <h3>💰 Configuración de precios</h3>
+        <h3>Configuracion de precios</h3>
         <div class="config-group">
           <label>Recargo nocturno (%):</label>
           <input type="number" id="recargo_nocturno" step="5">
@@ -893,23 +919,23 @@ app.get('/admin/dashboard', (req, res) => {
         <div class="config-group">
           <label>Recargo lluvia (%):</label>
           <input type="number" id="recargo_lluvia" step="5">
-          <button onclick="activarLluvia()">🌧 Activar lluvia ahora</button>
+          <button onclick="activarLluvia()">Activar lluvia ahora</button>
         </div>
         <div class="config-group">
           <label>Tarifa espera (CUP/min):</label>
           <input type="number" id="tarifa_espera" step="0.5">
         </div>
-        <button onclick="guardarConfiguracion()">Guardar configuración</button>
+        <button onclick="guardarConfiguracion()">Guardar configuracion</button>
       </div>
       
       <div class="card">
-        <h3>🆘 Configuración de Pánico</h3>
+        <h3>Configuracion de Panico</h3>
         <div class="config-group">
-          <label>Teléfono para llamar:</label>
+          <label>Telefono para llamar:</label>
           <input type="tel" id="telefono_llamada" placeholder="+5355555555">
         </div>
         <div class="config-group">
-          <label>Teléfono para SMS:</label>
+          <label>Telefono para SMS:</label>
           <input type="tel" id="telefono_sms" placeholder="+5355555555">
         </div>
         <div class="config-group">
@@ -923,11 +949,11 @@ app.get('/admin/dashboard', (req, res) => {
             <option value="false">Inactivo</option>
           </select>
         </div>
-        <button onclick="guardarConfiguracionPanico()">Guardar configuración de pánico</button>
+        <button onclick="guardarConfiguracionPanico()">Guardar configuracion de panico</button>
       </div>
       
       <div class="card">
-        <h3>👨‍✈️ Choferes pendientes de aprobación</h3>
+        <h3>Choferes pendientes de aprobacion</h3>
         <div id="choferesPendientes">Cargando...</div>
       </div>
       
@@ -969,14 +995,16 @@ app.get('/admin/dashboard', (req, res) => {
           if (pendientes.length === 0) {
             document.getElementById('choferesPendientes').innerHTML = '<p>No hay choferes pendientes</p>';
           } else {
-            document.getElementById('choferesPendientes').innerHTML = pendientes.map(c => `
-              <div style="padding: 10px; border-bottom: 1px solid #eee;">
-                <strong>${c.nombre} ${c.apellidos || ''}</strong><br>
-                Vehículo: ${c.marca_modelo || c.tipo}<br>
-                Matrícula: ${c.matricula || '-'}<br>
-                <button onclick="aprobarChofer(${c.usuario_id})" style="margin-top: 5px;">✓ Aprobar</button>
-              </div>
-            `).join('');
+            let html = '';
+            for (const c of pendientes) {
+              html += '<div style="padding: 10px; border-bottom: 1px solid #eee;">';
+              html += '<strong>' + c.nombre + ' ' + (c.apellidos || '') + '</strong><br>';
+              html += 'Vehiculo: ' + (c.marca_modelo || c.tipo) + '<br>';
+              html += 'Matricula: ' + (c.matricula || '-') + '<br>';
+              html += '<button onclick="aprobarChofer(' + c.usuario_id + ')" style="margin-top: 5px;">Aprobar</button>';
+              html += '</div>';
+            }
+            document.getElementById('choferesPendientes').innerHTML = html;
           }
         }
         
@@ -993,7 +1021,7 @@ app.get('/admin/dashboard', (req, res) => {
               await fetchAPI('/admin/configuracion', { method: 'POST', body: JSON.stringify({ clave, valor: input.value }) });
             }
           }
-          alert('Configuración guardada');
+          alert('Configuracion guardada');
         }
         
         async function guardarConfiguracionPanico() {
@@ -1004,7 +1032,7 @@ app.get('/admin/dashboard', (req, res) => {
             activo: document.getElementById('panico_activo').value === 'true'
           };
           await fetch('/admin/panico/config', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(data) });
-          alert('Configuración de pánico guardada');
+          alert('Configuracion de panico guardada');
         }
         
         function activarLluvia() {
@@ -1023,35 +1051,7 @@ app.get('/admin/dashboard', (req, res) => {
   `);
 });
 
-// Endpoint para admin - obtener choferes pendientes
-app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-  try {
-    const result = await pool.query(`
-      SELECT u.id as usuario_id, u.nombre, u.apellidos, u.telefono, v.*
-      FROM usuarios u
-      JOIN vehiculos v ON u.id = v.usuario_id
-      WHERE v.aprobado = FALSE AND u.rol IN ('chofer', 'ambos')
-    `);
-    res.json({ choferes: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener choferes' });
-  }
-});
-
-// Endpoint para admin - aprobar chofer
-app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-  const { id } = req.params;
-  try {
-    await pool.query('UPDATE vehiculos SET aprobado = TRUE WHERE usuario_id = $1', [id]);
-    res.json({ exito: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al aprobar chofer' });
-  }
-});
-
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🚕 LLévame API corriendo en puerto ${PORT}`);
+  console.log(`LLevame API corriendo en puerto ${PORT}`);
 });
