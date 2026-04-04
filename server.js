@@ -48,6 +48,8 @@ const crearTablas = async () => {
         rol TEXT DEFAULT 'cliente',
         telefono_emergencia TEXT,
         estado_chofer TEXT DEFAULT 'disponible',
+        ultima_ubicacion_lat REAL,
+        ultima_ubicacion_lng REAL,
         creado_en TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -241,7 +243,7 @@ app.get('/api/chofer/vehiculo', verificarToken, async (req, res) => {
   }
 });
 
-// Actualizar ubicación del chofer (NUEVO ENDPOINT)
+// Actualizar ubicación del chofer
 app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
   const { lat, lng } = req.body;
   try {
@@ -381,7 +383,7 @@ app.get('/', (req, res) => {
   res.json({ mensaje: 'LLévame API funcionando' });
 });
 
-// Panel admin
+// ============= PANEL ADMIN =============
 app.get('/admin/login', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -490,7 +492,7 @@ app.get('/admin/dashboard', (req, res) => {
   `);
 });
 
-// Admin endpoints
+// ============= ADMIN ENDPOINTS =============
 app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   try {
@@ -513,8 +515,49 @@ app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
   res.json({ exito: true });
 });
 
+// ============= ENDPOINTS TEMPORALES PARA SQL =============
+app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') {
+    return res.status(403).json({ error: 'Acceso denegado. Solo administrador.' });
+  }
+  
+  const { sql } = req.body;
+  
+  try {
+    await pool.query(sql);
+    res.json({ exito: true, mensaje: 'SQL ejecutado correctamente' });
+  } catch (error) {
+    console.error('Error SQL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/admin/verificar-columnas', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') {
+    return res.status(403).json({ error: 'Acceso denegado. Solo administrador.' });
+  }
+  
+  try {
+    const result = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'usuarios'
+      ORDER BY ordinal_position
+    `);
+    
+    const columnas = result.rows.map(row => row.column_name);
+    res.json({ exito: true, columnas });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============= ENDPOINT TEMPORAL PARA CREAR TABLAS =============
 app.post('/admin/crear-tablas', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') {
+    return res.status(403).json({ error: 'Acceso denegado. Solo administrador.' });
+  }
+  
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS vehiculos (
@@ -529,6 +572,7 @@ app.post('/admin/crear-tablas', verificarToken, async (req, res) => {
         creado_en TIMESTAMP DEFAULT NOW()
       )
     `);
+    
     res.json({ exito: true, mensaje: 'Tabla vehiculos creada correctamente' });
   } catch (error) {
     console.error('Error:', error);
