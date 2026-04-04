@@ -1,42 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test API Chofer</title>
+    <title>Ejecutar SQL - LLévame</title>
     <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 10px 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 8px; overflow-x: auto; }
+    </style>
 </head>
 <body>
-    <h1>Test API Chofer</h1>
-    <div id="resultado"></div>
+    <div class="card">
+        <h1>🚕 LLévame - Ejecutar SQL</h1>
+        <p>Este script agregará las columnas de ubicación a la tabla usuarios.</p>
+        <pre>ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lat REAL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;</pre>
+        
+        <button onclick="ejecutarSQL()">Ejecutar SQL</button>
+        <button onclick="verificarColumnas()">Verificar columnas</button>
+        <button onclick="probarRegistroVehiculo()">Probar registro vehículo</button>
+        
+        <h3>Resultado:</h3>
+        <div id="resultado"></div>
+    </div>
+
     <script>
-        const resultado = document.getElementById('resultado');
+        // Primero, obtener token (necesitas estar logueado como admin)
+        async function getToken() {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+            });
+            const data = await res.json();
+            return data.token;
+        }
         
-        // Tus credenciales
-        const USUARIO = 'Yosvany3105';
-        const PASSWORD = 'Yovi.3105';
-        
-        resultado.innerHTML = '<p>📡 Probando login con usuario: ' + USUARIO + '</p>';
-        
-        fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario: USUARIO, password: PASSWORD })
-        })
-        .then(r => r.json())
-        .then(data => {
-            resultado.innerHTML += '<p>📡 Respuesta login: ' + JSON.stringify(data) + '</p>';
+        async function ejecutarSQL() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Ejecutando SQL...</p>';
             
-            if (data.token) {
-                resultado.innerHTML += '<p style="color:green">✅ Login exitoso!</p>';
-                resultado.innerHTML += '<p>Token: ' + data.token.substring(0, 50) + '...</p>';
+            try {
+                const token = await getToken();
                 
-                // Probar registrar vehículo
-                resultado.innerHTML += '<p>📡 Registrando vehículo...</p>';
-                return fetch('/api/chofer/vehiculo', {
+                const response = await fetch('/admin/ejecutar-sql', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + data.token
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        sql: 'ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lat REAL; ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL;'
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.exito) {
+                    resultado.innerHTML = '<p class="success">✅ SQL ejecutado correctamente</p>';
+                    resultado.innerHTML += '<p>Columnas ultima_ubicacion_lat y ultima_ubicacion_lng agregadas.</p>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
+                }
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            }
+        }
+        
+        async function verificarColumnas() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Verificando columnas...</p>';
+            
+            try {
+                const token = await getToken();
+                
+                const response = await fetch('/admin/verificar-columnas', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                
+                if (data.exito) {
+                    resultado.innerHTML = '<p class="success">✅ Columnas encontradas:</p>';
+                    resultado.innerHTML += '<ul>';
+                    data.columnas.forEach(col => {
+                        if (col.includes('ubicacion')) {
+                            resultado.innerHTML += '<li><strong>' + col + '</strong> ✅</li>';
+                        } else {
+                            resultado.innerHTML += '<li>' + col + '</li>';
+                        }
+                    });
+                    resultado.innerHTML += '</ul>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
+                }
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            }
+        }
+        
+        async function probarRegistroVehiculo() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Probando registro de vehículo con usuario Yosvany3105...</p>';
+            
+            try {
+                // Login como Yosvany3105
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const loginData = await loginRes.json();
+                
+                if (!loginData.token) {
+                    resultado.innerHTML = '<p class="error">❌ Error de login con Yosvany3105</p>';
+                    return;
+                }
+                
+                const token = loginData.token;
+                
+                const response = await fetch('/api/chofer/vehiculo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify({
                         tipo: 'auto',
                         marca_modelo: 'Lada 2105',
@@ -45,24 +129,18 @@
                         categorias: ['economico', 'confort']
                     })
                 });
-            } else {
-                throw new Error('Login falló: ' + JSON.stringify(data));
+                const data = await response.json();
+                
+                if (data.exito) {
+                    resultado.innerHTML = '<p class="success">✅ Vehículo registrado correctamente!</p>';
+                    resultado.innerHTML += '<p>' + data.mensaje + '</p>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
+                }
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
             }
-        })
-        .then(r => r.json())
-        .then(data => {
-            resultado.innerHTML += '<p>📡 Respuesta vehículo: ' + JSON.stringify(data) + '</p>';
-            if (data.exito) {
-                resultado.innerHTML += '<p style="color:green">✅ Vehículo registrado correctamente!</p>';
-                resultado.innerHTML += '<p>Espera aprobación del administrador.</p>';
-            } else {
-                resultado.innerHTML += '<p style="color:red">❌ Error al registrar vehículo: ' + (data.error || 'desconocido') + '</p>';
-            }
-        })
-        .catch(error => {
-            resultado.innerHTML += '<p style="color:red">❌ Error: ' + error.message + '</p>';
-            console.error(error);
-        });
+        }
     </script>
 </body>
 </html>
