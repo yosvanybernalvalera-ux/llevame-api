@@ -76,7 +76,7 @@
             color: #1a1a2e;
         }
         
-        input, select {
+        input {
             width: 100%;
             padding: 12px;
             margin: 8px 0;
@@ -115,15 +115,14 @@
         }
         
         .mapa-container {
-            height: 300px;
+            height: 350px;
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
             margin: 15px 0;
             background: #e0e0e0;
-            position: relative;
         }
-        #mapaSeleccion {
+        #mapaModal {
             height: 100%;
             width: 100%;
         }
@@ -132,6 +131,7 @@
             display: flex;
             gap: 10px;
             margin-top: 8px;
+            margin-bottom: 15px;
         }
         .ubicacion-buttons button {
             flex: 1;
@@ -140,20 +140,20 @@
         }
         
         .sugerencias {
-            position: absolute;
             background: white;
             border: 1px solid #ddd;
             border-radius: 8px;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
+            position: absolute;
             z-index: 1000;
-            width: calc(100% - 24px);
-            margin-top: -8px;
+            width: calc(100% - 2px);
         }
         .sugerencia-item {
             padding: 8px 12px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
+            font-size: 12px;
         }
         .sugerencia-item:hover {
             background: #f0f0f0;
@@ -161,6 +161,75 @@
         
         .input-wrapper {
             position: relative;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .modal.open { display: flex; }
+        .modal-header {
+            background: #1a1a2e;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+        .modal-header button {
+            background: none;
+            font-size: 24px;
+            width: auto;
+            padding: 0 10px;
+        }
+        .modal-footer {
+            padding: 15px;
+            background: white;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .categorias {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .categoria-card {
+            background: #f9f9f9;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .categoria-card.selected {
+            border-color: #FF9800;
+            background: #FFF3E0;
+        }
+        .categoria-icon { font-size: 24px; }
+        .categoria-nombre { font-size: 12px; font-weight: bold; }
+        .categoria-precio { font-size: 11px; color: #FF9800; }
+        
+        .precio-box {
+            background: #FFF3E0;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .precio-box .valor {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FF9800;
         }
     </style>
 </head>
@@ -247,12 +316,12 @@
         </div>
 
         <!-- Modal del mapa -->
-        <div id="modalMapa" class="modal hidden">
+        <div id="modalMapa" class="modal">
             <div class="modal-header">
                 <span id="modalTitulo">Selecciona tu ubicación</span>
                 <button onclick="cerrarModalMapa()">✖</button>
             </div>
-            <div class="mapa-container" style="height: 400px;">
+            <div class="mapa-container">
                 <div id="mapaModal"></div>
             </div>
             <div class="modal-footer">
@@ -263,72 +332,12 @@
 
     <div id="notification" class="notification hidden"></div>
 
-    <style>
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .modal.open { display: flex; }
-        .modal-header {
-            background: #1a1a2e;
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: 12px 12px 0 0;
-        }
-        .modal-footer {
-            padding: 15px;
-            background: white;
-            border-radius: 0 0 12px 12px;
-        }
-        .categorias {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .categoria-card {
-            background: #f9f9f9;
-            border: 2px solid #eee;
-            border-radius: 12px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-        }
-        .categoria-card.selected {
-            border-color: #FF9800;
-            background: #FFF3E0;
-        }
-        .precio-box {
-            background: #FFF3E0;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            margin: 15px 0;
-        }
-        .precio-box .valor {
-            font-size: 28px;
-            font-weight: bold;
-            color: #FF9800;
-        }
-    </style>
-
     <script>
         let token = localStorage.getItem('token');
         let categoriaSeleccionada = 'economico';
         let mapaModal = null;
         let ubicacionSeleccionada = null;
-        let modoSeleccion = 'origen'; // 'origen' o 'destino'
+        let modoSeleccion = 'origen';
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         let origenCoords = null;
         let destinoCoords = null;
@@ -342,6 +351,18 @@
             { id: 'moto', nombre: 'Moto', icono: '🏍️', precio: 80 },
             { id: 'triciclo', nombre: 'Triciclo', icono: '🛺', precio: 50 }
         ];
+
+        function toggleMenu() {
+            // Por ahora vacío
+        }
+        
+        function mostrarNotificacion(msg, tipo) {
+            const notif = document.getElementById('notification');
+            notif.textContent = msg;
+            notif.classList.remove('hidden');
+            notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
+            setTimeout(() => notif.classList.add('hidden'), 3000);
+        }
 
         // ============= BÚSQUEDA DE DIRECCIONES =============
         async function buscarDirecciones(query, tipo) {
@@ -358,7 +379,7 @@
                 const sugerenciasDiv = document.getElementById(`sugerencias${tipo}`);
                 if (data.length > 0) {
                     sugerenciasDiv.innerHTML = data.map(item => `
-                        <div class="sugerencia-item" onclick="seleccionarDireccion('${tipo}', '${item.display_name}', ${item.lat}, ${item.lon})">
+                        <div class="sugerencia-item" onclick="seleccionarDireccion('${tipo}', '${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
                             ${item.display_name.substring(0, 60)}...
                         </div>
                     `).join('');
@@ -367,13 +388,13 @@
                     sugerenciasDiv.classList.add('hidden');
                 }
             } catch (error) {
-                console.error('Error en búsqueda:', error);
+                console.error('Error:', error);
             }
         }
         
         function seleccionarDireccion(tipo, direccion, lat, lng) {
-            document.getElementById(tipo === 'origen' ? 'origen' : 'destino').value = direccion;
-            if (tipo === 'origen') {
+            document.getElementById(tipo === 'Origen' ? 'origen' : 'destino').value = direccion;
+            if (tipo === 'Origen') {
                 origenCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
             } else {
                 destinoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
@@ -382,16 +403,18 @@
             verificarOrigenDestino();
         }
         
-        // ============= MAPA MODAL =============
+        // ============= MAPA =============
         function abrirMapa(tipo) {
             modoSeleccion = tipo;
             document.getElementById('modalTitulo').innerHTML = tipo === 'origen' ? '📍 Selecciona tu origen' : '🎯 Selecciona tu destino';
             document.getElementById('modalMapa').classList.add('open');
             
             setTimeout(() => {
-                if (mapaModal) mapaModal.remove();
-                const center = tipo === 'origen' && origenCoords ? origenCoords : 
-                             tipo === 'destino' && destinoCoords ? destinoCoords : ubicacionActual;
+                if (mapaModal) {
+                    mapaModal.remove();
+                }
+                const center = (tipo === 'origen' && origenCoords) ? origenCoords : 
+                             (tipo === 'destino' && destinoCoords) ? destinoCoords : ubicacionActual;
                 mapaModal = L.map('mapaModal').setView([center.lat, center.lng], 16);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                     attribution: '© OpenStreetMap',
@@ -402,22 +425,16 @@
                 mapaModal.on('click', (e) => {
                     marcador.setLatLng(e.latlng);
                     ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng };
-                    
-                    // Obtener dirección de las coordenadas
-                    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${e.latlng.lat}&lon=${e.latlng.lng}&format=json`)
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.display_name) {
-                                document.getElementById(tipo === 'origen' ? 'origen' : 'destino').value = data.display_name;
-                            }
-                        });
                 });
             }, 100);
         }
         
         function cerrarModalMapa() {
             document.getElementById('modalMapa').classList.remove('open');
-            if (mapaModal) mapaModal.remove();
+            if (mapaModal) {
+                mapaModal.remove();
+                mapaModal = null;
+            }
             ubicacionSeleccionada = null;
         }
         
@@ -425,8 +442,10 @@
             if (ubicacionSeleccionada) {
                 if (modoSeleccion === 'origen') {
                     origenCoords = ubicacionSeleccionada;
+                    document.getElementById('origen').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
                 } else {
                     destinoCoords = ubicacionSeleccionada;
+                    document.getElementById('destino').value = `${ubicacionSeleccionada.lat.toFixed(5)}, ${ubicacionSeleccionada.lng.toFixed(5)}`;
                 }
                 cerrarModalMapa();
                 verificarOrigenDestino();
@@ -493,19 +512,7 @@
             document.getElementById('precioEstimado').innerHTML = `${precio} CUP`;
         }
         
-        function mostrarNotificacion(msg, tipo) {
-            const notif = document.getElementById('notification');
-            notif.textContent = msg;
-            notif.classList.remove('hidden');
-            notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
-            setTimeout(() => notif.classList.add('hidden'), 3000);
-        }
-        
         // ============= LOGIN Y REGISTRO =============
-        function toggleMenu() {
-            // Menú simplificado para este ejemplo
-        }
-        
         function mostrarLogin() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
@@ -603,18 +610,19 @@
             finally { btn.disabled = false; btn.innerHTML = 'Confirmar Taxi'; }
         }
         
-        // Event listeners para búsqueda
+        // Event listeners
         document.getElementById('origen').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Origen'));
         document.getElementById('destino').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Destino'));
         
         // Ocultar sugerencias al hacer clic fuera
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-wrapper')) {
-                document.getElementById('sugerenciasOrigen').classList.add('hidden');
-                document.getElementById('sugerenciasDestino').classList.add('hidden');
+                document.getElementById('sugerenciasOrigen')?.classList.add('hidden');
+                document.getElementById('sugerenciasDestino')?.classList.add('hidden');
             }
         });
         
+        // Inicializar
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionViaje').classList.remove('hidden');
