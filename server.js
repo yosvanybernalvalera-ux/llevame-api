@@ -55,7 +55,7 @@ const crearTablas = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS vehiculos (
         id SERIAL PRIMARY KEY,
-        usuario_id INTEGER REFERENCES usuarios(id) UNIQUE,
+        usuario_id INTEGER UNIQUE REFERENCES usuarios(id),
         tipo TEXT NOT NULL,
         marca_modelo TEXT,
         color TEXT,
@@ -115,14 +115,14 @@ crearTablas();
 
 // ============= ENDPOINTS USUARIOS =============
 app.post('/api/registro', async (req, res) => {
-  const { usuario, password, nombre, apellidos, ci, telefono, email } = req.body;
+  const { usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia } = req.body;
   try {
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO usuarios (usuario, password, nombre, apellidos, ci, telefono, email)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, usuario, nombre, apellidos, rol`,
-      [usuario, passwordHash, nombre, apellidos, ci, telefono, email]
+      `INSERT INTO usuarios (usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, usuario, nombre, apellidos, rol, telefono_emergencia`,
+      [usuario, passwordHash, nombre, apellidos, ci, telefono, email, telefono_emergencia]
     );
     const token = jwt.sign(
       { id: result.rows[0].id, usuario: result.rows[0].usuario, rol: result.rows[0].rol },
@@ -159,7 +159,8 @@ app.post('/api/login', async (req, res) => {
         ci: usuarioDB.ci,
         telefono: usuarioDB.telefono,
         email: usuarioDB.email,
-        rol: usuarioDB.rol
+        rol: usuarioDB.rol,
+        telefono_emergencia: usuarioDB.telefono_emergencia
       }
     });
   } catch (error) {
@@ -170,7 +171,7 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/perfil', verificarToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, usuario, nombre, apellidos, ci, telefono, email, rol FROM usuarios WHERE id = $1',
+      'SELECT id, usuario, nombre, apellidos, ci, telefono, email, rol, telefono_emergencia FROM usuarios WHERE id = $1',
       [req.usuario.id]
     );
     res.json({ usuario: result.rows[0] });
@@ -180,11 +181,16 @@ app.get('/api/perfil', verificarToken, async (req, res) => {
 });
 
 app.put('/api/perfil', verificarToken, async (req, res) => {
-  const { nombre, telefono, email } = req.body;
+  const { nombre, telefono, email, telefono_emergencia } = req.body;
   try {
     await pool.query(
-      'UPDATE usuarios SET nombre = $1, telefono = $2, email = $3 WHERE id = $4',
-      [nombre, telefono, email, req.usuario.id]
+      `UPDATE usuarios SET 
+        nombre = COALESCE($1, nombre), 
+        telefono = COALESCE($2, telefono), 
+        email = COALESCE($3, email),
+        telefono_emergencia = COALESCE($4, telefono_emergencia)
+       WHERE id = $5`,
+      [nombre, telefono, email, telefono_emergencia, req.usuario.id]
     );
     res.json({ exito: true });
   } catch (error) {
@@ -200,18 +206,15 @@ app.post('/api/chofer/vehiculo', verificarToken, async (req, res) => {
   const { tipo, marca_modelo, color, matricula, categorias } = req.body;
   
   try {
-    // Verificar si ya existe
     const existente = await pool.query('SELECT * FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
     
     if (existente.rows.length > 0) {
-      // Actualizar
       await pool.query(
         `UPDATE vehiculos SET tipo = $1, marca_modelo = $2, color = $3, matricula = $4, categorias = $5, aprobado = FALSE
          WHERE usuario_id = $6`,
         [tipo, marca_modelo, color, matricula, JSON.stringify(categorias), req.usuario.id]
       );
     } else {
-      // Insertar nuevo
       await pool.query(
         `INSERT INTO vehiculos (usuario_id, tipo, marca_modelo, color, matricula, categorias, aprobado)
          VALUES ($1, $2, $3, $4, $5, $6, FALSE)`,
@@ -219,13 +222,12 @@ app.post('/api/chofer/vehiculo', verificarToken, async (req, res) => {
       );
     }
     
-    // Actualizar rol del usuario
-    await pool.query('UPDATE usuarios SET rol = $1 WHERE id = $2', ['chofer', req.usuario.id]);
+    await pool.query("UPDATE usuarios SET rol = 'chofer' WHERE id = $1 AND rol = 'cliente'", [req.usuario.id]);
     
     res.json({ exito: true, mensaje: 'Vehículo registrado. Espera aprobación del administrador' });
   } catch (error) {
     console.error('Error al guardar vehículo:', error);
-    res.status(500).json({ error: 'Error al registrar vehículo' });
+    res.status(500).json({ error: 'Error al registrar vehículo: ' + error.message });
   }
 });
 
@@ -236,6 +238,20 @@ app.get('/api/chofer/vehiculo', verificarToken, async (req, res) => {
     res.json({ vehiculo: result.rows[0] || null });
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener vehículo' });
+  }
+});
+
+// Actualizar ubicación del chofer (NUEVO ENDPOINT)
+app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
+  const { lat, lng } = req.body;
+  try {
+    await pool.query(
+      'UPDATE usuarios SET ultima_ubicacion_lat = $1, ultima_ubicacion_lng = $2 WHERE id = $3',
+      [lat, lng, req.usuario.id]
+    );
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar ubicación' });
   }
 });
 
@@ -263,6 +279,7 @@ app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
       'UPDATE viajes SET chofer_id = $1, estado = $2 WHERE id = $3',
       [req.usuario.id, 'aceptado', viaje_id]
     );
+    await pool.query("UPDATE usuarios SET estado_chofer = 'ocupado' WHERE id = $1", [req.usuario.id]);
     res.json({ exito: true });
   } catch (error) {
     res.status(500).json({ error: 'Error al aceptar viaje' });
@@ -276,7 +293,7 @@ app.post('/api/chofer/iniciar-viaje/:viaje_id', verificarToken, async (req, res)
     await pool.query('UPDATE viajes SET estado = $1 WHERE id = $2', ['en_curso', viaje_id]);
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error' });
+    res.status(500).json({ error: 'Error al iniciar viaje' });
   }
 });
 
@@ -289,9 +306,10 @@ app.post('/api/chofer/finalizar-viaje/:viaje_id', verificarToken, async (req, re
       'UPDATE viajes SET estado = $1, precio_final = $2 WHERE id = $3',
       ['completado', precio_final, viaje_id]
     );
+    await pool.query("UPDATE usuarios SET estado_chofer = 'disponible' WHERE id = $1", [req.usuario.id]);
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error' });
+    res.status(500).json({ error: 'Error al finalizar viaje' });
   }
 });
 
@@ -304,7 +322,7 @@ app.get('/api/chofer/mis-viajes', verificarToken, async (req, res) => {
     );
     res.json({ viajes: result.rows });
   } catch (error) {
-    res.status(500).json({ error: 'Error' });
+    res.status(500).json({ error: 'Error al obtener historial' });
   }
 });
 
@@ -312,10 +330,14 @@ app.get('/api/chofer/mis-viajes', verificarToken, async (req, res) => {
 app.get('/api/chofer/ganancias', verificarToken, async (req, res) => {
   try {
     const hoy = await pool.query(
-      'SELECT COALESCE(SUM(precio_final), 0) as total FROM viajes WHERE chofer_id = $1 AND estado = $2 AND DATE(creado_en) = CURRENT_DATE',
-      [req.usuario.id, 'completado']
+      "SELECT COALESCE(SUM(precio_final), 0) as total FROM viajes WHERE chofer_id = $1 AND estado = 'completado' AND DATE(creado_en) = CURRENT_DATE",
+      [req.usuario.id]
     );
-    res.json({ hoy: parseInt(hoy.rows[0].total), semana: 0 });
+    const semana = await pool.query(
+      "SELECT COALESCE(SUM(precio_final), 0) as total FROM viajes WHERE chofer_id = $1 AND estado = 'completado' AND creado_en >= NOW() - INTERVAL '7 days'",
+      [req.usuario.id]
+    );
+    res.json({ hoy: parseInt(hoy.rows[0].total), semana: parseInt(semana.rows[0].total) });
   } catch (error) {
     res.json({ hoy: 0, semana: 0 });
   }
@@ -340,7 +362,7 @@ app.post('/api/direcciones', verificarToken, async (req, res) => {
     );
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error' });
+    res.status(500).json({ error: 'Error al guardar dirección' });
   }
 });
 
@@ -350,7 +372,7 @@ app.delete('/api/direcciones/:id', verificarToken, async (req, res) => {
     await pool.query('DELETE FROM direcciones WHERE id = $1 AND usuario_id = $2', [id, req.usuario.id]);
     res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error' });
+    res.status(500).json({ error: 'Error al eliminar dirección' });
   }
 });
 
@@ -491,7 +513,6 @@ app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
   res.json({ exito: true });
 });
 
-//temporal
 // ============= ENDPOINT TEMPORAL PARA CREAR TABLAS =============
 app.post('/admin/crear-tablas', verificarToken, async (req, res) => {
   try {
@@ -508,14 +529,13 @@ app.post('/admin/crear-tablas', verificarToken, async (req, res) => {
         creado_en TIMESTAMP DEFAULT NOW()
       )
     `);
-    
     res.json({ exito: true, mensaje: 'Tabla vehiculos creada correctamente' });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
-//temporal
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
