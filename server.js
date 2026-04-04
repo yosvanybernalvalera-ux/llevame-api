@@ -48,12 +48,11 @@ async function calcularDistancia(origen, destino) {
   } catch (error) {
     console.error('Error calculando distancia:', error);
   }
-  return { distancia: 5, tiempo: 10 }; // Valor por defecto
+  return { distancia: 5, tiempo: 10 };
 }
 
 // Calcular precio final
 async function calcularPrecioFinal(origen, destino, esperaMin = 0, desvioKm = 0, categoria = 'confort') {
-  // Precios base por categoría (CUP/km)
   const preciosPorKm = {
     economico: 15,
     confort: 20,
@@ -63,7 +62,6 @@ async function calcularPrecioFinal(origen, destino, esperaMin = 0, desvioKm = 0,
     triciclo: 8
   };
   
-  // Obtener configuración del admin
   const configRes = await pool.query('SELECT clave, valor FROM configuraciones');
   const config = {};
   configRes.rows.forEach(row => { config[row.clave] = row.valor; });
@@ -71,31 +69,25 @@ async function calcularPrecioFinal(origen, destino, esperaMin = 0, desvioKm = 0,
   const precioKm = preciosPorKm[categoria] || 20;
   const recargoNocturno = parseFloat(config.recargo_nocturno) || 30;
   const recargoLluvia = parseFloat(config.recargo_lluvia) || 20;
-  const tarifaEspera = parseFloat(config.tarifa_espera) || 2; // CUP por minuto
+  const tarifaEspera = parseFloat(config.tarifa_espera) || 2;
   
-  // Calcular distancia real
   const { distancia, tiempo } = await calcularDistancia(origen, destino);
   
-  // Precio base
   let precio = distancia * precioKm;
   
-  // Recargo nocturno (12am - 5am)
   const hora = new Date().getHours();
   if (hora >= 0 && hora < 5) {
     precio = precio * (1 + recargoNocturno / 100);
   }
   
-  // Recargo por lluvia (si está activado)
   if (config.lluvia_activa === 'true') {
     precio = precio * (1 + recargoLluvia / 100);
   }
   
-  // Tarifa por espera (después de 3 minutos gratis)
   if (esperaMin > 3) {
     precio = precio + (esperaMin - 3) * tarifaEspera;
   }
   
-  // Desvíos
   if (desvioKm > 0) {
     precio = precio + (desvioKm * precioKm);
   }
@@ -128,7 +120,30 @@ const crearTablas = async () => {
         email TEXT UNIQUE,
         rol TEXT DEFAULT 'cliente',
         telefono_emergencia TEXT,
+        estado_chofer TEXT DEFAULT 'disponible',
+        ultima_ubicacion_lat REAL,
+        ultima_ubicacion_lng REAL,
+        ultima_actualizacion TIMESTAMP,
         creado_en TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vehiculos (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER REFERENCES usuarios(id),
+        tipo TEXT NOT NULL,
+        marca_modelo TEXT,
+        color TEXT,
+        matricula TEXT,
+        chapa TEXT,
+        circulacion TEXT,
+        tipo_moto TEXT,
+        tipo_triciclo TEXT,
+        categorias JSONB,
+        aprobado BOOLEAN DEFAULT FALSE,
+        creado_en TIMESTAMP DEFAULT NOW(),
+        actualizado_en TIMESTAMP
       )
     `);
     
@@ -199,7 +214,19 @@ const crearTablas = async () => {
       )
     `);
     
-    // Insertar configuraciones por defecto
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS logs_panico (
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER REFERENCES usuarios(id),
+        lat REAL,
+        lng REAL,
+        mensaje TEXT,
+        telefono_llamada TEXT,
+        telefono_sms TEXT,
+        creado_en TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
     await pool.query(`
       INSERT INTO configuraciones (clave, valor)
       VALUES 
@@ -211,7 +238,6 @@ const crearTablas = async () => {
       ON CONFLICT (clave) DO NOTHING
     `);
     
-    // Insertar configuración de pánico por defecto
     const panicoExistente = await pool.query('SELECT * FROM configuraciones_panico');
     if (panicoExistente.rows.length === 0) {
       await pool.query(`
@@ -229,7 +255,6 @@ crearTablas();
 
 // ============= ENDPOINTS DE USUARIO =============
 
-// Registro
 app.post('/api/registro', async (req, res) => {
   const { usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia } = req.body;
   
@@ -272,7 +297,6 @@ app.post('/api/registro', async (req, res) => {
   }
 });
 
-// Login
 app.post('/api/login', async (req, res) => {
   const { usuario, password } = req.body;
   
@@ -308,7 +332,8 @@ app.post('/api/login', async (req, res) => {
         telefono: usuarioDB.telefono,
         email: usuarioDB.email,
         rol: usuarioDB.rol,
-        telefono_emergencia: usuarioDB.telefono_emergencia
+        telefono_emergencia: usuarioDB.telefono_emergencia,
+        estado_chofer: usuarioDB.estado_chofer
       }
     });
   } catch (error) {
@@ -316,11 +341,10 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Obtener perfil
 app.get('/api/perfil', verificarToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, usuario, nombre, apellidos, ci, telefono, email, rol, telefono_emergencia FROM usuarios WHERE id = $1',
+      'SELECT id, usuario, nombre, apellidos, ci, telefono, email, rol, telefono_emergencia, estado_chofer FROM usuarios WHERE id = $1',
       [req.usuario.id]
     );
     res.json({ usuario: result.rows[0] });
@@ -329,7 +353,6 @@ app.get('/api/perfil', verificarToken, async (req, res) => {
   }
 });
 
-// Actualizar perfil
 app.put('/api/perfil', verificarToken, async (req, res) => {
   const { nombre, telefono, email, telefono_emergencia } = req.body;
   
@@ -360,110 +383,6 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
     res.json({ exito: true });
   } catch (error) {
     res.status(500).json({ error: 'Error al actualizar perfil' });
-  }
-});
-
-// ============= ENDPOINTS DE VIAJES =============
-
-// Solicitar viaje (con cálculo de precio real)
-app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
-  const { origen, destino, origen_coords, destino_coords, categoria } = req.body;
-  
-  try {
-    const precioData = await calcularPrecioFinal(origen_coords, destino_coords, 0, 0, categoria);
-    
-    const result = await pool.query(
-      `INSERT INTO viajes (cliente_id, origen, destino, origen_coords, destino_coords, categoria, estado, precio_base, distancia, tiempo_estimado, creado_en)
-       VALUES ($1, $2, $3, $4, $5, $6, 'buscando_chofer', $7, $8, $9, NOW())
-       RETURNING *`,
-      [req.usuario.id, origen, destino, JSON.stringify(origen_coords), JSON.stringify(destino_coords), categoria, precioData.precio, precioData.distancia, precioData.tiempo]
-    );
-    
-    res.json({ exito: true, viaje: result.rows[0], precio_detalle: precioData.recargos });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al solicitar viaje' });
-  }
-});
-
-// Calcular precio antes de solicitar
-app.post('/api/viajes/calcular-precio', verificarToken, async (req, res) => {
-  const { origen_coords, destino_coords, categoria, espera_min, desvio_km } = req.body;
-  
-  try {
-    const precioData = await calcularPrecioFinal(origen_coords, destino_coords, espera_min || 0, desvio_km || 0, categoria);
-    res.json(precioData);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al calcular precio' });
-  }
-});
-
-// Obtener estado del viaje
-app.get('/api/viajes/estado/:id', verificarToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query(
-      `SELECT v.*, u.telefono as chofer_telefono, u.nombre as chofer_nombre 
-       FROM viajes v
-       LEFT JOIN usuarios u ON v.chofer_id = u.id
-       WHERE v.id = $1`,
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Viaje no encontrado' });
-    }
-    res.json({ viaje: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener estado' });
-  }
-});
-
-// Cancelar viaje
-app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    await pool.query(
-      "UPDATE viajes SET estado = 'cancelado' WHERE id = $1 AND cliente_id = $2 AND estado IN ('buscando_chofer', 'aceptado')",
-      [id, req.usuario.id]
-    );
-    res.json({ exito: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al cancelar viaje' });
-  }
-});
-
-// Obtener viajes del cliente
-app.get('/api/viajes/mis-viajes', verificarToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM viajes WHERE cliente_id = $1 ORDER BY creado_en DESC',
-      [req.usuario.id]
-    );
-    res.json({ viajes: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener viajes' });
-  }
-});
-
-// Calificar viaje
-app.post('/api/viajes/calificar/:id', verificarToken, async (req, res) => {
-  const { id } = req.params;
-  const { puntuacion, comentario } = req.body;
-  
-  try {
-    const viaje = await pool.query('SELECT * FROM viajes WHERE id = $1 AND cliente_id = $2', [id, req.usuario.id]);
-    if (viaje.rows.length === 0) {
-      return res.status(404).json({ error: 'Viaje no encontrado' });
-    }
-    
-    await pool.query(
-      `INSERT INTO calificaciones (viaje_id, cliente_id, chofer_id, puntuacion, comentario)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [id, req.usuario.id, viaje.rows[0].chofer_id, puntuacion, comentario]
-    );
-    res.json({ exito: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al calificar viaje' });
   }
 });
 
@@ -501,9 +420,299 @@ app.delete('/api/direcciones/:id', verificarToken, async (req, res) => {
   }
 });
 
+// ============= ENDPOINTS DE VIAJES (CLIENTE) =============
+
+app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
+  const { origen, destino, origen_coords, destino_coords, categoria } = req.body;
+  
+  try {
+    const precioData = await calcularPrecioFinal(origen_coords, destino_coords, 0, 0, categoria);
+    
+    const result = await pool.query(
+      `INSERT INTO viajes (cliente_id, origen, destino, origen_coords, destino_coords, categoria, estado, precio_base, distancia, tiempo_estimado, creado_en)
+       VALUES ($1, $2, $3, $4, $5, $6, 'buscando_chofer', $7, $8, $9, NOW())
+       RETURNING *`,
+      [req.usuario.id, origen, destino, JSON.stringify(origen_coords), JSON.stringify(destino_coords), categoria, precioData.precio, precioData.distancia, precioData.tiempo]
+    );
+    
+    res.json({ exito: true, viaje: result.rows[0], precio_detalle: precioData.recargos });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al solicitar viaje' });
+  }
+});
+
+app.post('/api/viajes/calcular-precio', verificarToken, async (req, res) => {
+  const { origen_coords, destino_coords, categoria, espera_min, desvio_km } = req.body;
+  
+  try {
+    const precioData = await calcularPrecioFinal(origen_coords, destino_coords, espera_min || 0, desvio_km || 0, categoria);
+    res.json(precioData);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al calcular precio' });
+  }
+});
+
+app.get('/api/viajes/estado/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT v.*, u.telefono as chofer_telefono, u.nombre as chofer_nombre 
+       FROM viajes v
+       LEFT JOIN usuarios u ON v.chofer_id = u.id
+       WHERE v.id = $1`,
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Viaje no encontrado' });
+    }
+    res.json({ viaje: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener estado' });
+  }
+});
+
+app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      "UPDATE viajes SET estado = 'cancelado' WHERE id = $1 AND cliente_id = $2 AND estado IN ('buscando_chofer', 'aceptado')",
+      [id, req.usuario.id]
+    );
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cancelar viaje' });
+  }
+});
+
+app.get('/api/viajes/mis-viajes', verificarToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM viajes WHERE cliente_id = $1 ORDER BY creado_en DESC',
+      [req.usuario.id]
+    );
+    res.json({ viajes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener viajes' });
+  }
+});
+
+app.post('/api/viajes/calificar/:id', verificarToken, async (req, res) => {
+  const { id } = req.params;
+  const { puntuacion, comentario } = req.body;
+  
+  try {
+    const viaje = await pool.query('SELECT * FROM viajes WHERE id = $1 AND cliente_id = $2', [id, req.usuario.id]);
+    if (viaje.rows.length === 0) {
+      return res.status(404).json({ error: 'Viaje no encontrado' });
+    }
+    
+    await pool.query(
+      `INSERT INTO calificaciones (viaje_id, cliente_id, chofer_id, puntuacion, comentario)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [id, req.usuario.id, viaje.rows[0].chofer_id, puntuacion, comentario]
+    );
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al calificar viaje' });
+  }
+});
+
+// ============= ENDPOINTS PARA CHOFERES =============
+
+app.post('/api/chofer/vehiculo', verificarToken, async (req, res) => {
+  const { tipo, marca_modelo, color, matricula, chapa, circulacion, tipo_moto, tipo_triciclo, categorias } = req.body;
+  
+  try {
+    const existente = await pool.query('SELECT * FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
+    
+    if (existente.rows.length > 0) {
+      await pool.query(
+        `UPDATE vehiculos SET 
+          tipo = $1, marca_modelo = $2, color = $3, matricula = $4, 
+          chapa = $5, circulacion = $6, tipo_moto = $7, tipo_triciclo = $8, categorias = $9, 
+          aprobado = FALSE, actualizado_en = NOW()
+         WHERE usuario_id = $10`,
+        [tipo, marca_modelo, color, matricula, chapa, circulacion, tipo_moto, tipo_triciclo, JSON.stringify(categorias), req.usuario.id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO vehiculos (usuario_id, tipo, marca_modelo, color, matricula, chapa, circulacion, tipo_moto, tipo_triciclo, categorias, aprobado)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, FALSE)`,
+        [req.usuario.id, tipo, marca_modelo, color, matricula, chapa, circulacion, tipo_moto, tipo_triciclo, JSON.stringify(categorias)]
+      );
+    }
+    
+    const usuarioResult = await pool.query('SELECT rol FROM usuarios WHERE id = $1', [req.usuario.id]);
+    let nuevoRol = 'chofer';
+    if (usuarioResult.rows[0].rol === 'cliente') {
+      nuevoRol = 'ambos';
+    }
+    await pool.query('UPDATE usuarios SET rol = $1 WHERE id = $2', [nuevoRol, req.usuario.id]);
+    
+    res.json({ exito: true, mensaje: 'Vehículo registrado. Espera aprobación del administrador' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al registrar vehículo' });
+  }
+});
+
+app.get('/api/chofer/vehiculo', verificarToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
+    res.json({ vehiculo: result.rows[0] || null });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener vehículo' });
+  }
+});
+
+app.post('/api/chofer/estado', verificarToken, async (req, res) => {
+  const { estado } = req.body;
+  try {
+    await pool.query('UPDATE usuarios SET estado_chofer = $1 WHERE id = $2', [estado, req.usuario.id]);
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cambiar estado' });
+  }
+});
+
+app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
+  try {
+    const vehiculo = await pool.query('SELECT categorias FROM vehiculos WHERE usuario_id = $1 AND aprobado = TRUE', [req.usuario.id]);
+    if (vehiculo.rows.length === 0) {
+      return res.json({ viajes: [] });
+    }
+    
+    const categoriasChofer = vehiculo.rows[0].categorias;
+    
+    const result = await pool.query(
+      `SELECT v.*, u.nombre as cliente_nombre, u.telefono as cliente_telefono
+       FROM viajes v
+       JOIN usuarios u ON v.cliente_id = u.id
+       WHERE v.estado = 'buscando_chofer' 
+         AND v.categoria = ANY($1)
+       ORDER BY v.creado_en ASC`,
+      [categoriasChofer]
+    );
+    
+    res.json({ viajes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener viajes' });
+  }
+});
+
+app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
+  const { viaje_id } = req.body;
+  
+  try {
+    const viaje = await pool.query(
+      'SELECT * FROM viajes WHERE id = $1 AND estado = $2',
+      [viaje_id, 'buscando_chofer']
+    );
+    
+    if (viaje.rows.length === 0) {
+      return res.status(400).json({ error: 'Viaje no disponible' });
+    }
+    
+    await pool.query(
+      'UPDATE viajes SET chofer_id = $1, estado = $2, aceptado_en = NOW() WHERE id = $3',
+      [req.usuario.id, 'aceptado', viaje_id]
+    );
+    
+    await pool.query('UPDATE usuarios SET estado_chofer = $1 WHERE id = $2', ['ocupado', req.usuario.id]);
+    
+    res.json({ exito: true, mensaje: 'Viaje aceptado' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al aceptar viaje' });
+  }
+});
+
+app.post('/api/chofer/iniciar-viaje/:viaje_id', verificarToken, async (req, res) => {
+  const { viaje_id } = req.params;
+  
+  try {
+    await pool.query(
+      'UPDATE viajes SET estado = $1, iniciado_en = NOW() WHERE id = $2 AND chofer_id = $3',
+      ['en_curso', viaje_id, req.usuario.id]
+    );
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al iniciar viaje' });
+  }
+});
+
+app.post('/api/chofer/finalizar-viaje/:viaje_id', verificarToken, async (req, res) => {
+  const { viaje_id } = req.params;
+  const { precio_final } = req.body;
+  
+  try {
+    await pool.query(
+      'UPDATE viajes SET estado = $1, precio_final = $2, completado_en = NOW() WHERE id = $3 AND chofer_id = $4',
+      ['completado', precio_final, viaje_id, req.usuario.id]
+    );
+    
+    await pool.query('UPDATE usuarios SET estado_chofer = $1 WHERE id = $2', ['disponible', req.usuario.id]);
+    
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al finalizar viaje' });
+  }
+});
+
+app.get('/api/chofer/mis-viajes', verificarToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT v.*, u.nombre as cliente_nombre, u.telefono as cliente_telefono
+       FROM viajes v
+       JOIN usuarios u ON v.cliente_id = u.id
+       WHERE v.chofer_id = $1
+       ORDER BY v.creado_en DESC`,
+      [req.usuario.id]
+    );
+    res.json({ viajes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener viajes' });
+  }
+});
+
+app.get('/api/chofer/ganancias', verificarToken, async (req, res) => {
+  try {
+    const hoy = await pool.query(
+      `SELECT COALESCE(SUM(precio_final), 0) as total FROM viajes 
+       WHERE chofer_id = $1 AND estado = 'completado' AND DATE(completado_en) = CURRENT_DATE`,
+      [req.usuario.id]
+    );
+    
+    const semana = await pool.query(
+      `SELECT COALESCE(SUM(precio_final), 0) as total FROM viajes 
+       WHERE chofer_id = $1 AND estado = 'completado' AND completado_en >= NOW() - INTERVAL '7 days'`,
+      [req.usuario.id]
+    );
+    
+    res.json({ 
+      hoy: parseInt(hoy.rows[0].total),
+      semana: parseInt(semana.rows[0].total)
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener ganancias' });
+  }
+});
+
+app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
+  const { lat, lng } = req.body;
+  try {
+    await pool.query(
+      'UPDATE usuarios SET ultima_ubicacion_lat = $1, ultima_ubicacion_lng = $2, ultima_actualizacion = NOW() WHERE id = $3',
+      [lat, lng, req.usuario.id]
+    );
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar ubicación' });
+  }
+});
+
 // ============= ENDPOINTS DE PÁNICO =============
 
-// Configuración de pánico (solo admin)
 app.get('/api/panico/config', verificarToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM configuraciones_panico WHERE id = 1');
@@ -513,12 +722,10 @@ app.get('/api/panico/config', verificarToken, async (req, res) => {
   }
 });
 
-// Activar pánico (envía SMS y llama)
 app.post('/api/panico/activar', verificarToken, async (req, res) => {
   const { lat, lng } = req.body;
   
   try {
-    // Obtener datos del usuario
     const usuario = await pool.query('SELECT nombre, telefono, telefono_emergencia FROM usuarios WHERE id = $1', [req.usuario.id]);
     const config = await pool.query('SELECT * FROM configuraciones_panico WHERE id = 1');
     
@@ -529,9 +736,7 @@ app.post('/api/panico/activar', verificarToken, async (req, res) => {
     const conf = config.rows[0];
     const nombre = usuario.rows[0].nombre;
     const telefono = usuario.rows[0].telefono || 'No registrado';
-    const telefonoEmergencia = usuario.rows[0].telefono_emergencia;
     
-    // Preparar mensaje
     let mensaje = conf.mensaje
       .replace('{nombre}', nombre)
       .replace('{telefono}', telefono)
@@ -542,8 +747,6 @@ app.post('/api/panico/activar', verificarToken, async (req, res) => {
     const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
     mensaje += `\n\n📍 Ver en mapa: ${mapsUrl}`;
     
-    // Aquí se integraría con un servicio de SMS (Twilio, etc.)
-    // Por ahora guardamos el registro
     await pool.query(`
       INSERT INTO logs_panico (usuario_id, lat, lng, mensaje, telefono_llamada, telefono_sms, creado_en)
       VALUES ($1, $2, $3, $4, $5, $6, NOW())
@@ -563,7 +766,6 @@ app.post('/api/panico/activar', verificarToken, async (req, res) => {
 
 // ============= ENDPOINTS DE ADMIN =============
 
-// Obtener configuración
 app.get('/admin/configuracion', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   try {
@@ -576,7 +778,6 @@ app.get('/admin/configuracion', verificarToken, async (req, res) => {
   }
 });
 
-// Actualizar configuración
 app.post('/admin/configuracion', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   const { clave, valor } = req.body;
@@ -591,7 +792,6 @@ app.post('/admin/configuracion', verificarToken, async (req, res) => {
   }
 });
 
-// Actualizar configuración de pánico
 app.post('/admin/panico/config', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   const { telefono_llamada, telefono_sms, mensaje, activo } = req.body;
@@ -607,12 +807,12 @@ app.post('/admin/panico/config', verificarToken, async (req, res) => {
   }
 });
 
-// Ruta raíz
+// ============= RUTA RAÍZ =============
 app.get('/', (req, res) => {
   res.json({ mensaje: '🚕 LLévame API funcionando', version: '3.0' });
 });
 
-// Panel admin (HTML)
+// ============= PANEL ADMIN (HTML) =============
 app.get('/admin/login', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -726,6 +926,11 @@ app.get('/admin/dashboard', (req, res) => {
         <button onclick="guardarConfiguracionPanico()">Guardar configuración de pánico</button>
       </div>
       
+      <div class="card">
+        <h3>👨‍✈️ Choferes pendientes de aprobación</h3>
+        <div id="choferesPendientes">Cargando...</div>
+      </div>
+      
       <script>
         const token = localStorage.getItem('token');
         if (!token) window.location.href = '/admin/login';
@@ -755,6 +960,29 @@ app.get('/admin/dashboard', (req, res) => {
             document.getElementById('mensaje_panico').value = data.config.mensaje || '';
             document.getElementById('panico_activo').value = data.config.activo ? 'true' : 'false';
           }
+        }
+        
+        async function cargarChoferesPendientes() {
+          const res = await fetch('/admin/choferes/pendientes', { headers: { 'Authorization': 'Bearer ' + token } });
+          const data = await res.json();
+          const pendientes = data.choferes || [];
+          if (pendientes.length === 0) {
+            document.getElementById('choferesPendientes').innerHTML = '<p>No hay choferes pendientes</p>';
+          } else {
+            document.getElementById('choferesPendientes').innerHTML = pendientes.map(c => `
+              <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                <strong>${c.nombre} ${c.apellidos || ''}</strong><br>
+                Vehículo: ${c.marca_modelo || c.tipo}<br>
+                Matrícula: ${c.matricula || '-'}<br>
+                <button onclick="aprobarChofer(${c.usuario_id})" style="margin-top: 5px;">✓ Aprobar</button>
+              </div>
+            `).join('');
+          }
+        }
+        
+        async function aprobarChofer(id) {
+          await fetch('/admin/choferes/aprobar/' + id, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+          cargarChoferesPendientes();
         }
         
         async function guardarConfiguracion() {
@@ -788,10 +1016,39 @@ app.get('/admin/dashboard', (req, res) => {
         
         cargarConfiguracion();
         cargarConfiguracionPanico();
+        cargarChoferesPendientes();
       </script>
     </body>
     </html>
   `);
+});
+
+// Endpoint para admin - obtener choferes pendientes
+app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  try {
+    const result = await pool.query(`
+      SELECT u.id as usuario_id, u.nombre, u.apellidos, u.telefono, v.*
+      FROM usuarios u
+      JOIN vehiculos v ON u.id = v.usuario_id
+      WHERE v.aprobado = FALSE AND u.rol IN ('chofer', 'ambos')
+    `);
+    res.json({ choferes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener choferes' });
+  }
+});
+
+// Endpoint para admin - aprobar chofer
+app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  const { id } = req.params;
+  try {
+    await pool.query('UPDATE vehiculos SET aprobado = TRUE WHERE usuario_id = $1', [id]);
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al aprobar chofer' });
+  }
 });
 
 // Iniciar servidor
