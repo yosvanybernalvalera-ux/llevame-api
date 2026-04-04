@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Chofer</title>
+</head>
+<body>
+    <h1>Test API Chofer</h1>
+    <div id="resultado"></div>
+    <script>
+        async function test() {
+            // Primero login
+            const loginRes = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'Yosvany31', password: 'Yovi.3105' })
+            });
+            const loginData = await loginRes.json();
+            const token = loginData.token;
+            
+            document.getElementById('resultado').innerHTML += '<p>Token obtenido: ' + token.substring(0, 50) + '...</p>';
+            
+            // Probar registro de vehículo
+            const res = await fetch('/api/chofer/vehiculo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    tipo: 'auto',
+                    marca_modelo: 'Test Auto',
+                    color: 'Azul',
+                    matricula: 'TEST123',
+                    categorias: ['economico']
+                })
+            });
+            const data = await res.json();
+            document.getElementById('resultado').innerHTML += '<p>Respuesta: ' + JSON.stringify(data) + '</p>';
+        }
+        
+        test();
+    </script>
+</body>
+</html>
