@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Chofer</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Test API Chofer</h1>
+    <div id="resultado"></div>
+    <script>
+        const resultado = document.getElementById('resultado');
+        
+        // Tus credenciales
+        const USUARIO = 'Yosvany3105';
+        const PASSWORD = 'Yovi.3105';
+        
+        resultado.innerHTML = '<p>📡 Probando login con usuario: ' + USUARIO + '</p>';
+        
+        fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario: USUARIO, password: PASSWORD })
+        })
+        .then(r => r.json())
+        .then(data => {
+            resultado.innerHTML += '<p>📡 Respuesta login: ' + JSON.stringify(data) + '</p>';
+            
+            if (data.token) {
+                resultado.innerHTML += '<p style="color:green">✅ Login exitoso!</p>';
+                resultado.innerHTML += '<p>Token: ' + data.token.substring(0, 50) + '...</p>';
+                
+                // Probar registrar vehículo
+                resultado.innerHTML += '<p>📡 Registrando vehículo...</p>';
+                return fetch('/api/chofer/vehiculo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + data.token
+                    },
+                    body: JSON.stringify({
+                        tipo: 'auto',
+                        marca_modelo: 'Lada 2105',
+                        color: 'Rojo',
+                        matricula: 'TEST123',
+                        categorias: ['economico', 'confort']
+                    })
+                });
+            } else {
+                throw new Error('Login falló: ' + JSON.stringify(data));
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            resultado.innerHTML += '<p>📡 Respuesta vehículo: ' + JSON.stringify(data) + '</p>';
+            if (data.exito) {
+                resultado.innerHTML += '<p style="color:green">✅ Vehículo registrado correctamente!</p>';
+                resultado.innerHTML += '<p>Espera aprobación del administrador.</p>';
+            } else {
+                resultado.innerHTML += '<p style="color:red">❌ Error al registrar vehículo: ' + (data.error || 'desconocido') + '</p>';
+            }
+        })
+        .catch(error => {
+            resultado.innerHTML += '<p style="color:red">❌ Error: ' + error.message + '</p>';
+            console.error(error);
+        });
+    </script>
+</body>
+</html>
