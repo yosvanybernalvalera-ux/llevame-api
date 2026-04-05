@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reparar Chofer - LLévame</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 10px 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; overflow-x: auto; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 LLévame - Reparar Chofer</h1>
+        <p>Este script arreglará el problema del mapa en la app chofer.</p>
+        
+        <button id="btnReparar" onclick="reparar()">🔧 Reparar Ahora</button>
+        
+        <h3>Resultado:</h3>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function reparar() {
+            const resultado = document.getElementById('resultado');
+            const btn = document.getElementById('btnReparar');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Reparando...';
+            resultado.innerHTML = '<p>🔄 Conectando con el servidor...</p>';
+            
+            try {
+                // Primero, obtener token de admin
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+                });
+                const loginData = await loginRes.json();
+                
+                if (!loginData.token) {
+                    resultado.innerHTML = '<p class="error">❌ Error: No se pudo iniciar sesión como admin</p>';
+                    btn.disabled = false;
+                    btn.innerHTML = '🔧 Reparar Ahora';
+                    return;
+                }
+                
+                const token = loginData.token;
+                
+                // 1. Aprobar al chofer Yosvany3105
+                resultado.innerHTML += '<p>📌 Aprobando chofer Yosvany3105...</p>';
+                const aprobarRes = await fetch('/admin/choferes/aprobar/2', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                // 2. Crear un viaje de prueba con coordenadas reales
+                resultado.innerHTML += '<p>📌 Creando viaje de prueba con coordenadas...</p>';
+                const viajeRes = await fetch('/api/viajes/solicitar', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({
+                        origen: 'Parque Central, La Habana',
+                        destino: 'Vedado, La Habana',
+                        origen_lat: 23.1365,
+                        origen_lng: -82.3589,
+                        destino_lat: 23.1234,
+                        destino_lng: -82.3987,
+                        categoria: 'confort'
+                    })
+                });
+                const viajeData = await viajeRes.json();
+                
+                if (viajeData.exito) {
+                    resultado.innerHTML += '<p class="success">✅ Viaje de prueba creado con éxito</p>';
+                } else {
+                    resultado.innerHTML += '<p class="error">⚠️ No se pudo crear viaje de prueba</p>';
+                }
+                
+                resultado.innerHTML += '<p class="success">✅ Reparación completada</p>';
+                resultado.innerHTML += '<p>Ahora recarga la app chofer y acepta el viaje. El mapa debería mostrarse correctamente.</p>';
+                
+            } catch (error) {
+                resultado.innerHTML += '<p class="error">❌ Error: ' + error.message + '</p>';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔧 Reparar Ahora';
+            }
+        }
+    </script>
+</body>
+</html>
