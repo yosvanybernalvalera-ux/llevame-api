@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix LLévame</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; margin: 5px; width: 100%; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 11px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 LLévame - Reparar</h1>
+        
+        <button onclick="ejecutar()">🔧 Ejecutar reparación</button>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        const resultado = document.getElementById('resultado');
+        
+        async function ejecutar() {
+            resultado.innerHTML = '<p class="info">🔄 Iniciando...</p>';
+            
+            // 1. Login como admin
+            resultado.innerHTML += '<p>📡 1. Login como admin...</p>';
+            const loginRes = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+            });
+            const loginData = await loginRes.json();
+            
+            if (!loginData.token) {
+                resultado.innerHTML += '<p class="error">❌ Error de login admin</p>';
+                return;
+            }
+            
+            const token = loginData.token;
+            resultado.innerHTML += '<p class="success">✅ Login admin exitoso</p>';
+            
+            // 2. Agregar columnas faltantes
+            resultado.innerHTML += '<p>📡 2. Agregando columnas a viajes...</p>';
+            
+            const sql = `ALTER TABLE viajes ADD COLUMN IF NOT EXISTS aceptado_en TIMESTAMP; ALTER TABLE viajes ADD COLUMN IF NOT EXISTS iniciado_en TIMESTAMP; ALTER TABLE viajes ADD COLUMN IF NOT EXISTS completado_en TIMESTAMP; ALTER TABLE viajes ADD COLUMN IF NOT EXISTS chofer_id INTEGER;`;
+            
+            const sqlRes = await fetch('/admin/ejecutar-sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ sql: sql })
+            });
+            const sqlData = await sqlRes.json();
+            
+            if (sqlData.exito) {
+                resultado.innerHTML += '<p class="success">✅ Columnas agregadas correctamente</p>';
+            } else {
+                resultado.innerHTML += '<p class="error">❌ Error: ' + sqlData.error + '</p>';
+            }
+            
+            // 3. Ver viajes disponibles
+            resultado.innerHTML += '<p>📡 3. Obteniendo viajes disponibles...</p>';
+            
+            // Login como chofer
+            const loginChofer = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+            });
+            const choferData = await loginChofer.json();
+            
+            if (!choferData.token) {
+                resultado.innerHTML += '<p class="error">❌ Error login chofer</p>';
+                return;
+            }
+            
+            const viajesRes = await fetch('/api/chofer/viajes-disponibles', {
+                headers: { 'Authorization': 'Bearer ' + choferData.token }
+            });
+            const viajesData = await viajesRes.json();
+            
+            if (viajesData.viajes) {
+                resultado.innerHTML += `<p class="success">✅ Viajes encontrados: ${viajesData.viajes.length}</p>`;
+                if (viajesData.viajes.length > 0) {
+                    resultado.innerHTML += '<pre>' + JSON.stringify(viajesData.viajes, null, 2) + '</pre>';
+                }
+            } else {
+                resultado.innerHTML += `<p class="error">❌ Error: ${JSON.stringify(viajesData)}</p>`;
+            }
+            
+            resultado.innerHTML += '<p class="success">✅ Reparación completada</p>';
+            resultado.innerHTML += '<p>🔄 Ahora recarga la app chofer y prueba aceptar un viaje</p>';
+        }
+    </script>
+</body>
+</html>
