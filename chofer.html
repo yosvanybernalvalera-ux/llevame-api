@@ -68,7 +68,6 @@
             border-radius: 20px;
         }
         
-        /* Menú lateral - logo horizontal ancho completo */
         .side-menu {
             position: fixed;
             top: 0;
@@ -130,7 +129,6 @@
             transition: background 0.2s;
         }
         .menu-item:hover { background: rgba(255,255,255,0.1); }
-        .menu-item:active { background: rgba(255,255,255,0.15); }
         .menu-item .icon { font-size: 20px; width: 28px; text-align: center; }
         
         .container {
@@ -154,21 +152,6 @@
             color: #1a1a2e;
         }
         
-        .card h3 {
-            font-size: 15px;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin: 6px 0;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 14px;
-        }
-        
         button {
             width: 100%;
             padding: 12px;
@@ -184,24 +167,7 @@
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
         button.danger { background: #f44336; }
-        button.outline {
-            background: transparent;
-            border: 2px solid #FF9800;
-            color: #FF9800;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 13px;
-        }
+        button.success { background: #4CAF50; }
         
         .estado-display {
             font-size: 22px;
@@ -271,7 +237,6 @@
             max-height: 80vh;
             overflow-y: auto;
         }
-        .modal-content h3 { margin-bottom: 12px; font-size: 18px; }
         
         .mapa-container {
             height: 320px;
@@ -287,17 +252,6 @@
         }
         
         .hidden { display: none; }
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
         .notification {
             position: fixed;
             bottom: 20px;
@@ -320,12 +274,13 @@
             font-weight: bold;
             font-size: 14px;
         }
-        .estado-esperando { background: #FFF3E0; color: #FF9800; }
         .estado-aceptado { background: #E3F2FD; color: #2196F3; }
         .estado-en-curso { background: #E8F5E9; color: #4CAF50; }
         
         .mt-10 { margin-top: 10px; }
         .text-center { text-align: center; }
+        .flex-buttons { display: flex; gap: 10px; }
+        .flex-buttons button { flex: 1; }
     </style>
 </head>
 <body>
@@ -360,7 +315,6 @@
     </div>
 
     <div class="container" id="app">
-        <!-- Pantalla de bienvenida -->
         <div id="authScreen">
             <div class="card">
                 <h2>🔐 Bienvenido Chofer</h2>
@@ -369,7 +323,6 @@
             </div>
         </div>
 
-        <!-- Pantalla de login -->
         <div id="loginScreen" class="hidden">
             <div class="card">
                 <h2>Iniciar sesión</h2>
@@ -380,7 +333,6 @@
             </div>
         </div>
 
-        <!-- Modal de registro de vehículo -->
         <div id="modalVehiculo" class="modal">
             <div class="modal-content">
                 <h3>Registrar/Editar vehículo</h3>
@@ -432,7 +384,6 @@
             </div>
         </div>
 
-        <!-- Modal de editar perfil -->
         <div id="modalPerfil" class="modal">
             <div class="modal-content">
                 <h3>Editar perfil</h3>
@@ -445,7 +396,6 @@
             </div>
         </div>
 
-        <!-- Sección Principal -->
         <div id="seccionPrincipal" class="hidden">
             <div class="card">
                 <h2>📊 Mi estado</h2>
@@ -468,26 +418,26 @@
                 </div>
             </div>
             
-            <!-- Viajes disponibles -->
             <div id="viajesDisponiblesSection" class="card">
                 <h2>📋 Viajes disponibles</h2>
                 <div id="listaViajes">Cargando...</div>
             </div>
             
-            <!-- Viaje activo -->
             <div id="viajeActivoSection" class="card hidden">
                 <h2>🚖 Viaje en curso</h2>
-                <div class="estado-viaje" id="estadoViaje">🔄 Esperando...</div>
+                <div class="estado-viaje" id="estadoViaje">🚗 En camino al cliente</div>
                 <div class="mapa-container">
                     <div id="mapaRuta"></div>
                 </div>
                 <div id="infoViaje" class="text-center mt-10" style="font-size:13px;"></div>
-                <button id="btnIniciarViaje" class="hidden" onclick="iniciarViaje()">🚗 Llegué al cliente - Iniciar viaje</button>
+                <div class="flex-buttons">
+                    <button id="btnBuscarCliente" class="success" onclick="iniciarNavegacion()">📍 Buscar cliente</button>
+                    <button id="btnIniciarViaje" class="hidden" onclick="iniciarViaje()">🚗 Llegué al cliente</button>
+                </div>
                 <button id="btnFinalizarViaje" class="hidden" onclick="finalizarViaje()">✅ Finalizar viaje</button>
             </div>
         </div>
 
-        <!-- Sección Mis Viajes -->
         <div id="seccionViajes" class="hidden">
             <div class="card">
                 <h2>📋 Historial de viajes</h2>
@@ -495,7 +445,6 @@
             </div>
         </div>
 
-        <!-- Sección Perfil -->
         <div id="seccionPerfil" class="hidden">
             <div class="card">
                 <h2>👤 Mi perfil</h2>
@@ -522,6 +471,7 @@
         let mapaRuta = null;
         let controlRuta = null;
         let vehiculoAprobado = false;
+        let intervaloPosicion = null;
         
         function toggleMenu() {
             document.getElementById('sideMenu').classList.toggle('open');
@@ -811,21 +761,24 @@
         
         function iniciarActualizacionUbicacion() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(async (position) => {
-                    ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    
-                    try {
-                        await fetch('/api/chofer/ubicacion', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
-                        });
-                    } catch(e) {}
-                    
-                    if (viajeActivo && (viajeActivo.estado === 'aceptado' || viajeActivo.estado === 'en_curso')) {
-                        actualizarRuta();
-                    }
-                }, null, { enableHighAccuracy: true });
+                // Actualizar cada 3 segundos
+                intervaloPosicion = setInterval(async () => {
+                    navigator.geolocation.getCurrentPosition(async (position) => {
+                        ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        
+                        try {
+                            await fetch('/api/chofer/ubicacion', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
+                            });
+                        } catch(e) {}
+                        
+                        if (viajeActivo && (viajeActivo.estado === 'aceptado' || viajeActivo.estado === 'en_curso')) {
+                            actualizarRuta();
+                        }
+                    }, null, { enableHighAccuracy: true });
+                }, 3000);
             }
         }
         
@@ -833,13 +786,10 @@
             if (estadoActual !== 'disponible' || !vehiculoAprobado) return;
             
             try {
-                console.log('Buscando viajes disponibles...');
                 const res = await fetch('/api/chofer/viajes-disponibles', { 
                     headers: { 'Authorization': 'Bearer ' + token } 
                 });
                 const data = await res.json();
-                console.log('Respuesta:', data);
-                
                 const viajes = data.viajes || [];
                 const listaDiv = document.getElementById('listaViajes');
                 
@@ -874,9 +824,13 @@
                     estadoActual = 'ocupado';
                     actualizarUIEstado();
                     await cargarViajeActivo(viajeId);
-                    mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito');
-                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
-            } catch(e) { mostrarNotificacion('Error', 'error'); }
+                    mostrarNotificacion('Viaje aceptado. Usa "Buscar cliente" para iniciar la navegación', 'exito');
+                } else { 
+                    mostrarNotificacion(data.error || 'Error al aceptar', 'error'); 
+                }
+            } catch(e) { 
+                mostrarNotificacion('Error', 'error'); 
+            }
         }
         
         async function cargarViajeActivo(viajeId) {
@@ -896,17 +850,12 @@
                         <strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP
                     `;
                     
-                    if (viajeActivo.estado === 'aceptado') {
-                        document.getElementById('btnIniciarViaje').classList.remove('hidden');
-                        document.getElementById('btnFinalizarViaje').classList.add('hidden');
-                        document.getElementById('estadoViaje').innerHTML = '🚗 En camino al cliente';
-                        document.getElementById('estadoViaje').className = 'estado-viaje estado-aceptado';
-                    } else if (viajeActivo.estado === 'en_curso') {
-                        document.getElementById('btnIniciarViaje').classList.add('hidden');
-                        document.getElementById('btnFinalizarViaje').classList.remove('hidden');
-                        document.getElementById('estadoViaje').innerHTML = '🚖 Viaje en curso';
-                        document.getElementById('estadoViaje').className = 'estado-viaje estado-en-curso';
-                    }
+                    // Mostrar botón de buscar cliente, ocultar iniciar viaje
+                    document.getElementById('btnBuscarCliente').classList.remove('hidden');
+                    document.getElementById('btnIniciarViaje').classList.add('hidden');
+                    document.getElementById('btnFinalizarViaje').classList.add('hidden');
+                    document.getElementById('estadoViaje').innerHTML = '🚗 En camino al cliente';
+                    document.getElementById('estadoViaje').className = 'estado-viaje estado-aceptado';
                     
                     inicializarMapaRuta();
                     
@@ -929,6 +878,12 @@
                 icon: L.divIcon({ html: '🚖', iconSize: [30, 30] })
             }).addTo(mapaRuta).bindPopup('Tu ubicación');
             
+            actualizarRuta();
+        }
+        
+        function iniciarNavegacion() {
+            if (!viajeActivo) return;
+            mostrarNotificacion('📍 Navegación activada. Sigue la ruta en el mapa.', 'exito');
             actualizarRuta();
         }
         
@@ -964,9 +919,12 @@
                     lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }
                 }).addTo(mapaRuta);
                 
+                // Marcar destino
+                const icono = viajeActivo.estado === 'aceptado' ? '📍' : '🎯';
+                const texto = viajeActivo.estado === 'aceptado' ? '📍 Cliente' : '🎯 Destino';
                 L.marker([destino.lat, destino.lng], {
-                    icon: L.divIcon({ html: viajeActivo.estado === 'aceptado' ? '📍' : '🎯', iconSize: [25, 25] })
-                }).addTo(mapaRuta).bindPopup(viajeActivo.estado === 'aceptado' ? '📍 Cliente' : '🎯 Destino');
+                    icon: L.divIcon({ html: icono, iconSize: [25, 25] })
+                }).addTo(mapaRuta).bindPopup(texto);
             }
         }
         
@@ -981,6 +939,7 @@
                     viajeActivo = data.viaje;
                     
                     if (estadoAnterior === 'aceptado' && viajeActivo.estado === 'en_curso') {
+                        document.getElementById('btnBuscarCliente').classList.add('hidden');
                         document.getElementById('btnIniciarViaje').classList.add('hidden');
                         document.getElementById('btnFinalizarViaje').classList.remove('hidden');
                         document.getElementById('estadoViaje').innerHTML = '🚖 Viaje en curso';
@@ -1017,6 +976,7 @@
                 });
                 if (res.ok) {
                     viajeActivo.estado = 'en_curso';
+                    document.getElementById('btnBuscarCliente').classList.add('hidden');
                     document.getElementById('btnIniciarViaje').classList.add('hidden');
                     document.getElementById('btnFinalizarViaje').classList.remove('hidden');
                     document.getElementById('estadoViaje').innerHTML = '🚖 Viaje en curso';
@@ -1092,6 +1052,7 @@
         
         function cerrarSesion() { 
             if (intervaloTimer) clearInterval(intervaloTimer);
+            if (intervaloPosicion) clearInterval(intervaloPosicion);
             localStorage.removeItem('token'); 
             location.reload(); 
         }
