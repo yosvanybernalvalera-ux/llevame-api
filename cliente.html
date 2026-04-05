@@ -12,8 +12,7 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e); }
-        
+        body { font-family: system-ui, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e, #16213e); }
         .header { background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 100; }
         .menu-btn { background: none; border: none; font-size: 26px; cursor: pointer; color: white; width: auto; padding: 0; }
         .logo-container { display: flex; align-items: center; gap: 10px; }
@@ -21,34 +20,27 @@
         .logo-text { font-size: 22px; color: white; font-weight: 600; }
         .logo-text span { color: #FF9800; }
         .user-info { font-size: 12px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; }
-        
         .side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); z-index: 200; transition: left 0.3s ease; padding: 80px 20px 20px; }
         .side-menu.open { left: 0; }
         .menu-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
         .menu-overlay.open { display: block; }
         .menu-item { padding: 14px 16px; color: white; font-size: 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 14px; }
-        
         .container { max-width: 500px; margin: 0 auto; padding: 20px; min-height: calc(100vh - 70px); }
         .card { background: rgba(255,255,255,0.95); border-radius: 24px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .card h2 { font-size: 18px; margin-bottom: 15px; color: #1a1a2e; }
-        
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; }
         button { width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
         button.danger { background: #f44336; }
-        
         .hidden { display: none; }
         .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(0,0,0,0.9); color: white; padding: 12px; border-radius: 12px; text-align: center; z-index: 1000; }
-        
         .ubicacion-buttons { display: flex; gap: 10px; margin-top: 5px; margin-bottom: 15px; }
         .ubicacion-buttons button { flex: 1; padding: 8px; font-size: 12px; }
-        
         .input-wrapper { position: relative; }
         .sugerencias { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; }
         .sugerencia-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; }
         .sugerencia-item:hover { background: #f0f0f0; }
-        
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; padding: 20px; }
         .modal.open { display: flex; }
         .modal-header { background: #1a1a2e; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0; }
@@ -57,21 +49,17 @@
         .mapa-container { height: 400px; width: 100%; border-radius: 12px; overflow: hidden; background: #e0e0e0; }
         #mapaModal { height: 100%; width: 100%; }
         #mapaSeguimiento { height: 100%; width: 100%; }
-        
         .categorias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
         .categoria-card { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; }
         .categoria-card.selected { border-color: #FF9800; background: #FFF3E0; }
         .categoria-icon { font-size: 24px; }
         .categoria-nombre { font-size: 12px; font-weight: bold; }
         .categoria-precio { font-size: 11px; color: #FF9800; }
-        
         .precio-box { background: #FFF3E0; border-radius: 12px; padding: 15px; text-align: center; margin: 15px 0; }
         .precio-box .valor { font-size: 28px; font-weight: bold; color: #FF9800; }
-        
         .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; line-height: 1.6; margin-bottom: 15px; }
         .viaje-item { padding: 10px; border-bottom: 1px solid #eee; }
         .text-center { text-align: center; }
-        
         .estado-viaje { text-align: center; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; }
         .estado-buscando { background: #FFF3E0; color: #FF9800; }
         .estado-aceptado { background: #E3F2FD; color: #2196F3; }
@@ -106,29 +94,15 @@
             <div id="formularioViaje">
                 <div class="card">
                     <h2>📍 ¿A dónde vas?</h2>
-                    <div class="input-wrapper">
-                        <input type="text" id="origen" placeholder="Origen" autocomplete="off">
-                        <div id="sugerenciasOrigen" class="sugerencias hidden"></div>
-                    </div>
-                    <div class="ubicacion-buttons">
-                        <button onclick="abrirMapa('origen')">🗺️ Seleccionar en mapa</button>
-                        <button onclick="usarUbicacionActual()">📍 Mi ubicación</button>
-                    </div>
-                    
-                    <div class="input-wrapper">
-                        <input type="text" id="destino" placeholder="Destino" autocomplete="off">
-                        <div id="sugerenciasDestino" class="sugerencias hidden"></div>
-                    </div>
-                    <div class="ubicacion-buttons">
-                        <button onclick="abrirMapa('destino')">🗺️ Seleccionar en mapa</button>
-                    </div>
-                    
+                    <div class="input-wrapper"><input type="text" id="origen" placeholder="Origen" autocomplete="off"><div id="sugerenciasOrigen" class="sugerencias hidden"></div></div>
+                    <div class="ubicacion-buttons"><button onclick="abrirMapa('origen')">🗺️ Mapa</button><button onclick="usarUbicacionActual()">📍 Mi ubicación</button></div>
+                    <div class="input-wrapper"><input type="text" id="destino" placeholder="Destino" autocomplete="off"><div id="sugerenciasDestino" class="sugerencias hidden"></div></div>
+                    <div class="ubicacion-buttons"><button onclick="abrirMapa('destino')">🗺️ Mapa</button></div>
                     <div id="categoriasSection" class="hidden"><div class="categorias" id="categorias"></div></div>
                     <div id="precioSection" class="hidden"><div class="precio-box"><div class="valor" id="precioEstimado">-- CUP</div></div></div>
                     <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
                 </div>
             </div>
-
             <div id="seguimientoViaje" class="hidden">
                 <div class="card">
                     <h2>🚖 Seguimiento de tu viaje</h2>
@@ -180,94 +154,53 @@
         function cambiarSeccion(seccion) { toggleMenu(); document.getElementById('seccionViaje').classList.add('hidden'); document.getElementById('seccionHistorial').classList.add('hidden'); document.getElementById('seccionPerfil').classList.add('hidden'); document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden'); if (seccion === 'historial') cargarHistorial(); if (seccion === 'perfil') cargarPerfil(); }
         function mostrarNotificacion(msg, tipo) { const notif = document.getElementById('notification'); notif.textContent = msg; notif.classList.remove('hidden'); notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50'; setTimeout(() => notif.classList.add('hidden'), 3000); }
 
-        // ============= BÚSQUEDA DE DIRECCIONES =============
         async function buscarDirecciones(query, tipo) {
-            if (query.length < 3) {
-                document.getElementById(`sugerencias${tipo}`).classList.add('hidden');
-                return;
-            }
+            if (query.length < 3) { document.getElementById(`sugerencias${tipo}`).classList.add('hidden'); return; }
             try {
                 const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=cu`;
                 const response = await fetch(url);
                 const data = await response.json();
                 const sugerenciasDiv = document.getElementById(`sugerencias${tipo}`);
                 if (data.length > 0) {
-                    sugerenciasDiv.innerHTML = data.map(item => `
-                        <div class="sugerencia-item" onclick="seleccionarDireccion('${tipo}', '${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
-                            📍 ${item.display_name.substring(0, 60)}...
-                        </div>
-                    `).join('');
+                    sugerenciasDiv.innerHTML = data.map(item => `<div class="sugerencia-item" onclick="seleccionarDireccion('${tipo}', '${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">📍 ${item.display_name.substring(0, 60)}...</div>`).join('');
                     sugerenciasDiv.classList.remove('hidden');
-                } else {
-                    sugerenciasDiv.classList.add('hidden');
-                }
+                } else { sugerenciasDiv.classList.add('hidden'); }
             } catch (error) { console.error('Error:', error); }
         }
         
         function seleccionarDireccion(tipo, direccion, lat, lng) {
             const inputId = tipo === 'Origen' ? 'origen' : 'destino';
             document.getElementById(inputId).value = direccion;
-            if (tipo === 'Origen') {
-                origenLat = parseFloat(lat);
-                origenLng = parseFloat(lng);
-            } else {
-                destinoLat = parseFloat(lat);
-                destinoLng = parseFloat(lng);
-            }
+            if (tipo === 'Origen') { origenLat = parseFloat(lat); origenLng = parseFloat(lng); }
+            else { destinoLat = parseFloat(lat); destinoLng = parseFloat(lng); }
             document.getElementById(`sugerencias${tipo}`).classList.add('hidden');
             verificarOrigenDestino();
         }
         
-        // ============= MAPA MODAL =============
         function abrirMapa(tipo) {
             modoSeleccion = tipo;
             document.getElementById('modalTitulo').innerHTML = tipo === 'origen' ? '📍 Selecciona tu origen' : '🎯 Selecciona tu destino';
             document.getElementById('modalMapa').classList.add('open');
-            
             setTimeout(() => {
                 if (mapaModalActual) mapaModalActual.remove();
-                
                 let center = ubicacionActual;
                 if (tipo === 'origen' && origenLat) center = { lat: origenLat, lng: origenLng };
                 if (tipo === 'destino' && destinoLat) center = { lat: destinoLat, lng: destinoLng };
-                
                 mapaModalActual = L.map('mapaModal').setView([center.lat, center.lng], 16);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '© OpenStreetMap',
-                    subdomains: 'abcd'
-                }).addTo(mapaModalActual);
-                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd' }).addTo(mapaModalActual);
                 let marcador = L.marker([center.lat, center.lng]).addTo(mapaModalActual);
-                mapaModalActual.on('click', (e) => {
-                    marcador.setLatLng(e.latlng);
-                    ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng };
-                });
+                mapaModalActual.on('click', (e) => { marcador.setLatLng(e.latlng); ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng }; });
             }, 100);
         }
         
-        function cerrarModalMapa() {
-            document.getElementById('modalMapa').classList.remove('open');
-            if (mapaModalActual) mapaModalActual.remove();
-            ubicacionSeleccionada = null;
-        }
+        function cerrarModalMapa() { document.getElementById('modalMapa').classList.remove('open'); if(mapaModalActual) mapaModalActual.remove(); ubicacionSeleccionada = null; }
         
         function confirmarUbicacionMapa() {
             if (ubicacionSeleccionada) {
-                if (modoSeleccion === 'origen') {
-                    origenLat = ubicacionSeleccionada.lat;
-                    origenLng = ubicacionSeleccionada.lng;
-                    document.getElementById('origen').value = `${origenLat.toFixed(5)}, ${origenLng.toFixed(5)}`;
-                } else {
-                    destinoLat = ubicacionSeleccionada.lat;
-                    destinoLng = ubicacionSeleccionada.lng;
-                    document.getElementById('destino').value = `${destinoLat.toFixed(5)}, ${destinoLng.toFixed(5)}`;
-                }
-                cerrarModalMapa();
-                verificarOrigenDestino();
-                mostrarNotificacion('Ubicación seleccionada', 'exito');
-            } else {
-                mostrarNotificacion('Toca el mapa para seleccionar', 'error');
-            }
+                if (modoSeleccion === 'origen') { origenLat = ubicacionSeleccionada.lat; origenLng = ubicacionSeleccionada.lng; document.getElementById('origen').value = `${origenLat.toFixed(5)}, ${origenLng.toFixed(5)}`; }
+                else { destinoLat = ubicacionSeleccionada.lat; destinoLng = ubicacionSeleccionada.lng; document.getElementById('destino').value = `${destinoLat.toFixed(5)}, ${destinoLng.toFixed(5)}`; }
+                cerrarModalMapa(); verificarOrigenDestino(); mostrarNotificacion('Ubicación seleccionada', 'exito');
+            } else { mostrarNotificacion('Toca el mapa para seleccionar', 'error'); }
         }
         
         function usarUbicacionActual() {
@@ -275,17 +208,11 @@
                 mostrarNotificacion('Obteniendo ubicación...', 'exito');
                 navigator.geolocation.getCurrentPosition(pos => {
                     ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    origenLat = ubicacionActual.lat;
-                    origenLng = ubicacionActual.lng;
+                    origenLat = ubicacionActual.lat; origenLng = ubicacionActual.lng;
                     document.getElementById('origen').value = `${origenLat.toFixed(5)}, ${origenLng.toFixed(5)}`;
-                    verificarOrigenDestino();
-                    mostrarNotificacion('Ubicación actual seleccionada', 'exito');
-                }, error => {
-                    mostrarNotificacion('Error al obtener ubicación. Activa el GPS', 'error');
-                });
-            } else {
-                mostrarNotificacion('GPS no disponible', 'error');
-            }
+                    verificarOrigenDestino(); mostrarNotificacion('Ubicación actual seleccionada', 'exito');
+                }, error => { mostrarNotificacion('Error al obtener ubicación. Activa el GPS', 'error'); });
+            } else { mostrarNotificacion('GPS no disponible', 'error'); }
         }
         
         function verificarOrigenDestino() {
@@ -295,8 +222,7 @@
                 document.getElementById('categoriasSection').classList.remove('hidden');
                 document.getElementById('precioSection').classList.remove('hidden');
                 document.getElementById('btnSolicitar').classList.remove('hidden');
-                cargarCategorias();
-                actualizarPrecio();
+                cargarCategorias(); actualizarPrecio();
             } else {
                 document.getElementById('categoriasSection').classList.add('hidden');
                 document.getElementById('precioSection').classList.add('hidden');
@@ -304,16 +230,7 @@
             }
         }
         
-        function cargarCategorias() {
-            document.getElementById('categorias').innerHTML = categorias.map(cat => `
-                <div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" onclick="seleccionarCategoria('${cat.id}')">
-                    <div class="categoria-icon">${cat.icono}</div>
-                    <div class="categoria-nombre">${cat.nombre}</div>
-                    <div class="categoria-precio">${cat.precio} CUP</div>
-                </div>
-            `).join('');
-        }
-        
+        function cargarCategorias() { document.getElementById('categorias').innerHTML = categorias.map(cat => `<div class="categoria-card ${categoriaSeleccionada === cat.id ? 'selected' : ''}" onclick="seleccionarCategoria('${cat.id}')"><div class="categoria-icon">${cat.icono}</div><div class="categoria-nombre">${cat.nombre}</div><div class="categoria-precio">${cat.precio} CUP</div></div>`).join(''); }
         function seleccionarCategoria(catId) { categoriaSeleccionada = catId; cargarCategorias(); actualizarPrecio(); }
         function actualizarPrecio() { document.getElementById('precioEstimado').innerHTML = (preciosBase[categoriaSeleccionada] || 100) + ' CUP'; }
         
@@ -391,19 +308,13 @@
             const destino = document.getElementById('destino').value;
             if (!origen || !destino) { mostrarNotificacion('Complete origen y destino', 'error'); return; }
             if (origenLat === null || destinoLat === null) { mostrarNotificacion('Selecciona origen y destino en el mapa o usa la ubicación actual', 'error'); return; }
-            
             const btn = document.getElementById('btnSolicitar');
             btn.disabled = true; btn.innerHTML = 'Solicitando...';
             try {
                 const res = await fetch('/api/viajes/solicitar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ 
-                        origen, destino, 
-                        origen_lat: origenLat, origen_lng: origenLng, 
-                        destino_lat: destinoLat, destino_lng: destinoLng, 
-                        categoria: categoriaSeleccionada 
-                    })
+                    body: JSON.stringify({ origen, destino, origen_lat: origenLat, origen_lng: origenLng, destino_lat: destinoLat, destino_lng: destinoLng, categoria: categoriaSeleccionada })
                 });
                 const data = await res.json();
                 if (data.exito) {
@@ -420,85 +331,37 @@
         
         function iniciarSeguimiento() {
             if (intervaloSeguimiento) clearInterval(intervaloSeguimiento);
-            
             if (mapaSeguimiento) mapaSeguimiento.remove();
             mapaSeguimiento = L.map('mapaSeguimiento').setView([origenLat, origenLng], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
-                attribution: '© OpenStreetMap', 
-                subdomains: 'abcd' 
-            }).addTo(mapaSeguimiento);
-            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd' }).addTo(mapaSeguimiento);
             L.marker([origenLat, origenLng]).addTo(mapaSeguimiento).bindPopup('🚩 Origen');
             L.marker([destinoLat, destinoLng]).addTo(mapaSeguimiento).bindPopup('🎯 Destino');
-            
             intervaloSeguimiento = setInterval(consultarEstadoViaje, 3000);
-        }
-        
-        function actualizarRuta(desdeLat, desdeLng, hastaLat, hastaLng) {
-            if (controlRuta) controlRuta.remove();
-            if (!desdeLat || !hastaLat) return;
-            
-            controlRuta = L.Routing.control({
-                waypoints: [
-                    L.latLng(desdeLat, desdeLng),
-                    L.latLng(hastaLat, hastaLng)
-                ],
-                routeWhileDragging: false,
-                showAlternatives: false,
-                lineOptions: { styles: [{ color: '#FF9800', weight: 5, opacity: 0.8 }] },
-                addWaypoints: false,
-                draggableWaypoints: false,
-                fitSelectedRoutes: true
-            }).addTo(mapaSeguimiento);
         }
         
         async function consultarEstadoViaje() {
             if (!viajeActual) return;
-            
             try {
-                const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
-                });
+                const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
-                
                 if (data.viaje) {
                     viajeActual = data.viaje;
                     actualizarUIEstado();
-                    
-                    if (viajeActual.estado === 'aceptado' && viajeActual.chofer_lat) {
-                        actualizarRuta(viajeActual.chofer_lat, viajeActual.chofer_lng, origenLat, origenLng);
-                        
-                        if (marcadorChofer) {
-                            marcadorChofer.setLatLng([viajeActual.chofer_lat, viajeActual.chofer_lng]);
-                        } else {
-                            marcadorChofer = L.marker([viajeActual.chofer_lat, viajeActual.chofer_lng], {
-                                icon: L.divIcon({ html: '🚖', iconSize: [30, 30], className: 'marcador-chofer' })
-                            }).addTo(mapaSeguimiento).bindPopup('🚖 Chofer');
+                    if ((viajeActual.estado === 'aceptado' || viajeActual.estado === 'en_curso') && viajeActual.chofer_lat) {
+                        if (marcadorChofer) { marcadorChofer.setLatLng([viajeActual.chofer_lat, viajeActual.chofer_lng]); }
+                        else { marcadorChofer = L.marker([viajeActual.chofer_lat, viajeActual.chofer_lng], { icon: L.divIcon({ html: '🚖', iconSize: [30, 30] }) }).addTo(mapaSeguimiento).bindPopup('🚖 Chofer'); }
+                        if (viajeActual.estado === 'aceptado') {
+                            if (controlRuta) controlRuta.remove();
+                            controlRuta = L.Routing.control({ waypoints: [ L.latLng(viajeActual.chofer_lat, viajeActual.chofer_lng), L.latLng(origenLat, origenLng) ], routeWhileDragging: false, showAlternatives: false, lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }, addWaypoints: false, draggableWaypoints: false }).addTo(mapaSeguimiento);
+                        } else if (viajeActual.estado === 'en_curso') {
+                            if (controlRuta) controlRuta.remove();
+                            controlRuta = L.Routing.control({ waypoints: [ L.latLng(viajeActual.chofer_lat, viajeActual.chofer_lng), L.latLng(destinoLat, destinoLng) ], routeWhileDragging: false, showAlternatives: false, lineOptions: { styles: [{ color: '#4CAF50', weight: 5 }] }, addWaypoints: false, draggableWaypoints: false }).addTo(mapaSeguimiento);
                         }
                         mapaSeguimiento.setView([viajeActual.chofer_lat, viajeActual.chofer_lng], 14);
                     }
-                    
-                    if (viajeActual.estado === 'en_curso' && viajeActual.chofer_lat) {
-                        actualizarRuta(viajeActual.chofer_lat, viajeActual.chofer_lng, destinoLat, destinoLng);
-                        
-                        if (marcadorChofer) {
-                            marcadorChofer.setLatLng([viajeActual.chofer_lat, viajeActual.chofer_lng]);
-                        } else {
-                            marcadorChofer = L.marker([viajeActual.chofer_lat, viajeActual.chofer_lng], {
-                                icon: L.divIcon({ html: '🚖', iconSize: [30, 30], className: 'marcador-chofer' })
-                            }).addTo(mapaSeguimiento).bindPopup('🚖 Chofer');
-                        }
-                        mapaSeguimiento.setView([viajeActual.chofer_lat, viajeActual.chofer_lng], 14);
-                    }
-                    
                     if (viajeActual.estado === 'completado') {
                         clearInterval(intervaloSeguimiento);
-                        setTimeout(() => {
-                            document.getElementById('seguimientoViaje').classList.add('hidden');
-                            document.getElementById('formularioViaje').classList.remove('hidden');
-                            viajeActual = null;
-                            cargarHistorial();
-                        }, 3000);
+                        setTimeout(() => { document.getElementById('seguimientoViaje').classList.add('hidden'); document.getElementById('formularioViaje').classList.remove('hidden'); viajeActual = null; cargarHistorial(); }, 3000);
                     }
                 }
             } catch(e) { console.error('Error:', e); }
@@ -507,36 +370,15 @@
         function actualizarUIEstado() {
             const estadoDiv = document.getElementById('estadoViaje');
             const infoDiv = document.getElementById('infoViaje');
-            
             let estadoTexto = '', estadoClass = '', infoTexto = '';
             switch(viajeActual.estado) {
-                case 'buscando_chofer':
-                    estadoTexto = '🔄 Buscando chofer...';
-                    estadoClass = 'estado-buscando';
-                    infoTexto = '⏳ Por favor espera, estamos buscando el chofer más cercano.';
-                    break;
-                case 'aceptado':
-                    estadoTexto = '✅ Chofer asignado. Está en camino hacia ti';
-                    estadoClass = 'estado-aceptado';
-                    infoTexto = `🚖 Chofer: ${viajeActual.chofer_nombre || 'Asignado'} | Llegada estimada: 5-10 minutos`;
-                    break;
-                case 'en_curso':
-                    estadoTexto = '🚗 Viaje en curso. En camino a tu destino';
-                    estadoClass = 'estado-en-curso';
-                    infoTexto = `🎯 Destino: ${viajeActual.destino} | 💰 Precio: ${viajeActual.precio_base} CUP`;
-                    break;
-                case 'completado':
-                    estadoTexto = '🏁 Viaje completado. ¡Gracias por viajar con LLévame!';
-                    estadoClass = 'estado-completado';
-                    infoTexto = `💰 Total: ${viajeActual.precio_final || viajeActual.precio_base} CUP`;
-                    break;
-                default:
-                    estadoTexto = viajeActual.estado;
-                    estadoClass = 'estado-buscando';
+                case 'buscando_chofer': estadoTexto = '🔄 Buscando chofer...'; estadoClass = 'estado-buscando'; infoTexto = '⏳ Por favor espera...'; break;
+                case 'aceptado': estadoTexto = '✅ Chofer asignado. Está en camino'; estadoClass = 'estado-aceptado'; infoTexto = `🚖 Chofer: ${viajeActual.chofer_nombre || 'Asignado'}`; break;
+                case 'en_curso': estadoTexto = '🚗 Viaje en curso'; estadoClass = 'estado-en-curso'; infoTexto = `🎯 Destino: ${viajeActual.destino} | 💰 ${viajeActual.precio_base} CUP`; break;
+                case 'completado': estadoTexto = '🏁 Viaje completado'; estadoClass = 'estado-completado'; infoTexto = `💰 Total: ${viajeActual.precio_final || viajeActual.precio_base} CUP`; break;
+                default: estadoTexto = viajeActual.estado; estadoClass = 'estado-buscando';
             }
-            estadoDiv.className = `estado-viaje ${estadoClass}`;
-            estadoDiv.innerHTML = estadoTexto;
-            infoDiv.innerHTML = infoTexto;
+            estadoDiv.className = `estado-viaje ${estadoClass}`; estadoDiv.innerHTML = estadoTexto; infoDiv.innerHTML = infoTexto;
         }
         
         async function cancelarViaje() {
@@ -563,12 +405,7 @@
         
         document.getElementById('origen').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Origen'));
         document.getElementById('destino').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Destino'));
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.input-wrapper')) {
-                document.getElementById('sugerenciasOrigen')?.classList.add('hidden');
-                document.getElementById('sugerenciasDestino')?.classList.add('hidden');
-            }
-        });
+        document.addEventListener('click', function(e) { if (!e.target.closest('.input-wrapper')) { document.getElementById('sugerenciasOrigen')?.classList.add('hidden'); document.getElementById('sugerenciasDestino')?.classList.add('hidden'); } });
         
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
