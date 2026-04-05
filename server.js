@@ -246,6 +246,7 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
   const { viaje_id } = req.body;
   try {
