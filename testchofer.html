@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Chofer API</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Test Chofer API</h1>
+    <button onclick="test()">Ejecutar prueba</button>
+    <div id="resultado"></div>
+    <script>
+        async function test() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = 'Iniciando...';
+            
+            // Login como chofer
+            const loginRes = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+            });
+            const loginData = await loginRes.json();
+            
+            if (!loginData.token) {
+                resultado.innerHTML = 'Error de login';
+                return;
+            }
+            
+            resultado.innerHTML += '<br>✅ Login exitoso';
+            
+            // 1. Ver vehículo
+            const vehiculoRes = await fetch('/api/chofer/vehiculo', {
+                headers: { 'Authorization': 'Bearer ' + loginData.token }
+            });
+            const vehiculoData = await vehiculoRes.json();
+            resultado.innerHTML += '<br>📋 Vehículo: ' + JSON.stringify(vehiculoData);
+            
+            // 2. Ver viajes disponibles
+            const viajesRes = await fetch('/api/chofer/viajes-disponibles', {
+                headers: { 'Authorization': 'Bearer ' + loginData.token }
+            });
+            const viajesData = await viajesRes.json();
+            resultado.innerHTML += '<br><br>📋 Viajes disponibles: ' + JSON.stringify(viajesData);
+            
+            // 3. Verificar si hay viaje activo
+            const misViajesRes = await fetch('/api/chofer/mis-viajes', {
+                headers: { 'Authorization': 'Bearer ' + loginData.token }
+            });
+            const misViajesData = await misViajesRes.json();
+            resultado.innerHTML += '<br><br>📋 Mis viajes: ' + JSON.stringify(misViajesData);
+        }
+    </script>
+</body>
+</html>
