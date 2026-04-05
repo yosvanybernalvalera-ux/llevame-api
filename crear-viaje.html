@@ -9,13 +9,14 @@
         button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; width: 100%; margin: 10px 0; }
         .success { color: green; }
         .error { color: red; }
-        select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        select, input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .log { background: #f0f0f0; padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 10px; word-break: break-all; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>🚕 Crear Viaje para MOTO</h1>
-        <p>Tu chofer es tipo MOTO, así que el viaje debe ser de categoría MOTO.</p>
+        <p>Tu chofer es tipo MOTO - el viaje debe ser MOTO</p>
         
         <input type="text" id="origen" placeholder="Origen" value="Parque Central">
         <input type="text" id="destino" placeholder="Destino" value="Vedado">
@@ -24,20 +25,91 @@
             <option value="moto">🏍️ MOTO</option>
             <option value="economico">🚗 Económico</option>
             <option value="confort">🚙 Confort</option>
-            <option value="triciclo">🛺 Triciclo</option>
         </select>
         
         <button onclick="crearViaje()">Crear Viaje</button>
         <div id="resultado"></div>
+        <div id="log" class="log"></div>
     </div>
 
     <script>
         async function crearViaje() {
             const resultado = document.getElementById('resultado');
-            resultado.innerHTML = '<p>🔄 Iniciando sesión...</p>';
+            const logDiv = document.getElementById('log');
+            resultado.innerHTML = '<p>🔄 Iniciando...</p>';
+            logDiv.innerHTML = '';
+            
+            function addLog(msg) {
+                logDiv.innerHTML += '<div>' + msg + '</div>';
+                console.log(msg);
+            }
             
             try {
+                addLog('1. Intentando login con Yosvany3105...');
+                
                 const loginRes = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                
+                addLog('2. Login respuesta status: ' + loginRes.status);
+                const loginData = await loginRes.json();
+                addLog('3. Login respuesta: ' + JSON.stringify(loginData));
+                
+                if (!loginData.token) {
+                    resultado.innerHTML = '<p class="error">❌ Error de login</p>';
+                    return;
+                }
+                
+                const token = loginData.token;
+                addLog('4. Token obtenido: ' + token.substring(0, 30) + '...');
+                
+                const origen = document.getElementById('origen').value;
+                const destino = document.getElementById('destino').value;
+                const categoria = document.getElementById('categoria').value;
+                
+                addLog('5. Datos del viaje: origen=' + origen + ', destino=' + destino + ', categoria=' + categoria);
+                
+                const bodyData = {
+                    origen: origen,
+                    destino: destino,
+                    origen_lat: 23.1365,
+                    origen_lng: -82.3589,
+                    destino_lat: 23.1234,
+                    destino_lng: -82.3987,
+                    categoria: categoria
+                };
+                
+                addLog('6. Enviando petición a /api/viajes/solicitar');
+                
+                const viajeRes = await fetch('/api/viajes/solicitar', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+                
+                addLog('7. Respuesta status: ' + viajeRes.status);
+                const viajeData = await viajeRes.json();
+                addLog('8. Respuesta completa: ' + JSON.stringify(viajeData));
+                
+                if (viajeData.exito) {
+                    resultado.innerHTML = '<p class="success">✅ Viaje creado con éxito!</p>';
+                    resultado.innerHTML += '<p>ID: ' + viajeData.viaje.id + '</p>';
+                    resultado.innerHTML += '<p>Categoría: ' + categoria + '</p>';
+                    resultado.innerHTML += '<p><strong>Ahora ve a la app chofer y actualiza.</strong></p>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + (viajeData.error || 'desconocido') + '</p>';
+                }
+                
+            } catch(e) {
+                addLog('❌ ERROR: ' + e.message);
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
