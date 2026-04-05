@@ -303,7 +303,8 @@
     <div class="header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <div class="logo-container">
-            <img src="Logo3.png" alt="LLévame" class="logo-img" onerror="this.style.display='none'">
+            <!-- Cliente usa logo_cliente.png - cambia este nombre si tu archivo es diferente -->
+            <img src="logo_cliente.png" alt="LLévame" class="logo-img" onerror="this.style.display='none'">
             <div class="logo-text">LLé<span>vame</span></div>
         </div>
         <div class="user-info" id="userName"></div>
@@ -419,7 +420,7 @@
     <script>
         let token = localStorage.getItem('token');
         let categoriaSeleccionada = 'economico';
-        let mapaModal = null;
+        let mapaModalActual = null;  // Variable independiente para el mapa modal
         let ubicacionSeleccionada = null;
         let modoSeleccion = 'origen';
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
@@ -501,21 +502,39 @@
             modoSeleccion = tipo;
             document.getElementById('modalTitulo').innerHTML = tipo === 'origen' ? '📍 Selecciona tu origen' : '🎯 Selecciona tu destino';
             document.getElementById('modalMapa').classList.add('open');
+            
+            // Pequeño retraso para asegurar que el contenedor esté visible
             setTimeout(() => {
-                if (mapaModal) mapaModal.remove();
+                // Destruir mapa anterior si existe
+                if (mapaModalActual) {
+                    mapaModalActual.remove();
+                    mapaModalActual = null;
+                }
+                
                 let center = ubicacionActual;
                 if (tipo === 'origen' && origenLat) center = { lat: origenLat, lng: origenLng };
                 if (tipo === 'destino' && destinoLat) center = { lat: destinoLat, lng: destinoLng };
-                mapaModal = L.map('mapaModal').setView([center.lat, center.lng], 16);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd' }).addTo(mapaModal);
-                let marcador = L.marker([center.lat, center.lng]).addTo(mapaModal);
-                mapaModal.on('click', (e) => { marcador.setLatLng(e.latlng); ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng }; });
+                
+                mapaModalActual = L.map('mapaModal').setView([center.lat, center.lng], 16);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
+                    attribution: '© OpenStreetMap', 
+                    subdomains: 'abcd' 
+                }).addTo(mapaModalActual);
+                
+                let marcador = L.marker([center.lat, center.lng]).addTo(mapaModalActual);
+                mapaModalActual.on('click', (e) => { 
+                    marcador.setLatLng(e.latlng); 
+                    ubicacionSeleccionada = { lat: e.latlng.lat, lng: e.latlng.lng }; 
+                });
             }, 100);
         }
         
         function cerrarModalMapa() {
             document.getElementById('modalMapa').classList.remove('open');
-            if(mapaModal) mapaModal.remove();
+            if (mapaModalActual) {
+                mapaModalActual.remove();
+                mapaModalActual = null;
+            }
             ubicacionSeleccionada = null;
         }
         
@@ -549,7 +568,7 @@
                     verificarOrigenDestino();
                     mostrarNotificacion('Ubicación actual seleccionada', 'exito');
                 }, error => {
-                    mostrarNotificacion('Error al obtener ubicación', 'error');
+                    mostrarNotificacion('Error al obtener ubicación. Activa el GPS', 'error');
                 });
             } else {
                 mostrarNotificacion('GPS no disponible', 'error');
@@ -627,8 +646,12 @@
                     cargarPerfil();
                     cargarHistorial();
                     mostrarNotificacion(`Bienvenido ${data.usuario.nombre}`, 'exito');
-                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
-            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+                } else { 
+                    mostrarNotificacion(data.error || 'Error al iniciar sesión', 'error'); 
+                }
+            } catch (error) { 
+                mostrarNotificacion('Error de conexión', 'error'); 
+            }
         }
         
         async function registro() {
@@ -653,8 +676,12 @@
                     cargarPerfil();
                     cargarHistorial();
                     mostrarNotificacion('Registro exitoso', 'exito');
-                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
-            } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+                } else { 
+                    mostrarNotificacion(data.error || 'Error al registrar', 'error'); 
+                }
+            } catch (error) { 
+                mostrarNotificacion('Error de conexión', 'error'); 
+            }
         }
         
         async function cargarPerfil() {
@@ -671,7 +698,9 @@
                         Usuario: ${u.usuario}
                     `;
                 }
-            } catch(e) { document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; }
+            } catch(e) { 
+                document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; 
+            }
         }
         
         async function editarPerfil() {
@@ -683,21 +712,43 @@
                 await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email }) });
                 mostrarNotificacion('Perfil actualizado', 'exito');
                 cargarPerfil();
-            } catch(e) { mostrarNotificacion('Error', 'error'); }
+            } catch(e) { 
+                mostrarNotificacion('Error al actualizar', 'error'); 
+            }
         }
         
         async function solicitarTaxi() {
             const origen = document.getElementById('origen').value;
             const destino = document.getElementById('destino').value;
-            if (!origen || !destino) { mostrarNotificacion('Complete origen y destino', 'error'); return; }
-            if (origenLat === null || destinoLat === null) { mostrarNotificacion('Selecciona origen y destino en el mapa', 'error'); return; }
+            
+            if (!origen || !destino) { 
+                mostrarNotificacion('Complete origen y destino', 'error'); 
+                return; 
+            }
+            
+            if (origenLat === null || destinoLat === null) { 
+                mostrarNotificacion('Selecciona origen y destino en el mapa o usa la ubicación actual', 'error'); 
+                return; 
+            }
             
             const btn = document.getElementById('btnSolicitar');
-            btn.disabled = true; btn.innerHTML = 'Buscando...';
+            btn.disabled = true; 
+            btn.innerHTML = 'Buscando chofer...';
+            
             try {
+                console.log('Enviando solicitud:', {
+                    origen, destino,
+                    origen_lat: origenLat, origen_lng: origenLng,
+                    destino_lat: destinoLat, destino_lng: destinoLng,
+                    categoria: categoriaSeleccionada
+                });
+                
                 const res = await fetch('/api/viajes/solicitar', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': 'Bearer ' + token 
+                    },
                     body: JSON.stringify({
                         origen, destino,
                         origen_lat: origenLat, origen_lng: origenLng,
@@ -705,12 +756,17 @@
                         categoria: categoriaSeleccionada
                     })
                 });
+                
                 const data = await res.json();
+                console.log('Respuesta del servidor:', data);
+                
                 if (data.exito) {
-                    mostrarNotificacion('✅ Taxi solicitado', 'exito');
+                    mostrarNotificacion('✅ Taxi solicitado con éxito', 'exito');
+                    // Limpiar campos después de solicitar
                     document.getElementById('origen').value = '';
                     document.getElementById('destino').value = '';
-                    origenLat = null; origenLng = null; destinoLat = null; destinoLng = null;
+                    origenLat = null; origenLng = null; 
+                    destinoLat = null; destinoLng = null;
                     document.getElementById('categoriasSection').classList.add('hidden');
                     document.getElementById('precioSection').classList.add('hidden');
                     document.getElementById('btnSolicitar').classList.add('hidden');
@@ -719,9 +775,11 @@
                     mostrarNotificacion(data.error || 'Error al solicitar taxi', 'error');
                 }
             } catch(e) {
-                mostrarNotificacion('Error de conexión', 'error');
+                console.error('Error:', e);
+                mostrarNotificacion('Error de conexión al servidor', 'error');
             } finally {
-                btn.disabled = false; btn.innerHTML = 'Confirmar Taxi';
+                btn.disabled = false; 
+                btn.innerHTML = 'Confirmar Taxi';
             }
         }
         
@@ -741,13 +799,21 @@
                         </div>
                     `).join('');
                 }
-            } catch(e) { document.getElementById('historialLista').innerHTML = 'Error al cargar historial'; }
+            } catch(e) { 
+                console.error(e);
+                document.getElementById('historialLista').innerHTML = 'Error al cargar historial'; 
+            }
         }
         
-        function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
+        function cerrarSesion() { 
+            localStorage.removeItem('token'); 
+            location.reload(); 
+        }
         
+        // Event listeners
         document.getElementById('origen').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Origen'));
         document.getElementById('destino').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Destino'));
+        
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-wrapper')) {
                 document.getElementById('sugerenciasOrigen')?.classList.add('hidden');
@@ -755,6 +821,7 @@
             }
         });
         
+        // Inicialización
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionViaje').classList.remove('hidden');
