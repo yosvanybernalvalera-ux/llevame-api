@@ -73,6 +73,29 @@ const crearTablas = async () => {
 };
 crearTablas();
 
+// ============= ENDPOINTS ADMIN TEMPORALES =============
+app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  const { sql } = req.body;
+  try {
+    await pool.query(sql);
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/admin/verificar-columnas-viajes', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  try {
+    const result = await pool.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'viajes' ORDER BY ordinal_position`);
+    res.json({ exito: true, columnas: result.rows.map(r => r.column_name) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============= ENDPOINTS USUARIOS =============
 app.post('/api/registro', async (req, res) => {
   const { usuario, password, nombre, apellidos, ci, telefono, email } = req.body;
   try {
@@ -151,6 +174,7 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
   }
 });
 
+// ============= ENDPOINTS VIAJES =============
 app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
   console.log('Solicitud recibida:', req.body);
   const { origen, destino, origen_lat, origen_lng, destino_lat, destino_lng, categoria } = req.body;
@@ -208,6 +232,7 @@ app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
   }
 });
 
+// ============= RUTAS =============
 app.get('/', (req, res) => {
   res.json({ mensaje: 'LLévame API funcionando' });
 });
