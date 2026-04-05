@@ -31,7 +31,6 @@ const verificarToken = (req, res, next) => {
   }
 };
 
-// ============= CREAR TABLAS =============
 const crearTablas = async () => {
   try {
     await pool.query(`
@@ -56,8 +55,10 @@ const crearTablas = async () => {
         chofer_id INTEGER REFERENCES usuarios(id),
         origen TEXT NOT NULL,
         destino TEXT NOT NULL,
-        origen_coords JSONB,
-        destino_coords JSONB,
+        origen_lat REAL,
+        origen_lng REAL,
+        destino_lat REAL,
+        destino_lng REAL,
         categoria TEXT DEFAULT 'confort',
         estado TEXT DEFAULT 'buscando_chofer',
         precio_base INTEGER,
@@ -72,7 +73,6 @@ const crearTablas = async () => {
 };
 crearTablas();
 
-// ============= ENDPOINTS USUARIOS =============
 app.post('/api/registro', async (req, res) => {
   const { usuario, password, nombre, apellidos, ci, telefono, email } = req.body;
   try {
@@ -151,22 +151,22 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
   }
 });
 
-// ============= ENDPOINTS VIAJES =============
 app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
-  const { origen, destino, origen_coords, destino_coords, categoria } = req.body;
+  console.log('Solicitud recibida:', req.body);
+  const { origen, destino, origen_lat, origen_lng, destino_lat, destino_lng, categoria } = req.body;
   
   try {
     const precioBase = 100;
     const result = await pool.query(
-      `INSERT INTO viajes (cliente_id, origen, destino, origen_coords, destino_coords, categoria, estado, precio_base, creado_en)
-       VALUES ($1, $2, $3, $4, $5, $6, 'buscando_chofer', $7, NOW())
+      `INSERT INTO viajes (cliente_id, origen, destino, origen_lat, origen_lng, destino_lat, destino_lng, categoria, estado, precio_base, creado_en)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'buscando_chofer', $9, NOW())
        RETURNING *`,
-      [req.usuario.id, origen, destino, JSON.stringify(origen_coords), JSON.stringify(destino_coords), categoria || 'confort', precioBase]
+      [req.usuario.id, origen, destino, origen_lat, origen_lng, destino_lat, destino_lng, categoria || 'confort', precioBase]
     );
     res.json({ exito: true, viaje: result.rows[0] });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al solicitar viaje' });
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al solicitar viaje: ' + error.message });
   }
 });
 
@@ -208,48 +208,44 @@ app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
   }
 });
 
-// ============= RUTAS =============
 app.get('/', (req, res) => {
   res.json({ mensaje: 'LLévame API funcionando' });
 });
 
-// ============= PANEL ADMIN =============
 app.get('/admin/login', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head><title>LLévame - Admin</title>
-    <style>
-      body { font-family: system-ui; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-      .login-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; }
-      h1 { text-align: center; color: #FF9800; }
-      input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
-      button { width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    </style>
-    </head>
-    <body>
-      <div class="login-card">
-        <h1>LLévame - Admin</h1>
-        <form id="loginForm">
-          <input type="text" id="username" placeholder="Usuario">
-          <input type="password" id="password" placeholder="Contraseña">
-          <button type="submit">Iniciar sesión</button>
-        </form>
-      </div>
-      <script>
-        document.getElementById('loginForm').onsubmit = async (e) => {
-          e.preventDefault();
-          const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: document.getElementById('username').value, password: document.getElementById('password').value }) });
-          const data = await res.json();
-          if (data.token && data.usuario.rol === 'admin') {
-            localStorage.setItem('token', data.token);
-            window.location.href = '/admin/dashboard';
-          } else { alert('Credenciales inválidas'); }
-        };
-      </script>
-    </body>
-    </html>
-  `);
+  res.send(`<!DOCTYPE html>
+<html>
+<head><title>LLévame - Admin</title>
+<style>
+  body { font-family: system-ui; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .login-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; }
+  h1 { text-align: center; color: #FF9800; }
+  input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+  button { width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="login-card">
+<h1>LLévame - Admin</h1>
+<form id="loginForm">
+<input type="text" id="username" placeholder="Usuario">
+<input type="password" id="password" placeholder="Contraseña">
+<button type="submit">Iniciar sesión</button>
+</form>
+</div>
+<script>
+document.getElementById('loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: document.getElementById('username').value, password: document.getElementById('password').value }) });
+  const data = await res.json();
+  if (data.token && data.usuario.rol === 'admin') {
+    localStorage.setItem('token', data.token);
+    window.location.href = '/admin/dashboard';
+  } else { alert('Credenciales inválidas'); }
+};
+</script>
+</body>
+</html>`);
 });
 
 app.get('/admin/dashboard', (req, res) => {
