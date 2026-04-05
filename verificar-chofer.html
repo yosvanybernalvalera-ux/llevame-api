@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificar Chofer - LLévame</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; width: 100%; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 Verificar Chofer</h1>
+        <button onclick="verificar()">Verificar mi estado</button>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function verificar() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>Verificando...</p>';
+            
+            try {
+                // Login con tu usuario
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const loginData = await loginRes.json();
+                
+                if (!loginData.token) {
+                    resultado.innerHTML = '<p class="error">Error de login</p>';
+                    return;
+                }
+                
+                // Verificar vehículo
+                const vehiculoRes = await fetch('/api/chofer/vehiculo', {
+                    headers: { 'Authorization': 'Bearer ' + loginData.token }
+                });
+                const vehiculoData = await vehiculoRes.json();
+                
+                if (vehiculoData.vehiculo) {
+                    resultado.innerHTML = '<p>✅ Vehículo registrado</p>';
+                    resultado.innerHTML += '<p>Tipo: ' + vehiculoData.vehiculo.tipo + '</p>';
+                    resultado.innerHTML += '<p>Aprobado: ' + (vehiculoData.vehiculo.aprobado ? '✅ SÍ' : '❌ NO') + '</p>';
+                    if (!vehiculoData.vehiculo.aprobado) {
+                        resultado.innerHTML += '<p class="error">El administrador debe aprobarte primero</p>';
+                    }
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ No tienes vehículo registrado</p>';
+                }
+                
+                // Verificar viajes disponibles
+                const viajesRes = await fetch('/api/chofer/viajes-disponibles', {
+                    headers: { 'Authorization': 'Bearer ' + loginData.token }
+                });
+                const viajesData = await viajesRes.json();
+                resultado.innerHTML += '<p>📋 Viajes disponibles: ' + (viajesData.viajes ? viajesData.viajes.length : 0) + '</p>';
+                
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">Error: ' + e.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
