@@ -31,7 +31,6 @@ const verificarToken = (req, res, next) => {
   }
 };
 
-// ============= CREAR TABLAS =============
 const crearTablas = async () => {
   try {
     await pool.query(`
@@ -101,14 +100,14 @@ const crearTablas = async () => {
       )
     `);
     
-    console.log('Tablas creadas/verificadas');
+    console.log('✅ Tablas listas');
   } catch (error) {
-    console.error('Error creando tablas:', error);
+    console.error('Error:', error);
   }
 };
 crearTablas();
 
-// ============= ENDPOINTS USUARIOS =============
+// ============= USUARIOS =============
 app.post('/api/registro', async (req, res) => {
   const { usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia } = req.body;
   try {
@@ -116,7 +115,7 @@ app.post('/api/registro', async (req, res) => {
     const result = await pool.query(
       `INSERT INTO usuarios (usuario, password, nombre, apellidos, ci, telefono, email, telefono_emergencia)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, usuario, nombre, apellidos, rol, telefono_emergencia`,
+       RETURNING id, usuario, nombre, apellidos, rol`,
       [usuario, passwordHash, nombre, apellidos, ci, telefono, email, telefono_emergencia]
     );
     const token = jwt.sign(
@@ -188,8 +187,7 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
   }
 });
 
-// ============= ENDPOINTS CHOFER =============
-
+// ============= CHOFER =============
 app.post('/api/chofer/vehiculo', verificarToken, async (req, res) => {
   const { tipo, marca_modelo, color, matricula, categorias } = req.body;
   try {
@@ -206,7 +204,7 @@ app.post('/api/chofer/vehiculo', verificarToken, async (req, res) => {
       );
     }
     await pool.query("UPDATE usuarios SET rol = 'chofer' WHERE id = $1 AND rol = 'cliente'", [req.usuario.id]);
-    res.json({ exito: true, mensaje: 'Vehículo registrado. Espera aprobación del administrador' });
+    res.json({ exito: true, mensaje: 'Vehículo registrado. Espera aprobación' });
   } catch (error) {
     res.status(500).json({ error: 'Error al registrar vehículo' });
   }
@@ -234,8 +232,8 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
     const vehiculo = await pool.query('SELECT categorias, aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
-    if (vehiculo.rows.length === 0) return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
-    if (!vehiculo.rows[0].aprobado) return res.json({ viajes: [], mensaje: 'Chofer no aprobado aún' });
+    if (vehiculo.rows.length === 0) return res.json({ viajes: [] });
+    if (!vehiculo.rows[0].aprobado) return res.json({ viajes: [] });
     
     let categoriasChofer = [];
     try {
@@ -243,26 +241,19 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
       categoriasChofer = typeof catRaw === 'string' ? JSON.parse(catRaw) : (Array.isArray(catRaw) ? catRaw : []);
     } catch(e) { categoriasChofer = []; }
     
-    if (categoriasChofer.length === 0) return res.json({ viajes: [], mensaje: 'Sin categorías asignadas' });
+    if (categoriasChofer.length === 0) return res.json({ viajes: [] });
     
     const result = await pool.query(`
-      SELECT id, cliente_id, origen, destino, categoria, precio_base
-      FROM viajes WHERE estado = 'buscando_chofer' AND categoria = ANY($1)
-      ORDER BY creado_en ASC
+      SELECT v.id, v.origen, v.destino, v.categoria, v.precio_base, u.nombre as cliente_nombre
+      FROM viajes v
+      JOIN usuarios u ON v.cliente_id = u.id
+      WHERE v.estado = 'buscando_chofer' AND v.categoria = ANY($1)
+      ORDER BY v.creado_en ASC
     `, [categoriasChofer]);
     
-    const viajes = [];
-    for (const viaje of result.rows) {
-      const cliente = await pool.query('SELECT nombre FROM usuarios WHERE id = $1', [viaje.cliente_id]);
-      viajes.push({
-        id: viaje.id, origen: viaje.origen, destino: viaje.destino,
-        categoria: viaje.categoria, precio_base: viaje.precio_base,
-        cliente_nombre: cliente.rows[0]?.nombre || 'Cliente'
-      });
-    }
-    res.json({ viajes });
+    res.json({ viajes: result.rows });
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener viajes: ' + error.message });
+    res.status(500).json({ error: 'Error al obtener viajes' });
   }
 });
 
@@ -274,9 +265,9 @@ app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
     
     await pool.query('UPDATE viajes SET chofer_id = $1, estado = $2, aceptado_en = NOW() WHERE id = $3', [req.usuario.id, 'aceptado', viaje_id]);
     await pool.query('UPDATE usuarios SET estado_chofer = $1 WHERE id = $2', ['ocupado', req.usuario.id]);
-    res.json({ exito: true, mensaje: 'Viaje aceptado' });
+    res.json({ exito: true });
   } catch (error) {
-    res.status(500).json({ error: 'Error al aceptar viaje: ' + error.message });
+    res.status(500).json({ error: 'Error al aceptar viaje' });
   }
 });
 
@@ -321,7 +312,7 @@ app.get('/api/chofer/ganancias', verificarToken, async (req, res) => {
   }
 });
 
-// ============= ENDPOINTS VIAJES (CLIENTE) =============
+// ============= VIAJES =============
 app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
   const { origen, destino, origen_lat, origen_lng, destino_lat, destino_lng, categoria } = req.body;
   try {
@@ -342,10 +333,12 @@ app.get('/api/viajes/estado/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(`
-      SELECT v.*, u.telefono as chofer_telefono, u.nombre as chofer_nombre,
-             u.ultima_ubicacion_lat as chofer_lat, u.ultima_ubicacion_lng as chofer_lng
+      SELECT v.*, u.nombre as cliente_nombre, u.telefono as cliente_telefono,
+             c.nombre as chofer_nombre, c.telefono as chofer_telefono,
+             c.ultima_ubicacion_lat as chofer_lat, c.ultima_ubicacion_lng as chofer_lng
       FROM viajes v
-      LEFT JOIN usuarios u ON v.chofer_id = u.id
+      LEFT JOIN usuarios u ON v.cliente_id = u.id
+      LEFT JOIN usuarios c ON v.chofer_id = c.id
       WHERE v.id = $1
     `, [id]);
     if (result.rows.length === 0) {
@@ -376,7 +369,7 @@ app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
   }
 });
 
-// ============= ENDPOINTS DIRECCIONES =============
+// ============= DIRECCIONES =============
 app.get('/api/direcciones', verificarToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM direcciones WHERE usuario_id = $1', [req.usuario.id]);
@@ -406,12 +399,12 @@ app.delete('/api/direcciones/:id', verificarToken, async (req, res) => {
   }
 });
 
-// ============= ENDPOINTS ADMIN =============
+// ============= ADMIN =============
 app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   try {
     const result = await pool.query(`
-      SELECT u.id as usuario_id, u.nombre, u.usuario, u.apellidos, u.telefono, v.tipo, v.marca_modelo, v.matricula, v.aprobado
+      SELECT u.id as usuario_id, u.nombre, u.usuario, v.tipo, v.marca_modelo, v.matricula, v.aprobado
       FROM usuarios u JOIN vehiculos v ON u.id = v.usuario_id
       WHERE v.aprobado = FALSE
     `);
@@ -442,7 +435,7 @@ app.get('/admin/login', (req, res) => {
 });
 
 app.get('/admin/dashboard', (req, res) => {
-  res.send(`<!DOCTYPE html><html><head><title>LLévame - Dashboard</title><style>body{font-family:system-ui;background:#f5f5f5;padding:20px}.header{background:#FF9800;color:white;padding:20px;border-radius:15px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}.card{background:white;padding:20px;border-radius:15px;margin-bottom:20px}button{background:#FF9800;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer}.logout{background:#f44336}</style></head><body><div class="header"><h1>LLévame - Panel Admin</h1><button class="logout" onclick="logout()">Cerrar sesión</button></div><div class="card"><h2>👨‍✈️ Choferes pendientes de aprobación</h2><div id="pendientes">Cargando...</div></div><script>const token=localStorage.getItem('token');if(!token)window.location.href='/admin/login';async function cargarPendientes(){try{const res=await fetch('/admin/choferes/pendientes',{headers:{'Authorization':'Bearer '+token}});const data=await res.json();const pendientes=data.choferes||[];const div=document.getElementById('pendientes');if(pendientes.length===0){div.innerHTML='<p>✅ No hay choferes pendientes de aprobación</p>';}else{let html='';for(const c of pendientes){html+='<div style="padding:10px;border-bottom:1px solid #eee;"><strong>'+c.nombre+'</strong> ('+c.usuario+')<br>Vehículo: '+(c.marca_modelo||c.tipo)+' - '+(c.matricula||'Sin matrícula')+'<br>Teléfono: '+(c.telefono||'No registrado')+'<br><button onclick="aprobar('+c.usuario_id+')">✓ Aprobar chofer</button></div>';}div.innerHTML=html;}}catch(e){console.error(e);}}async function aprobar(id){await fetch('/admin/choferes/aprobar/'+id,{method:'POST',headers:{'Authorization':'Bearer '+token}});cargarPendientes();}function logout(){localStorage.removeItem('token');window.location.href='/admin/login';}cargarPendientes();</script></body></html>`);
+  res.send(`<!DOCTYPE html><html><head><title>LLévame - Dashboard</title><style>body{font-family:system-ui;background:#f5f5f5;padding:20px}.header{background:#FF9800;color:white;padding:20px;border-radius:15px;margin-bottom:20px;display:flex;justify-content:space-between}.card{background:white;padding:20px;border-radius:15px;margin-bottom:20px}button{background:#FF9800;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer}.logout{background:#f44336}</style></head><body><div class="header"><h1>LLévame - Panel Admin</h1><button class="logout" onclick="logout()">Cerrar sesión</button></div><div class="card"><h2>👨‍✈️ Choferes pendientes</h2><div id="pendientes">Cargando...</div></div><script>const token=localStorage.getItem('token');if(!token)window.location.href='/admin/login';async function cargarPendientes(){const res=await fetch('/admin/choferes/pendientes',{headers:{'Authorization':'Bearer '+token}});const data=await res.json();const pendientes=data.choferes||[];const div=document.getElementById('pendientes');if(pendientes.length===0){div.innerHTML='<p>✅ No hay choferes pendientes</p>';}else{let html='';for(const c of pendientes){html+='<div style="padding:10px;border-bottom:1px solid #eee;"><strong>'+c.nombre+'</strong> ('+c.usuario+')<br>Vehículo: '+(c.marca_modelo||c.tipo)+'<br><button onclick="aprobar('+c.usuario_id+')">✓ Aprobar</button></div>';}div.innerHTML=html;}}async function aprobar(id){await fetch('/admin/choferes/aprobar/'+id,{method:'POST',headers:{'Authorization':'Bearer '+token}});cargarPendientes();}function logout(){localStorage.removeItem('token');window.location.href='/admin/login';}cargarPendientes();</script></body></html>`);
 });
 
 app.listen(PORT, () => {
