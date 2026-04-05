@@ -232,12 +232,18 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
 // ENDPOINT CORREGIDO - VIAJES DISPONIBLES
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
+    // Obtener vehículo del chofer
     const vehiculo = await pool.query('SELECT categorias, aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
     
-    if (vehiculo.rows.length === 0 || !vehiculo.rows[0].aprobado) {
+    if (vehiculo.rows.length === 0) {
       return res.json({ viajes: [] });
     }
     
+    if (!vehiculo.rows[0].aprobado) {
+      return res.json({ viajes: [] });
+    }
+    
+    // Parsear categorías
     let categoriasChofer = [];
     const catRaw = vehiculo.rows[0].categorias;
     
@@ -255,26 +261,29 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
       return res.json({ viajes: [] });
     }
     
-    // Usar placeholders para IN
-    const placeholders = categoriasChofer.map((_, i) => `$${i + 1}`).join(',');
+    // Convertir a formato JSON para PostgreSQL
+    const categoriasJson = JSON.stringify(categoriasChofer);
+    
+    // Usar jsonb_array_elements_text para comparar
     const query = `
       SELECT v.id, v.origen, v.destino, v.categoria, v.precio_base, u.nombre as cliente_nombre
       FROM viajes v
       JOIN usuarios u ON v.cliente_id = u.id
       WHERE v.estado = 'buscando_chofer' 
-        AND v.categoria IN (${placeholders})
+        AND v.categoria IN (
+          SELECT jsonb_array_elements_text($1::jsonb)
+        )
       ORDER BY v.creado_en ASC
     `;
     
-    const result = await pool.query(query, categoriasChofer);
+    const result = await pool.query(query, [categoriasJson]);
     res.json({ viajes: result.rows });
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error en viajes-disponibles:', error);
     res.status(500).json({ error: error.message });
   }
 });
-
 app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
   const { viaje_id } = req.body;
   try {
