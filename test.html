@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verificar Datos - LLévame</title>
+    <title>Test Viajes - LLévame</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: system-ui; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
-        .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        button { background: #FF9800; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 5px; }
+        body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; margin: 5px; font-size: 14px; }
         .success { color: green; }
         .error { color: red; }
         pre { background: #f0f0f0; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f0f0f0; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>🚕 LLévame - Verificar Datos</h1>
+        <h1>🚕 LLévame - Panel de Control</h1>
         
-        <button onclick="verificarViajes()">Ver Viajes Pendientes</button>
-        <button onclick="verificarChofer()">Ver Mi Chofer</button>
-        <button onclick="verificarCategorias()">Ver Categorías</button>
-        <button onclick="corregirCategorias()">Corregir Categorías</button>
+        <button onclick="probarLogin()">1. Probar Login (Yosvany)</button>
+        <button onclick="probarLoginAdmin()">1.2 Login Admin</button>
+        <button onclick="agregarColumnas()">2. Agregar Columnas Faltantes</button>
+        <button onclick="probarViajesDisponibles()">3. Ver Viajes Disponibles</button>
+        <button onclick="probarCrearViaje()">4. Crear Viaje de Prueba</button>
+        <button onclick="aceptarViaje()">5. Aceptar Viaje (ID específico)</button>
         
         <h3>Resultado:</h3>
         <div id="resultado"></div>
@@ -31,186 +31,223 @@
     <script>
         let token = null;
         
-        async function loginAdmin() {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
-            });
-            const data = await res.json();
-            return data.token;
+        function mostrarResultado(texto, esError = false) {
+            const div = document.getElementById('resultado');
+            const p = document.createElement('p');
+            p.style.color = esError ? 'red' : 'green';
+            p.innerHTML = texto;
+            div.appendChild(p);
         }
         
-        async function loginChofer() {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
-            });
-            const data = await res.json();
-            return data.token;
+        function limpiar() {
+            document.getElementById('resultado').innerHTML = '';
         }
         
-        async function ejecutarSQL(sql) {
-            const adminToken = await loginAdmin();
-            const res = await fetch('/admin/ejecutar-sql', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-                body: JSON.stringify({ sql })
-            });
-            return await res.json();
-        }
-        
-        async function verificarViajes() {
-            const resultado = document.getElementById('resultado');
-            resultado.innerHTML = '<p>🔄 Consultando viajes...</p>';
+        async function probarLogin() {
+            limpiar();
+            mostrarResultado('🔄 Probando login con Yosvany3105...');
             
             try {
-                const adminToken = await loginAdmin();
-                const res = await fetch('/admin/ejecutar-sql', {
+                const res = await fetch('/api/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-                    body: JSON.stringify({ 
-                        sql: "SELECT id, origen, destino, categoria, estado, cliente_id FROM viajes WHERE estado = 'buscando_chofer' ORDER BY id DESC LIMIT 10" 
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
                 });
                 const data = await res.json();
                 
-                if (data.rows) {
-                    if (data.rows.length === 0) {
-                        resultado.innerHTML = '<p class="error">❌ No hay viajes pendientes en la base de datos.</p>';
-                    } else {
-                        let html = '<p class="success">✅ Viajes pendientes encontrados:</p>';
-                        html += '<table><tr><th>ID</th><th>Origen</th><th>Destino</th><th>Categoría</th><th>Estado</th></tr>';
-                        data.rows.forEach(v => {
-                            html += `<tr>
-                                <td>${v.id}</td>
-                                <td>${v.origen}</td>
-                                <td>${v.destino}</td>
-                                <td><strong>${v.categoria}</strong></td>
-                                <td>${v.estado}</td>
-                            </tr>`;
-                        });
-                        html += '</table>';
-                        resultado.innerHTML = html;
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('test_token', token);
+                    mostrarResultado('✅ Login exitoso!');
+                    mostrarResultado(`Usuario: ${data.usuario.nombre}`);
+                } else {
+                    mostrarResultado('❌ Error de login: ' + JSON.stringify(data), true);
+                }
+            } catch(e) {
+                mostrarResultado('❌ Error: ' + e.message, true);
+            }
+        }
+        
+        async function probarLoginAdmin() {
+            limpiar();
+            mostrarResultado('🔄 Probando login como admin...');
+            
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+                });
+                const data = await res.json();
+                
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('test_token', token);
+                    mostrarResultado('✅ Login admin exitoso!');
+                } else {
+                    mostrarResultado('❌ Error de login admin: ' + JSON.stringify(data), true);
+                }
+            } catch(e) {
+                mostrarResultado('❌ Error: ' + e.message, true);
+            }
+        }
+        
+        async function agregarColumnas() {
+            limpiar();
+            mostrarResultado('🔄 Agregando columnas faltantes a la tabla viajes...');
+            
+            let tokenActual = token || localStorage.getItem('test_token');
+            if (!tokenActual) {
+                mostrarResultado('❌ Primero haz clic en "Probar Login"', true);
+                return;
+            }
+            
+            const sql = `
+                ALTER TABLE viajes ADD COLUMN IF NOT EXISTS aceptado_en TIMESTAMP;
+                ALTER TABLE viajes ADD COLUMN IF NOT EXISTS iniciado_en TIMESTAMP;
+                ALTER TABLE viajes ADD COLUMN IF NOT EXISTS completado_en TIMESTAMP;
+                ALTER TABLE viajes ADD COLUMN IF NOT EXISTS chofer_id INTEGER;
+            `;
+            
+            try {
+                const res = await fetch('/admin/ejecutar-sql', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + tokenActual
+                    },
+                    body: JSON.stringify({ sql })
+                });
+                const data = await res.json();
+                
+                if (data.exito) {
+                    mostrarResultado('✅ Columnas agregadas correctamente!');
+                    mostrarResultado('- aceptado_en');
+                    mostrarResultado('- iniciado_en');
+                    mostrarResultado('- completado_en');
+                    mostrarResultado('- chofer_id');
+                } else {
+                    mostrarResultado('❌ Error: ' + data.error, true);
+                }
+            } catch(e) {
+                mostrarResultado('❌ Error de conexión: ' + e.message, true);
+            }
+        }
+        
+        async function probarViajesDisponibles() {
+            limpiar();
+            mostrarResultado('🔄 Buscando viajes disponibles...');
+            
+            let tokenActual = token || localStorage.getItem('test_token');
+            if (!tokenActual) {
+                mostrarResultado('❌ Primero haz clic en "Probar Login"', true);
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/chofer/viajes-disponibles', {
+                    headers: { 'Authorization': 'Bearer ' + tokenActual }
+                });
+                const data = await res.json();
+                
+                if (data.viajes) {
+                    mostrarResultado(`✅ Se encontraron ${data.viajes.length} viajes:`);
+                    data.viajes.forEach((v, i) => {
+                        mostrarResultado(`${i+1}. ${v.origen} → ${v.destino} (${v.categoria}) - ${v.precio_base} CUP`);
+                    });
+                    if (data.viajes.length > 0) {
+                        mostrarResultado(`<br>📌 Para aceptar un viaje, copia su ID y haz clic en "Aceptar Viaje"`);
                     }
+                } else if (data.mensaje) {
+                    mostrarResultado(`⚠️ ${data.mensaje}`, true);
                 } else {
-                    resultado.innerHTML = '<p class="error">Error al consultar: ' + JSON.stringify(data) + '</p>';
+                    mostrarResultado('❌ Error: ' + JSON.stringify(data), true);
                 }
             } catch(e) {
-                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+                mostrarResultado('❌ Error de conexión: ' + e.message, true);
             }
         }
         
-        async function verificarChofer() {
-            const resultado = document.getElementById('resultado');
-            resultado.innerHTML = '<p>🔄 Consultando datos del chofer...</p>';
+        async function probarCrearViaje() {
+            limpiar();
+            mostrarResultado('🔄 Creando viaje de prueba...');
             
-            try {
-                const choferToken = await loginChofer();
-                const res = await fetch('/api/chofer/vehiculo', {
-                    headers: { 'Authorization': 'Bearer ' + choferToken }
-                });
-                const data = await res.json();
-                
-                if (data.vehiculo) {
-                    const v = data.vehiculo;
-                    resultado.innerHTML = `
-                        <p class="success">✅ Datos del chofer:</p>
-                        <pre>
-Tipo: ${v.tipo}
-Categorías: ${v.categorias}
-Aprobado: ${v.aprobado ? '✅ Sí' : '❌ No'}
-Matrícula: ${v.matricula || 'No registrada'}
-Vehículo: ${v.marca_modelo || 'No registrado'}
-Color: ${v.color || 'No registrado'}
-                        </pre>
-                    `;
-                } else {
-                    resultado.innerHTML = '<p class="error">❌ No hay vehículo registrado para este chofer.</p>';
-                }
-            } catch(e) {
-                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            let tokenActual = token || localStorage.getItem('test_token');
+            if (!tokenActual) {
+                mostrarResultado('❌ Primero haz clic en "Probar Login"', true);
+                return;
             }
-        }
-        
-        async function verificarCategorias() {
-            const resultado = document.getElementById('resultado');
-            resultado.innerHTML = '<p>🔄 Verificando categorías...</p>';
             
             try {
-                const adminToken = await loginAdmin();
-                const res = await fetch('/admin/ejecutar-sql', {
+                const res = await fetch('/api/viajes/solicitar', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-                    body: JSON.stringify({ 
-                        sql: `SELECT u.usuario, v.tipo, v.categorias, v.aprobado 
-                              FROM usuarios u 
-                              JOIN vehiculos v ON u.id = v.usuario_id 
-                              WHERE u.usuario = 'Yosvany3105'` 
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + tokenActual
+                    },
+                    body: JSON.stringify({
+                        origen: 'Test Origen ' + new Date().toLocaleTimeString(),
+                        destino: 'Test Destino',
+                        origen_lat: 23.1365,
+                        origen_lng: -82.3589,
+                        destino_lat: 23.1500,
+                        destino_lng: -82.3500,
+                        categoria: 'moto'
                     })
                 });
                 const data = await res.json();
                 
-                if (data.rows && data.rows.length > 0) {
-                    const v = data.rows[0];
-                    resultado.innerHTML = `
-                        <p class="success">✅ Categorías del chofer:</p>
-                        <pre>
-Usuario: ${v.usuario}
-Tipo vehículo: ${v.tipo}
-Categorías guardadas: ${v.categorias}
-Aprobado: ${v.aprobado ? 'Sí' : 'No'}
-                        </pre>
-                    `;
+                if (data.exito) {
+                    mostrarResultado('✅ Viaje creado correctamente!');
+                    mostrarResultado(`ID del viaje: ${data.viaje.id}`);
+                    mostrarResultado(`Categoría: ${data.viaje.categoria}`);
+                    mostrarResultado(`Precio: ${data.viaje.precio_base} CUP`);
+                    mostrarResultado('');
+                    mostrarResultado('🔄 Ahora haz clic en "Ver Viajes Disponibles" para verlo');
                 } else {
-                    resultado.innerHTML = '<p class="error">❌ No se encontró el chofer.</p>';
+                    mostrarResultado('❌ Error: ' + JSON.stringify(data), true);
                 }
             } catch(e) {
-                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+                mostrarResultado('❌ Error de conexión: ' + e.message, true);
             }
         }
         
-        async function corregirCategorias() {
-            const resultado = document.getElementById('resultado');
-            resultado.innerHTML = '<p>🔄 Corrigiendo categorías...</p>';
+        async function aceptarViaje() {
+            limpiar();
+            
+            let tokenActual = token || localStorage.getItem('test_token');
+            if (!tokenActual) {
+                mostrarResultado('❌ Primero haz clic en "Probar Login"', true);
+                return;
+            }
+            
+            const viajeId = prompt('Ingresa el ID del viaje que quieres aceptar:', '');
+            if (!viajeId) {
+                mostrarResultado('❌ No ingresaste un ID', true);
+                return;
+            }
+            
+            mostrarResultado(`🔄 Aceptando viaje ID: ${viajeId}...`);
             
             try {
-                const adminToken = await loginAdmin();
-                
-                // 1. Corregir categorías del chofer a moto
-                const sql1 = `UPDATE vehiculos SET categorias = '["moto"]' WHERE usuario_id = (SELECT id FROM usuarios WHERE usuario = 'Yosvany3105')`;
-                await fetch('/admin/ejecutar-sql', {
+                const res = await fetch('/api/chofer/aceptar-viaje', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-                    body: JSON.stringify({ sql: sql1 })
+                    headers: { 
+                        'Content-Type': application/json',
+                        'Authorization': 'Bearer ' + tokenActual
+                    },
+                    body: JSON.stringify({ viaje_id: parseInt(viajeId) })
                 });
+                const data = await res.json();
                 
-                // 2. Asegurar que el chofer está aprobado
-                const sql2 = `UPDATE vehiculos SET aprobado = TRUE WHERE usuario_id = (SELECT id FROM usuarios WHERE usuario = 'Yosvany3105')`;
-                await fetch('/admin/ejecutar-sql', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-                    body: JSON.stringify({ sql: sql2 })
-                });
-                
-                // 3. Verificar si hay viajes y actualizar sus categorías a moto
-                const sql3 = `UPDATE viajes SET categoria = 'moto' WHERE categoria IS NULL OR categoria = '' OR categoria = 'confort'`;
-                await fetch('/admin/ejecutar-sql', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken },
-                    body: JSON.stringify({ sql: sql3 })
-                });
-                
-                resultado.innerHTML = '<p class="success">✅ Categorías corregidas:</p>';
-                resultado.innerHTML += '<ul>';
-                resultado.innerHTML += '<li>Chofer actualizado a categoría "moto"</li>';
-                resultado.innerHTML += '<li>Chofer aprobado</li>';
-                resultado.innerHTML += '<li>Viajes actualizados a categoría "moto"</li>';
-                resultado.innerHTML += '</ul>';
-                resultado.innerHTML += '<p>🔄 Recarga la app chofer y deberías ver los viajes disponibles.</p>';
+                if (data.exito) {
+                    mostrarResultado('✅ Viaje aceptado correctamente!');
+                    mostrarResultado('Ahora puedes ver el viaje en curso en la app chofer.');
+                } else {
+                    mostrarResultado('❌ Error: ' + (data.error || JSON.stringify(data)), true);
+                }
             } catch(e) {
-                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+                mostrarResultado('❌ Error de conexión: ' + e.message, true);
             }
         }
     </script>
