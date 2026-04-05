@@ -138,9 +138,33 @@
                     document.getElementById('userName').innerHTML = datosUsuario.nombre ? datosUsuario.nombre.split(' ')[0] : 'Chofer';
                     await cargarPerfil(); await cargarVehiculo(); await cargarDatosChofer();
                     iniciarActualizacionUbicacion();
+                    // Buscar viaje activo después de login
+                    setTimeout(() => buscarViajeActivo(), 2000);
                     mostrarNotificacion(`Bienvenido ${datosUsuario.nombre}`, 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
+        }
+        
+        async function buscarViajeActivo() {
+            try {
+                const res = await fetch('/api/chofer/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                const viajes = data.viajes || [];
+                // Buscar viaje en estado aceptado o en_curso
+                const activo = viajes.find(v => v.estado === 'aceptado' || v.estado === 'en_curso');
+                if (activo) {
+                    console.log('Viaje activo encontrado:', activo);
+                    await cargarViajeActivo(activo.id);
+                } else {
+                    console.log('No hay viaje activo');
+                    // Mostrar viajes disponibles
+                    document.getElementById('viajesSection').style.display = 'block';
+                    document.getElementById('viajeActivoCard').style.display = 'none';
+                    buscarViajesDisponibles();
+                }
+            } catch(e) {
+                console.error('Error buscando viaje activo:', e);
+            }
         }
         
         function abrirModalPerfil() { if (datosUsuario) { document.getElementById('editNombre').value = datosUsuario.nombre || ''; document.getElementById('editTelefono').value = datosUsuario.telefono || ''; document.getElementById('editEmail').value = datosUsuario.email || ''; document.getElementById('editEmergencia').value = datosUsuario.telefono_emergencia || ''; } document.getElementById('modalPerfil').classList.add('open'); }
@@ -155,7 +179,7 @@
         
         async function guardarVehiculo() { const tipo = document.getElementById('tipoVehiculo').value; let datos = { tipo }; if (tipo === 'auto') { datos.marca_modelo = document.getElementById('autoMarca').value; datos.color = document.getElementById('autoColor').value; datos.matricula = document.getElementById('autoMatricula').value; const categorias = []; document.querySelectorAll('#categoriasAuto input:checked').forEach(cb => categorias.push(cb.value)); if (categorias.length === 0) { mostrarNotificacion('Selecciona al menos una categoría', 'error'); return; } datos.categorias = categorias; } else if (tipo === 'moto') { datos.marca_modelo = document.getElementById('motoMarca').value; datos.color = document.getElementById('motoColor').value; datos.matricula = document.getElementById('motoMatricula').value; datos.circulacion = document.getElementById('motoCirculacion').value; datos.tipo_moto = document.getElementById('motoTipo').value; datos.categorias = ['moto']; } else if (tipo === 'triciclo') { datos.marca_modelo = document.getElementById('tricicloMarca').value; datos.color = document.getElementById('tricicloColor').value; datos.matricula = document.getElementById('tricicloMatricula').value; datos.tipo_triciclo = document.getElementById('tricicloTipo').value; datos.categorias = ['triciclo']; } if (!datos.matricula) { mostrarNotificacion('La matrícula es obligatoria', 'error'); return; } try { const res = await fetch('/api/chofer/vehiculo', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(datos) }); const data = await res.json(); if (data.exito) { mostrarNotificacion('Vehículo guardado. Espera aprobación', 'exito'); cerrarModalVehiculo(); await cargarVehiculo(); } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error de conexión', 'error'); } }
         
-        async function cargarDatosChofer() { try { const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); vehiculoActual = data.vehiculo; if (vehiculoActual) { if (vehiculoActual.aprobado) { document.getElementById('aprobacionMsg').classList.add('hidden'); document.getElementById('viajesSection').classList.remove('hidden'); buscarViajesDisponibles(); cargarGanancias(); if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(() => { buscarViajesDisponibles(); cargarGanancias(); }, 10000); } else { document.getElementById('aprobacionMsg').classList.remove('hidden'); document.getElementById('viajesSection').classList.add('hidden'); } } else { document.getElementById('aprobacionMsg').innerHTML = '⚠️ No has registrado tu vehículo'; document.getElementById('aprobacionMsg').classList.remove('hidden'); document.getElementById('viajesSection').classList.add('hidden'); } } catch(e) { console.error(e); } }
+        async function cargarDatosChofer() { try { const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); vehiculoActual = data.vehiculo; if (vehiculoActual) { if (vehiculoActual.aprobado) { document.getElementById('aprobacionMsg').classList.add('hidden'); document.getElementById('viajesSection').classList.remove('hidden'); cargarGanancias(); if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(() => { cargarGanancias(); }, 10000); } else { document.getElementById('aprobacionMsg').classList.remove('hidden'); document.getElementById('viajesSection').classList.add('hidden'); } } else { document.getElementById('aprobacionMsg').innerHTML = '⚠️ No has registrado tu vehículo'; document.getElementById('aprobacionMsg').classList.remove('hidden'); document.getElementById('viajesSection').classList.add('hidden'); } } catch(e) { console.error(e); } }
         
         async function cargarPerfil() { try { const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.usuario) { datosUsuario = data.usuario; document.getElementById('perfilInfo').innerHTML = `<strong>${data.usuario.nombre || 'Sin nombre'} ${data.usuario.apellidos || ''}</strong><br>CI: ${data.usuario.ci || '-'}<br>Teléfono: ${data.usuario.telefono || '-'}<br>Email: ${data.usuario.email || '-'}<br>Usuario: ${data.usuario.usuario}<br>Emergencia: ${data.usuario.telefono_emergencia || 'No registrado'}`; } } catch(e) { console.error(e); document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; } }
         
@@ -163,33 +187,11 @@
         
         async function cargarGanancias() { try { const res = await fetch('/api/chofer/ganancias', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); document.getElementById('gananciasHoy').innerHTML = (data.hoy || 0) + ' CUP'; document.getElementById('gananciasSemana').innerHTML = (data.semana || 0) + ' CUP'; } catch(e) {} }
         
-        function iniciarActualizacionUbicacion() { if (navigator.geolocation) { if (intervalUbicacion) clearInterval(intervalUbicacion); intervalUbicacion = setInterval(() => { navigator.geolocation.getCurrentPosition(async (position) => { ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude }; if (estadoActual === 'disponible' || (viajeActivo && viajeActivo.estado === 'aceptado')) { try { await fetch('/api/chofer/ubicacion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng }) }); if (viajeActivo && viajeActivo.estado === 'aceptado') { actualizarRuta(); } } catch(e) {} } }, null, { enableHighAccuracy: true }); }, 5000); } }
+        function iniciarActualizacionUbicacion() { if (navigator.geolocation) { if (intervalUbicacion) clearInterval(intervalUbicacion); intervalUbicacion = setInterval(() => { navigator.geolocation.getCurrentPosition(async (position) => { ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude }; if (viajeActivo && (viajeActivo.estado === 'aceptado' || viajeActivo.estado === 'en_curso')) { try { await fetch('/api/chofer/ubicacion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng }) }); if (viajeActivo) { actualizarRuta(); } } catch(e) {} } }, null, { enableHighAccuracy: true }); }, 5000); } }
         
         async function buscarViajesDisponibles() { if (estadoActual !== 'disponible') return; try { const res = await fetch('/api/chofer/viajes-disponibles', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); const viajes = data.viajes || []; const listaDiv = document.getElementById('listaViajes'); if (viajes.length === 0) { listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>'; } else { listaDiv.innerHTML = viajes.map(v => `<div class="viaje-card" onclick="aceptarViaje(${v.id})"><div><strong>📍 ${v.origen}</strong> → ${v.destino}</div><div>💰 ${v.precio_base} CUP | 🚗 ${v.categoria}</div><div><small>Cliente: ${v.cliente_nombre || 'Cliente'}</small></div></div>`).join(''); } } catch(e) { console.error(e); } }
         
-        async function aceptarViaje(viajeId) {
-            if (!confirm('¿Aceptar este viaje?')) return;
-            try {
-                const res = await fetch('/api/chofer/aceptar-viaje', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ viaje_id: viajeId })
-                });
-                const data = await res.json();
-                if (data.exito) {
-                    estadoActual = 'ocupado';
-                    actualizarUIEstado();
-                    setTimeout(async () => {
-                        await cargarViajeActivo(viajeId);
-                    }, 1000);
-                    mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito');
-                } else {
-                    mostrarNotificacion(data.error || 'Error', 'error');
-                }
-            } catch(e) {
-                mostrarNotificacion('Error', 'error');
-            }
-        }
+        async function aceptarViaje(viajeId) { if (!confirm('¿Aceptar este viaje?')) return; try { const res = await fetch('/api/chofer/aceptar-viaje', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ viaje_id: viajeId }) }); const data = await res.json(); if (data.exito) { estadoActual = 'ocupado'; actualizarUIEstado(); await cargarViajeActivo(viajeId); mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito'); } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
         
         async function cargarViajeActivo(viajeId) {
             try {
@@ -200,16 +202,30 @@
                 if (data.viaje) {
                     viajeActivo = data.viaje;
                     console.log('Viaje activo cargado:', viajeActivo);
+                    
+                    // Ocultar sección de viajes disponibles
                     document.getElementById('viajesSection').style.display = 'none';
+                    // Mostrar sección de viaje activo
                     document.getElementById('viajeActivoCard').style.display = 'block';
-                    document.getElementById('btnIniciar').classList.remove('hidden');
-                    document.getElementById('estadoViaje').innerHTML = '✅ Viaje aceptado - Dirígete al cliente';
+                    
+                    if (viajeActivo.estado === 'aceptado') {
+                        document.getElementById('btnIniciar').classList.remove('hidden');
+                        document.getElementById('btnFinalizar').classList.add('hidden');
+                        document.getElementById('estadoViaje').innerHTML = '✅ Viaje aceptado - Dirígete al cliente';
+                    } else if (viajeActivo.estado === 'en_curso') {
+                        document.getElementById('btnIniciar').classList.add('hidden');
+                        document.getElementById('btnFinalizar').classList.remove('hidden');
+                        document.getElementById('estadoViaje').innerHTML = '🚗 Viaje en curso - Llevando al destino';
+                    }
+                    
                     document.getElementById('viajeActivoInfo').innerHTML = `
                         <div><strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}</div>
                         <div><strong>📍 Origen:</strong> ${viajeActivo.origen}</div>
                         <div><strong>🎯 Destino:</strong> ${viajeActivo.destino}</div>
                         <div><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP</div>
                     `;
+                    
+                    // Inicializar el mapa
                     iniciarMapa();
                 }
             } catch(e) {
@@ -229,14 +245,25 @@
                 }
                 if (mapaRuta) mapaRuta.remove();
                 if (controlRuta) controlRuta.remove();
+                
                 mapaRuta = L.map('mapaRuta').setView([ubicacionActual.lat, ubicacionActual.lng], 13);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                     attribution: '© OpenStreetMap',
                     subdomains: 'abcd'
                 }).addTo(mapaRuta);
-                L.marker([viajeActivo.origen_lat, viajeActivo.origen_lng]).addTo(mapaRuta).bindPopup('📍 Cliente');
-                L.marker([viajeActivo.destino_lat, viajeActivo.destino_lng]).addTo(mapaRuta).bindPopup('🎯 Destino');
+                
+                // Marcar origen del cliente
+                L.marker([viajeActivo.origen_lat, viajeActivo.origen_lng])
+                    .addTo(mapaRuta)
+                    .bindPopup('📍 Cliente');
+                
+                // Marcar destino
+                L.marker([viajeActivo.destino_lat, viajeActivo.destino_lng])
+                    .addTo(mapaRuta)
+                    .bindPopup('🎯 Destino');
+                
                 actualizarRuta();
+                console.log('Mapa inicializado');
             }, 500);
         }
         
@@ -279,7 +306,15 @@
         
         function cerrarSesion() { if (intervaloTimer) clearInterval(intervaloTimer); if (intervalUbicacion) clearInterval(intervalUbicacion); localStorage.removeItem('token'); location.reload(); }
         
-        if (token) { document.getElementById('authScreen').classList.add('hidden'); document.getElementById('seccionPrincipal').classList.remove('hidden'); document.getElementById('userName').innerHTML = 'Chofer'; Promise.all([ cargarPerfil(), cargarVehiculo(), cargarDatosChofer() ]).then(() => { iniciarActualizacionUbicacion(); }).catch(e => console.error(e)); }
+        if (token) {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('seccionPrincipal').classList.remove('hidden');
+            document.getElementById('userName').innerHTML = 'Chofer';
+            Promise.all([ cargarPerfil(), cargarVehiculo(), cargarDatosChofer() ]).then(() => {
+                iniciarActualizacionUbicacion();
+                buscarViajeActivo();
+            }).catch(e => console.error(e));
+        }
     </script>
 </body>
 </html>
