@@ -71,7 +71,7 @@ const crearTablas = async () => {
       CREATE TABLE IF NOT EXISTS viajes (
         id SERIAL PRIMARY KEY,
         cliente_id INTEGER REFERENCES usuarios(id),
-        chofer_id INTEGER REFERENCES usuarios(id),
+        chofer_id INTEGER DEFAULT NULL,
         origen TEXT NOT NULL,
         destino TEXT NOT NULL,
         origen_lat REAL,
@@ -231,84 +231,62 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
   }
 });
 
-// ENDPOINT VIAJES DISPONIBLES - CON FILTRO POR CATEGORÍA
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
-    console.log('Buscando viajes para chofer:', req.usuario.id);
-    
-    // Obtener las categorías del chofer
     const vehiculo = await pool.query('SELECT categorias, aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
+    if (vehiculo.rows.length === 0) return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
+    if (!vehiculo.rows[0].aprobado) return res.json({ viajes: [], mensaje: 'Chofer no aprobado aún' });
     
-    if (vehiculo.rows.length === 0) {
-      return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
-    }
-    if (!vehiculo.rows[0].aprobado) {
-      return res.json({ viajes: [], mensaje: 'Chofer no aprobado aún' });
-    }
-    
-    // Obtener categorías del chofer
     let categoriasChofer = [];
     try {
       const catRaw = vehiculo.rows[0].categorias;
-      if (typeof catRaw === 'string') {
-        categoriasChofer = JSON.parse(catRaw);
-      } else if (Array.isArray(catRaw)) {
-        categoriasChofer = catRaw;
-      } else {
-        categoriasChofer = [];
-      }
-    } catch(e) {
-      categoriasChofer = [];
-    }
+      categoriasChofer = typeof catRaw === 'string' ? JSON.parse(catRaw) : (Array.isArray(catRaw) ? catRaw : []);
+    } catch(e) { categoriasChofer = []; }
     
-    console.log('Categorías del chofer:', categoriasChofer);
+    if (categoriasChofer.length === 0) return res.json({ viajes: [], mensaje: 'Sin categorías asignadas' });
     
-    if (categoriasChofer.length === 0) {
-      return res.json({ viajes: [], mensaje: 'Tu vehículo no tiene categorías asignadas' });
-    }
-    
-    // Buscar viajes que coincidan con las categorías del chofer
     const result = await pool.query(`
-      SELECT id, cliente_id, origen, destino, categoria, precio_base, creado_en
-      FROM viajes
-      WHERE estado = 'buscando_chofer' AND categoria = ANY($1)
+      SELECT id, cliente_id, origen, destino, categoria, precio_base
+      FROM viajes WHERE estado = 'buscando_chofer' AND categoria = ANY($1)
       ORDER BY creado_en ASC
     `, [categoriasChofer]);
     
-    // Agregar nombre del cliente
     const viajes = [];
     for (const viaje of result.rows) {
       const cliente = await pool.query('SELECT nombre FROM usuarios WHERE id = $1', [viaje.cliente_id]);
       viajes.push({
-        id: viaje.id,
-        origen: viaje.origen,
-        destino: viaje.destino,
-        categoria: viaje.categoria,
-        precio_base: viaje.precio_base,
+        id: viaje.id, origen: viaje.origen, destino: viaje.destino,
+        categoria: viaje.categoria, precio_base: viaje.precio_base,
         cliente_nombre: cliente.rows[0]?.nombre || 'Cliente'
       });
     }
-    
-    console.log('Viajes filtrados encontrados:', viajes.length);
-    res.json({ viajes: viajes });
+    res.json({ viajes });
   } catch (error) {
-    console.error('Error:', error);
     res.status(500).json({ error: 'Error al obtener viajes: ' + error.message });
   }
 });
 
+// ENDPOINT ACEPTAR VIAJE - CORREGIDO
 app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
   const { viaje_id } = req.body;
+  console.log('Aceptando viaje:', viaje_id, 'Chofer:', req.usuario.id);
+  
   try {
     const viaje = await pool.query('SELECT * FROM viajes WHERE id = $1 AND estado = $2', [viaje_id, 'buscando_chofer']);
     if (viaje.rows.length === 0) {
       return res.status(400).json({ error: 'Viaje no disponible' });
     }
-    await pool.query('UPDATE viajes SET chofer_id = $1, estado = $2, aceptado_en = NOW() WHERE id = $3', [req.usuario.id, 'aceptado', viaje_id]);
-    await pool.query("UPDATE usuarios SET estado_chofer = 'ocupado' WHERE id = $1", [req.usuario.id]);
-    res.json({ exito: true });
+    
+    await pool.query(
+      'UPDATE viajes SET chofer_id = $1, estado = $2, aceptado_en = NOW() WHERE id = $3',
+      [req.usuario.id, 'aceptado', viaje_id]
+    );
+    await pool.query('UPDATE usuarios SET estado_chofer = $1 WHERE id = $2', ['ocupado', req.usuario.id]);
+    
+    res.json({ exito: true, mensaje: 'Viaje aceptado' });
   } catch (error) {
-    res.status(500).json({ error: 'Error al aceptar viaje' });
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error al aceptar viaje: ' + error.message });
   }
 });
 
@@ -435,8 +413,7 @@ app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT u.id as usuario_id, u.nombre, u.usuario, u.apellidos, u.telefono, v.tipo, v.marca_modelo, v.matricula, v.aprobado
-      FROM usuarios u
-      JOIN vehiculos v ON u.id = v.usuario_id
+      FROM usuarios u JOIN vehiculos v ON u.id = v.usuario_id
       WHERE v.aprobado = FALSE
     `);
     res.json({ choferes: result.rows });
