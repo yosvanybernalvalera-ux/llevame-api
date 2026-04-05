@@ -568,6 +568,22 @@ app.get('/admin/dashboard', (req, res) => {
 </body>
 </html>`);
 });
+// ============= ENDPOINT PARA EJECUTAR SQL (SOLO ADMIN) =============
+app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') {
+    return res.status(403).json({ error: 'Acceso denegado. Solo administrador.' });
+  }
+  
+  const { sql } = req.body;
+  
+  try {
+    const result = await pool.query(sql);
+    res.json({ exito: true, rows: result.rows });
+  } catch (error) {
+    console.error('Error SQL:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Iniciar servidor
 app.listen(PORT, () => {
