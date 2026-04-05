@@ -237,13 +237,13 @@
             border-radius: 0 0 12px 12px;
         }
         .mapa-container {
-            height: 400px;
+            height: 300px;
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
             background: #e0e0e0;
         }
-        #mapaModal {
+        #mapaModal, #mapaSeguimiento {
             height: 100%;
             width: 100%;
         }
@@ -296,15 +296,28 @@
             border-bottom: 1px solid #eee;
         }
         
+        .estado-viaje {
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .estado-buscando { background: #FFF3E0; color: #FF9800; }
+        .estado-aceptado { background: #E3F2FD; color: #2196F3; }
+        .estado-en-curso { background: #E8F5E9; color: #4CAF50; }
+        .estado-completado { background: #F5F5F5; color: #666; }
+        
         .text-center { text-align: center; }
+        .mt-10 { margin-top: 10px; }
+        .mb-10 { margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <div class="logo-container">
-            <!-- Cliente usa logo_cliente.png - cambia este nombre si tu archivo es diferente -->
-            <img src="logo_cliente.png" alt="LLévame" class="logo-img" onerror="this.style.display='none'">
+            <img src="Logo3.png" alt="LLévame" class="logo-img" onerror="this.style.display='none'">
             <div class="logo-text">LLé<span>vame</span></div>
         </div>
         <div class="user-info" id="userName"></div>
@@ -353,36 +366,52 @@
         </div>
 
         <div id="seccionViaje" class="hidden">
-            <div class="card">
-                <h2>📍 ¿A dónde vas?</h2>
-                <div class="input-wrapper">
-                    <input type="text" id="origen" placeholder="Origen" autocomplete="off">
-                    <div id="sugerenciasOrigen" class="sugerencias hidden"></div>
-                </div>
-                <div class="ubicacion-buttons">
-                    <button onclick="abrirMapa('origen')">🗺️ Seleccionar en mapa</button>
-                    <button onclick="usarUbicacionActual()">📍 Mi ubicación</button>
-                </div>
-                
-                <div class="input-wrapper">
-                    <input type="text" id="destino" placeholder="Destino" autocomplete="off">
-                    <div id="sugerenciasDestino" class="sugerencias hidden"></div>
-                </div>
-                <div class="ubicacion-buttons">
-                    <button onclick="abrirMapa('destino')">🗺️ Seleccionar en mapa</button>
-                </div>
-                
-                <div id="categoriasSection" class="hidden">
-                    <div class="categorias" id="categorias"></div>
-                </div>
-                
-                <div id="precioSection" class="hidden">
-                    <div class="precio-box">
-                        <div class="valor" id="precioEstimado">-- CUP</div>
+            <!-- Formulario de solicitud -->
+            <div id="formularioViaje">
+                <div class="card">
+                    <h2>📍 ¿A dónde vas?</h2>
+                    <div class="input-wrapper">
+                        <input type="text" id="origen" placeholder="Origen" autocomplete="off">
+                        <div id="sugerenciasOrigen" class="sugerencias hidden"></div>
                     </div>
+                    <div class="ubicacion-buttons">
+                        <button onclick="abrirMapa('origen')">🗺️ Seleccionar en mapa</button>
+                        <button onclick="usarUbicacionActual()">📍 Mi ubicación</button>
+                    </div>
+                    
+                    <div class="input-wrapper">
+                        <input type="text" id="destino" placeholder="Destino" autocomplete="off">
+                        <div id="sugerenciasDestino" class="sugerencias hidden"></div>
+                    </div>
+                    <div class="ubicacion-buttons">
+                        <button onclick="abrirMapa('destino')">🗺️ Seleccionar en mapa</button>
+                    </div>
+                    
+                    <div id="categoriasSection" class="hidden">
+                        <div class="categorias" id="categorias"></div>
+                    </div>
+                    
+                    <div id="precioSection" class="hidden">
+                        <div class="precio-box">
+                            <div class="valor" id="precioEstimado">-- CUP</div>
+                        </div>
+                    </div>
+                    
+                    <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
                 </div>
-                
-                <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
+            </div>
+
+            <!-- Seguimiento del viaje -->
+            <div id="seguimientoViaje" class="hidden">
+                <div class="card">
+                    <h2>🚖 Seguimiento de tu viaje</h2>
+                    <div class="estado-viaje" id="estadoViaje">🔄 Buscando chofer...</div>
+                    <div class="mapa-container" id="mapaSeguimientoContainer">
+                        <div id="mapaSeguimiento"></div>
+                    </div>
+                    <div id="infoViaje" class="mt-10 text-center"></div>
+                    <button id="btnCancelar" class="danger mt-10 hidden" onclick="cancelarViaje()">Cancelar viaje</button>
+                </div>
             </div>
         </div>
 
@@ -420,11 +449,17 @@
     <script>
         let token = localStorage.getItem('token');
         let categoriaSeleccionada = 'economico';
-        let mapaModalActual = null;  // Variable independiente para el mapa modal
+        let mapaModalActual = null;
+        let mapaSeguimiento = null;
+        let marcadorChofer = null;
+        let marcadorDestino = null;
+        let rutaPolylines = [];
         let ubicacionSeleccionada = null;
         let modoSeleccion = 'origen';
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         let origenLat = null, origenLng = null, destinoLat = null, destinoLng = null;
+        let viajeActual = null;
+        let intervaloSeguimiento = null;
         
         const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
         const categorias = [
@@ -503,9 +538,7 @@
             document.getElementById('modalTitulo').innerHTML = tipo === 'origen' ? '📍 Selecciona tu origen' : '🎯 Selecciona tu destino';
             document.getElementById('modalMapa').classList.add('open');
             
-            // Pequeño retraso para asegurar que el contenedor esté visible
             setTimeout(() => {
-                // Destruir mapa anterior si existe
                 if (mapaModalActual) {
                     mapaModalActual.remove();
                     mapaModalActual = null;
@@ -733,16 +766,9 @@
             
             const btn = document.getElementById('btnSolicitar');
             btn.disabled = true; 
-            btn.innerHTML = 'Buscando chofer...';
+            btn.innerHTML = 'Solicitando...';
             
             try {
-                console.log('Enviando solicitud:', {
-                    origen, destino,
-                    origen_lat: origenLat, origen_lng: origenLng,
-                    destino_lat: destinoLat, destino_lng: destinoLng,
-                    categoria: categoriaSeleccionada
-                });
-                
                 const res = await fetch('/api/viajes/solicitar', {
                     method: 'POST',
                     headers: { 
@@ -758,19 +784,18 @@
                 });
                 
                 const data = await res.json();
-                console.log('Respuesta del servidor:', data);
                 
                 if (data.exito) {
-                    mostrarNotificacion('✅ Taxi solicitado con éxito', 'exito');
-                    // Limpiar campos después de solicitar
-                    document.getElementById('origen').value = '';
-                    document.getElementById('destino').value = '';
-                    origenLat = null; origenLng = null; 
-                    destinoLat = null; destinoLng = null;
-                    document.getElementById('categoriasSection').classList.add('hidden');
-                    document.getElementById('precioSection').classList.add('hidden');
-                    document.getElementById('btnSolicitar').classList.add('hidden');
-                    cargarHistorial();
+                    viajeActual = data.viaje;
+                    mostrarNotificacion('✅ Taxi solicitado, buscando chofer...', 'exito');
+                    
+                    // Ocultar formulario y mostrar seguimiento
+                    document.getElementById('formularioViaje').classList.add('hidden');
+                    document.getElementById('seguimientoViaje').classList.remove('hidden');
+                    document.getElementById('btnCancelar').classList.remove('hidden');
+                    
+                    // Iniciar seguimiento en tiempo real
+                    iniciarSeguimiento();
                 } else {
                     mostrarNotificacion(data.error || 'Error al solicitar taxi', 'error');
                 }
@@ -780,6 +805,154 @@
             } finally {
                 btn.disabled = false; 
                 btn.innerHTML = 'Confirmar Taxi';
+            }
+        }
+        
+        async function iniciarSeguimiento() {
+            if (intervaloSeguimiento) clearInterval(intervaloSeguimiento);
+            
+            // Inicializar mapa de seguimiento
+            if (mapaSeguimiento) mapaSeguimiento.remove();
+            mapaSeguimiento = L.map('mapaSeguimiento').setView([origenLat, origenLng], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
+                attribution: '© OpenStreetMap', 
+                subdomains: 'abcd' 
+            }).addTo(mapaSeguimiento);
+            
+            // Marcar origen y destino
+            L.marker([origenLat, origenLng]).addTo(mapaSeguimiento).bindPopup('🚩 Origen');
+            marcadorDestino = L.marker([destinoLat, destinoLng]).addTo(mapaSeguimiento).bindPopup('🎯 Destino');
+            
+            // Dibujar ruta inicial (línea recta)
+            dibujarRuta([origenLat, origenLng], [destinoLat, destinoLng]);
+            
+            intervaloSeguimiento = setInterval(consultarEstadoViaje, 3000);
+        }
+        
+        function dibujarRuta(origen, destino) {
+            // Limpiar rutas anteriores
+            rutaPolylines.forEach(line => line.remove());
+            rutaPolylines = [];
+            
+            // Dibujar línea entre origen y destino
+            const ruta = L.polyline([origen, destino], { color: '#FF9800', weight: 4, opacity: 0.7 }).addTo(mapaSeguimiento);
+            rutaPolylines.push(ruta);
+            mapaSeguimiento.fitBounds([origen, destino]);
+        }
+        
+        async function consultarEstadoViaje() {
+            if (!viajeActual) return;
+            
+            try {
+                const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const data = await res.json();
+                
+                if (data.viaje) {
+                    viajeActual = data.viaje;
+                    actualizarUIEstado();
+                    
+                    // ========== MOSTRAR UBICACIÓN DEL CHOFER ==========
+                    // Mostrar ubicación del chofer en el mapa cuando está en camino
+                    if (viajeActual.estado === 'aceptado' || viajeActual.estado === 'en_curso') {
+                        if (viajeActual.chofer_lat && viajeActual.chofer_lng) {
+                            // Actualizar o crear marcador del chofer
+                            if (marcadorChofer) {
+                                marcadorChofer.setLatLng([viajeActual.chofer_lat, viajeActual.chofer_lng]);
+                            } else {
+                                marcadorChofer = L.marker([viajeActual.chofer_lat, viajeActual.chofer_lng], {
+                                    icon: L.divIcon({ 
+                                        html: '🚖', 
+                                        iconSize: [30, 30],
+                                        className: 'marcador-chofer'
+                                    })
+                                }).addTo(mapaSeguimiento).bindPopup('🚖 Chofer');
+                            }
+                            
+                            // Centrar mapa en la posición del chofer
+                            mapaSeguimiento.setView([viajeActual.chofer_lat, viajeActual.chofer_lng], 14);
+                        }
+                    }
+                    // ==================================================
+                    
+                    // Si el viaje está completado, detener seguimiento
+                    if (viajeActual.estado === 'completado') {
+                        clearInterval(intervaloSeguimiento);
+                        intervaloSeguimiento = null;
+                        setTimeout(() => {
+                            document.getElementById('seguimientoViaje').classList.add('hidden');
+                            document.getElementById('formularioViaje').classList.remove('hidden');
+                            viajeActual = null;
+                            cargarHistorial();
+                        }, 3000);
+                    }
+                }
+            } catch(e) {
+                console.error('Error consultando estado:', e);
+            }
+        }
+        
+        function actualizarUIEstado() {
+            const estadoDiv = document.getElementById('estadoViaje');
+            const infoDiv = document.getElementById('infoViaje');
+            
+            let estadoTexto = '';
+            let estadoClass = '';
+            let infoTexto = '';
+            
+            switch(viajeActual.estado) {
+                case 'buscando_chofer':
+                    estadoTexto = '🔄 Buscando chofer disponible...';
+                    estadoClass = 'estado-buscando';
+                    infoTexto = '⏳ Por favor espera, estamos buscando el chofer más cercano.';
+                    break;
+                case 'aceptado':
+                    estadoTexto = '✅ Chofer asignado. Está en camino hacia ti';
+                    estadoClass = 'estado-aceptado';
+                    infoTexto = `🚖 Chofer: ${viajeActual.chofer_nombre || 'Asignado'}\n📍 Tiempo estimado de llegada: 5-10 minutos`;
+                    break;
+                case 'en_curso':
+                    estadoTexto = '🚗 Viaje en curso. En camino a tu destino';
+                    estadoClass = 'estado-en-curso';
+                    infoTexto = `🎯 Destino: ${viajeActual.destino}\n💰 Precio: ${viajeActual.precio_base} CUP`;
+                    break;
+                case 'completado':
+                    estadoTexto = '🏁 Viaje completado. ¡Gracias por viajar con LLévame!';
+                    estadoClass = 'estado-completado';
+                    infoTexto = `💰 Total: ${viajeActual.precio_final || viajeActual.precio_base} CUP`;
+                    break;
+                default:
+                    estadoTexto = viajeActual.estado;
+                    estadoClass = 'estado-buscando';
+            }
+            
+            estadoDiv.className = `estado-viaje ${estadoClass}`;
+            estadoDiv.innerHTML = estadoTexto;
+            infoDiv.innerHTML = infoTexto.replace(/\n/g, '<br>');
+        }
+        
+        async function cancelarViaje() {
+            if (!confirm('¿Estás seguro de cancelar este viaje?')) return;
+            
+            try {
+                const res = await fetch(`/api/viajes/cancelar/${viajeActual.id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                
+                if (data.exito) {
+                    mostrarNotificacion('Viaje cancelado correctamente', 'exito');
+                    clearInterval(intervaloSeguimiento);
+                    document.getElementById('seguimientoViaje').classList.add('hidden');
+                    document.getElementById('formularioViaje').classList.remove('hidden');
+                    viajeActual = null;
+                } else {
+                    mostrarNotificacion(data.error || 'Error al cancelar', 'error');
+                }
+            } catch(e) {
+                mostrarNotificacion('Error de conexión', 'error');
             }
         }
         
@@ -806,6 +979,7 @@
         }
         
         function cerrarSesion() { 
+            if (intervaloSeguimiento) clearInterval(intervaloSeguimiento);
             localStorage.removeItem('token'); 
             location.reload(); 
         }
