@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Endpoint Directo</title>
+</head>
+<body>
+    <h1>Test</h1>
+    <button onclick="test()">Probar</button>
+    <pre id="resultado"></pre>
+    <script>
+        async function test() {
+            const login = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+            });
+            const { token } = await login.json();
+            
+            const res = await fetch('/api/chofer/viajes-disponibles', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
