@@ -22,7 +22,7 @@
         .header {
             background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(20px);
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -35,7 +35,7 @@
         .menu-btn {
             background: none;
             border: none;
-            font-size: 26px;
+            font-size: 24px;
             cursor: pointer;
             color: white;
             width: auto;
@@ -45,41 +45,44 @@
         .logo-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .logo-img {
-            height: 35px;
+            height: 32px;
             width: auto;
         }
         
         .logo-text {
-            font-size: 22px;
+            font-size: 20px;
             color: white;
             font-weight: 600;
         }
         .logo-text span { color: #FF9800; }
         
         .user-info {
-            font-size: 12px;
+            font-size: 11px;
             color: rgba(255,255,255,0.9);
             background: rgba(255,255,255,0.2);
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
         }
         
+        /* Menú lateral - diseño compacto */
         .side-menu {
             position: fixed;
             top: 0;
             left: -280px;
-            width: 280px;
+            width: 260px;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(20px);
             z-index: 200;
             transition: left 0.3s ease;
-            padding: 80px 20px 20px;
+            padding: 20px 15px;
             border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
         }
         
         .side-menu.open { left: 0; }
@@ -97,64 +100,69 @@
         
         .menu-logo {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
         }
         
         .menu-logo-img {
-            width: 80px;
-            height: auto;
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
             border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
         }
         
         .menu-item {
-            padding: 14px 16px;
+            padding: 12px 15px;
             color: white;
-            font-size: 16px;
-            border-radius: 12px;
-            margin-bottom: 8px;
+            font-size: 15px;
+            border-radius: 10px;
+            margin-bottom: 5px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            transition: background 0.2s;
         }
-        .menu-item:active { background: rgba(255,255,255,0.1); }
-        .menu-item .icon { font-size: 22px; }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .menu-item:active { background: rgba(255,255,255,0.15); }
+        .menu-item .icon { font-size: 20px; width: 28px; text-align: center; }
         
         .container {
             max-width: 500px;
             margin: 0 auto;
             padding: 20px;
-            min-height: calc(100vh - 70px);
+            min-height: calc(100vh - 60px);
         }
         
         .card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
         .card h2 {
-            font-size: 18px;
-            margin-bottom: 15px;
+            font-size: 17px;
+            margin-bottom: 12px;
             color: #1a1a2e;
         }
         
         .card h3 {
-            font-size: 16px;
+            font-size: 15px;
             margin-bottom: 10px;
             color: #333;
         }
         
         input, select {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
+            padding: 10px;
+            margin: 6px 0;
             border: 1px solid #ddd;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 14px;
         }
         
@@ -193,7 +201,7 @@
         }
         
         .estado-display {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             text-align: center;
             margin: 10px 0;
@@ -213,27 +221,28 @@
         
         .ganancias {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             text-align: center;
         }
         .ganancia-item {
             flex: 1;
             background: #f0f0f0;
-            padding: 10px;
-            border-radius: 12px;
+            padding: 8px;
+            border-radius: 10px;
         }
         .ganancia-valor {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #FF9800;
         }
         
         .perfil-info {
             background: #f0f0f0;
-            padding: 15px;
+            padding: 12px;
             border-radius: 12px;
-            line-height: 1.6;
-            margin-bottom: 15px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            font-size: 13px;
         }
         
         .modal {
@@ -252,22 +261,22 @@
         .modal.open { display: flex; }
         .modal-content {
             background: white;
-            border-radius: 24px;
+            border-radius: 20px;
             padding: 20px;
-            max-width: 400px;
+            max-width: 380px;
             width: 100%;
             max-height: 80vh;
             overflow-y: auto;
         }
-        .modal-content h3 { margin-bottom: 15px; }
+        .modal-content h3 { margin-bottom: 12px; font-size: 18px; }
         
         .mapa-container {
-            height: 350px;
+            height: 320px;
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
             background: #e0e0e0;
-            margin: 15px 0;
+            margin: 12px 0;
         }
         #mapaRuta {
             height: 100%;
@@ -293,18 +302,20 @@
             right: 20px;
             background: rgba(0,0,0,0.9);
             color: white;
-            padding: 12px;
+            padding: 10px;
             border-radius: 12px;
             text-align: center;
             z-index: 1000;
+            font-size: 13px;
         }
         
         .estado-viaje {
             text-align: center;
-            padding: 10px;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 12px;
             font-weight: bold;
+            font-size: 14px;
         }
         .estado-esperando { background: #FFF3E0; color: #FF9800; }
         .estado-aceptado { background: #E3F2FD; color: #2196F3; }
@@ -349,7 +360,7 @@
             <div class="card">
                 <h2>🔐 Bienvenido Chofer</h2>
                 <button onclick="mostrarLogin()">Iniciar sesión</button>
-                <button onclick="mostrarRegistroVehiculo()" class="secondary" style="margin-top: 12px;">Registrar mi vehículo</button>
+                <button onclick="mostrarRegistroVehiculo()" class="secondary" style="margin-top: 10px;">Registrar mi vehículo</button>
             </div>
         </div>
 
@@ -360,7 +371,7 @@
                 <input type="text" id="loginUsuario" placeholder="Usuario">
                 <input type="password" id="loginPassword" placeholder="Contraseña">
                 <button onclick="login()">Entrar</button>
-                <button onclick="volver()" class="secondary" style="margin-top: 12px;">Volver</button>
+                <button onclick="volver()" class="secondary" style="margin-top: 10px;">Volver</button>
             </div>
         </div>
 
@@ -435,7 +446,7 @@
                 <h2>📊 Mi estado</h2>
                 <div class="estado-display" id="estadoDisplay">🟢 Disponible</div>
                 <button id="btnToggle" onclick="toggleEstado()">Cambiar a Ocupado</button>
-                <div id="aprobacionMsg" class="hidden" style="color:#FF9800; margin-top:10px;">⏳ Esperando aprobación del administrador</div>
+                <div id="aprobacionMsg" class="hidden" style="color:#FF9800; margin-top:10px; font-size:13px;">⏳ Esperando aprobación del administrador</div>
             </div>
             
             <div class="card">
@@ -458,14 +469,14 @@
                 <div id="listaViajes">Cargando...</div>
             </div>
             
-            <!-- Viaje activo (con mapa) -->
+            <!-- Viaje activo -->
             <div id="viajeActivoSection" class="card hidden">
                 <h2>🚖 Viaje en curso</h2>
                 <div class="estado-viaje" id="estadoViaje">🔄 Esperando...</div>
                 <div class="mapa-container">
                     <div id="mapaRuta"></div>
                 </div>
-                <div id="infoViaje" class="text-center mt-10"></div>
+                <div id="infoViaje" class="text-center mt-10" style="font-size:13px;"></div>
                 <button id="btnIniciarViaje" class="hidden" onclick="iniciarViaje()">🚗 Llegué al cliente - Iniciar viaje</button>
                 <button id="btnFinalizarViaje" class="hidden" onclick="finalizarViaje()">✅ Finalizar viaje</button>
             </div>
@@ -507,7 +518,6 @@
         let controlRuta = null;
         let vehiculoAprobado = false;
         
-        // ============= MENÚ =============
         function toggleMenu() {
             document.getElementById('sideMenu').classList.toggle('open');
             document.getElementById('menuOverlay').classList.toggle('open');
@@ -546,7 +556,6 @@
             document.getElementById('authScreen').classList.remove('hidden');
         }
         
-        // ============= LOGIN =============
         async function login() {
             const usuario = document.getElementById('loginUsuario').value;
             const password = document.getElementById('loginPassword').value;
@@ -573,7 +582,6 @@
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
         
-        // ============= MODAL PERFIL =============
         function abrirModalPerfil() {
             if (datosUsuario) {
                 document.getElementById('editNombre').value = datosUsuario.nombre || '';
@@ -610,7 +618,6 @@
             } catch(e) { mostrarNotificacion('Error', 'error'); }
         }
         
-        // ============= MODAL VEHÍCULO =============
         function abrirModalVehiculo() {
             document.getElementById('modalVehiculo').classList.add('open');
             cargarDatosVehiculoEnModal();
@@ -716,7 +723,6 @@
             } catch(e) { mostrarNotificacion('Error de conexión', 'error'); }
         }
         
-        // ============= DATOS DEL CHOFER =============
         async function cargarDatosChofer() {
             try {
                 const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -798,7 +804,6 @@
             } catch(e) {}
         }
         
-        // ============= UBICACIÓN =============
         function iniciarActualizacionUbicacion() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(async (position) => {
@@ -819,7 +824,6 @@
             }
         }
         
-        // ============= VIAJES DISPONIBLES =============
         async function buscarViajesDisponibles() {
             if (estadoActual !== 'disponible' || !vehiculoAprobado) return;
             
@@ -832,7 +836,7 @@
                 const listaDiv = document.getElementById('listaViajes');
                 
                 if (viajes.length === 0) {
-                    listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles en este momento</p>';
+                    listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>';
                 } else {
                     listaDiv.innerHTML = viajes.map(v => `
                         <div class="viaje-card" onclick="aceptarViaje(${v.id})">
@@ -1084,7 +1088,6 @@
             location.reload(); 
         }
         
-        // Inicialización
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionPrincipal').classList.remove('hidden');
