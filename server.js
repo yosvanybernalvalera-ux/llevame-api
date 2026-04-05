@@ -44,6 +44,8 @@ const crearTablas = async () => {
         telefono TEXT UNIQUE,
         email TEXT UNIQUE,
         rol TEXT DEFAULT 'cliente',
+        ultima_ubicacion_lat REAL,
+        ultima_ubicacion_lng REAL,
         creado_en TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -62,38 +64,20 @@ const crearTablas = async () => {
         categoria TEXT DEFAULT 'confort',
         estado TEXT DEFAULT 'buscando_chofer',
         precio_base INTEGER,
-        creado_en TIMESTAMP DEFAULT NOW()
+        precio_final INTEGER,
+        creado_en TIMESTAMP DEFAULT NOW(),
+        aceptado_en TIMESTAMP,
+        iniciado_en TIMESTAMP,
+        completado_en TIMESTAMP
       )
     `);
     
-    console.log('Tablas creadas');
+    console.log('Tablas creadas/verificadas');
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error creando tablas:', error);
   }
 };
 crearTablas();
-
-// ============= ENDPOINTS ADMIN TEMPORALES =============
-app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-  const { sql } = req.body;
-  try {
-    await pool.query(sql);
-    res.json({ exito: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/admin/verificar-columnas-viajes', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-  try {
-    const result = await pool.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'viajes' ORDER BY ordinal_position`);
-    res.json({ exito: true, columnas: result.rows.map(r => r.column_name) });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 // ============= ENDPOINTS USUARIOS =============
 app.post('/api/registro', async (req, res) => {
@@ -176,7 +160,6 @@ app.put('/api/perfil', verificarToken, async (req, res) => {
 
 // ============= ENDPOINTS VIAJES =============
 app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
-  console.log('Solicitud recibida:', req.body);
   const { origen, destino, origen_lat, origen_lng, destino_lat, destino_lng, categoria } = req.body;
   
   try {
@@ -197,12 +180,23 @@ app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
 app.get('/api/viajes/estado/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query('SELECT * FROM viajes WHERE id = $1', [id]);
+    const result = await pool.query(
+      `SELECT v.*, 
+              u.telefono as chofer_telefono, 
+              u.nombre as chofer_nombre,
+              u.ultima_ubicacion_lat as chofer_lat,
+              u.ultima_ubicacion_lng as chofer_lng
+       FROM viajes v
+       LEFT JOIN usuarios u ON v.chofer_id = u.id
+       WHERE v.id = $1`,
+      [id]
+    );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Viaje no encontrado' });
     }
     res.json({ viaje: result.rows[0] });
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ error: 'Error al obtener estado' });
   }
 });
@@ -229,6 +223,20 @@ app.post('/api/viajes/cancelar/:id', verificarToken, async (req, res) => {
     res.json({ exito: true });
   } catch (error) {
     res.status(500).json({ error: 'Error al cancelar viaje' });
+  }
+});
+
+// ============= ENDPOINTS CHOFER =============
+app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
+  const { lat, lng } = req.body;
+  try {
+    await pool.query(
+      'UPDATE usuarios SET ultima_ubicacion_lat = $1, ultima_ubicacion_lng = $2 WHERE id = $3',
+      [lat, lng, req.usuario.id]
+    );
+    res.json({ exito: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar ubicación' });
   }
 });
 
