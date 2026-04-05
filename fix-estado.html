@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Estado Chofer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; margin: 5px; width: 100%; font-size: 16px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 LLévame - Reparar Estado Chofer</h1>
+        
+        <button onclick="reparar()">🔧 Ejecutar reparación</button>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        const resultado = document.getElementById('resultado');
+        
+        async function reparar() {
+            resultado.innerHTML = '<p class="info">🔄 Iniciando reparación...</p>';
+            
+            // Login como admin
+            resultado.innerHTML += '<p>📡 Login como admin...</p>';
+            const loginRes = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+            });
+            const loginData = await loginRes.json();
+            
+            if (!loginData.token) {
+                resultado.innerHTML += '<p class="error">❌ Error de login admin</p>';
+                return;
+            }
+            
+            const token = loginData.token;
+            resultado.innerHTML += '<p class="success">✅ Login admin exitoso</p>';
+            
+            // Agregar columna estado_chofer a usuarios
+            resultado.innerHTML += '<p>📡 Agregando columna estado_chofer a tabla usuarios...</p>';
+            
+            const sql1 = `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS estado_chofer TEXT DEFAULT 'disponible'`;
+            
+            const res1 = await fetch('/admin/ejecutar-sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ sql: sql1 })
+            });
+            const data1 = await res1.json();
+            
+            if (data1.exito) {
+                resultado.innerHTML += '<p class="success">✅ Columna estado_chofer agregada</p>';
+            } else {
+                resultado.innerHTML += '<p class="error">❌ Error: ' + data1.error + '</p>';
+            }
+            
+            // Agregar columna ultima_ubicacion si no existe
+            resultado.innerHTML += '<p>📡 Agregando columnas de ubicación...</p>';
+            
+            const sql2 = `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lat REAL; ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultima_ubicacion_lng REAL`;
+            
+            const res2 = await fetch('/admin/ejecutar-sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ sql: sql2 })
+            });
+            const data2 = await res2.json();
+            
+            if (data2.exito) {
+                resultado.innerHTML += '<p class="success">✅ Columnas de ubicación agregadas</p>';
+            } else {
+                resultado.innerHTML += '<p class="error">❌ Error: ' + data2.error + '</p>';
+            }
+            
+            resultado.innerHTML += '<p class="success">✅ Reparación completada</p>';
+            resultado.innerHTML += '<p>🔄 Ahora recarga la app chofer y prueba aceptar un viaje</p>';
+        }
+    </script>
+</body>
+</html>
