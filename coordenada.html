@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crear Viaje con Coordenadas</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; width: 100%; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 Crear Viaje con Coordenadas</h1>
+        <p>Este viaje tendrá coordenadas reales para que el mapa funcione.</p>
+        
+        <input type="text" id="origen" placeholder="Origen" value="Parque Central, La Habana">
+        <input type="text" id="destino" placeholder="Destino" value="Vedado, La Habana">
+        
+        <button onclick="crearViaje()">Crear Viaje</button>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function crearViaje() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Iniciando sesión...</p>';
+            
+            try {
+                // Login como cliente
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const loginData = await loginRes.json();
+                
+                if (!loginData.token) {
+                    resultado.innerHTML = '<p class="error">❌ Error de login</p>';
+                    return;
+                }
+                
+                const origen = document.getElementById('origen').value;
+                const destino = document.getElementById('destino').value;
+                
+                resultado.innerHTML = '<p>📌 Creando viaje con coordenadas...</p>';
+                
+                // Crear viaje con coordenadas REALES de La Habana
+                const viajeRes = await fetch('/api/viajes/solicitar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + loginData.token },
+                    body: JSON.stringify({
+                        origen: origen,
+                        destino: destino,
+                        origen_lat: 23.1365,
+                        origen_lng: -82.3589,
+                        destino_lat: 23.1234,
+                        destino_lng: -82.3987,
+                        categoria: 'moto'
+                    })
+                });
+                const viajeData = await viajeRes.json();
+                
+                if (viajeData.exito) {
+                    resultado.innerHTML = `<p class="success">✅ Viaje creado con éxito!</p>`;
+                    resultado.innerHTML += `<p><strong>ID del viaje:</strong> ${viajeData.viaje.id}</p>`;
+                    resultado.innerHTML += `<p><strong>Origen:</strong> ${origen}</p>`;
+                    resultado.innerHTML += `<p><strong>Destino:</strong> ${destino}</p>`;
+                    resultado.innerHTML += `<p><strong>Coordenadas origen:</strong> ${viajeData.viaje.origen_lat}, ${viajeData.viaje.origen_lng}</p>`;
+                    resultado.innerHTML += `<p><strong>Coordenadas destino:</strong> ${viajeData.viaje.destino_lat}, ${viajeData.viaje.destino_lng}</p>`;
+                    resultado.innerHTML += `<p style="color:blue">✅ Ahora ve a la app chofer, actualiza y acepta el viaje ID ${viajeData.viaje.id}. El mapa debería funcionar.</p>`;
+                } else {
+                    resultado.innerHTML = `<p class="error">❌ Error: ${JSON.stringify(viajeData)}</p>`;
+                }
+            } catch(e) {
+                resultado.innerHTML = `<p class="error">❌ Error: ${e.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
