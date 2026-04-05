@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LLévame - Chofer Simple</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 0 auto; padding: 20px; background: #1a1a2e; color: white; }
+        .card { background: rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        button { background: #FF9800; color: white; border: none; padding: 12px; border-radius: 12px; width: 100%; cursor: pointer; margin: 5px 0; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: none; }
+        .mapa { height: 300px; border-radius: 12px; margin-top: 15px; background: #333; }
+        .hidden { display: none; }
+        .viaje-card { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; }
+        .estado { text-align: center; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; }
+        .estado-aceptado { background: #2196F3; }
+        .estado-en-curso { background: #4CAF50; }
+    </style>
+</head>
+<body>
+    <h1>🚕 LLévame - Chofer</h1>
+    
+    <div id="loginSection">
+        <div class="card">
+            <input type="text" id="usuario" placeholder="Usuario" value="Yosvany3105">
+            <input type="password" id="password" placeholder="Contraseña" value="Yovi.3105">
+            <button onclick="login()">Iniciar sesión</button>
+        </div>
+    </div>
+
+    <div id="mainSection" class="hidden">
+        <div class="card">
+            <h3>📊 Estado</h3>
+            <div id="estadoDisplay">🟢 Disponible</div>
+            <button id="btnToggle" onclick="toggleEstado()">Cambiar a Ocupado</button>
+        </div>
+
+        <div id="viajesLista" class="card">
+            <h3>📋 Viajes disponibles</h3>
+            <div id="listaViajes">Cargando...</div>
+        </div>
+
+        <div id="viajeActivoCard" class="card hidden">
+            <h3>🚖 Viaje en curso</h3>
+            <div id="estadoViaje" class="estado estado-aceptado">✅ Viaje aceptado</div>
+            <div id="mapa" class="mapa"></div>
+            <div id="infoViaje"></div>
+            <button id="btnIniciar" onclick="iniciarViaje()">🚗 Llegué al cliente</button>
+            <button id="btnFinalizar" class="hidden" onclick="finalizarViaje()">✅ Finalizar viaje</button>
+        </div>
+    </div>
+
+    <script>
+        let token = null;
+        let viajeActivo = null;
+        let mapa = null;
+        let controlRuta = null;
+        let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
+        let intervaloTimer = null;
+        
+        async function login() {
+            const usuario = document.getElementById('usuario').value;
+            const password = document.getElementById('password').value;
+            
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password })
+            });
+            const data = await res.json();
+            
+            if (data.token) {
+                token = data.token;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainSection').classList.remove('hidden');
+                cargarViajes();
+                iniciarGPS();
+                mostrarNotificacion('Bienvenido ' + data.usuario.nombre);
+            } else {
+                alert('Error de login');
+            }
+        }
+        
+        function mostrarNotificacion(msg) {
+            const notif = document.createElement('div');
+            notif.textContent = msg;
+            notif.style.position = 'fixed';
+            notif.style.bottom = '20px';
+            notif.style.left = '20px';
+            notif.style.right = '20px';
+            notif.style.background = '#4CAF50';
+            notif.style.color = 'white';
+            notif.style.padding = '12px';
+            notif.style.borderRadius = '12px';
+            notif.style.textAlign = 'center';
+            notif.style.zIndex = '1000';
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+        
+        async function cargarViajes() {
+            const res = await fetch('/api/chofer/viajes-disponibles', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            const viajes = data.viajes || [];
+            const listaDiv = document.getElementById('listaViajes');
+            
+            if (viajes.length === 0) {
+                listaDiv.innerHTML = '<p>No hay viajes disponibles</p>';
+            } else {
+                listaDiv.innerHTML = viajes.map(v => `
+                    <div class="viaje-card" onclick="aceptarViaje(${v.id})">
+                        <strong>📍 ${v.origen}</strong> → ${v.destino}<br>
+                        💰 ${v.precio_base} CUP | 🚗 ${v.categoria}
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function aceptarViaje(viajeId) {
+            if (!confirm('¿Aceptar este viaje?')) return;
+            
+            const res = await fetch('/api/chofer/aceptar-viaje', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ viaje_id: viajeId })
+            });
+            const data = await res.json();
+            
+            if (data.exito) {
+                await cargarViajeActivo(viajeId);
+                mostrarNotificacion('Viaje aceptado');
+                document.getElementById('viajesLista').classList.add('hidden');
+                document.getElementById('viajeActivoCard').classList.remove('hidden');
+            }
+        }
+        
+        async function cargarViajeActivo(viajeId) {
+            const res = await fetch('/api/viajes/estado/' + viajeId, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            
+            if (data.viaje) {
+                viajeActivo = data.viaje;
+                console.log('Viaje cargado:', viajeActivo);
+                
+                document.getElementById('infoViaje').innerHTML = `
+                    <strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}<br>
+                    <strong>Origen:</strong> ${viajeActivo.origen}<br>
+                    <strong>Destino:</strong> ${viajeActivo.destino}<br>
+                    <strong>Precio:</strong> ${viajeActivo.precio_base} CUP
+                `;
+                
+                iniciarMapa();
+            }
+        }
+        
+        function iniciarMapa() {
+            setTimeout(() => {
+                if (mapa) mapa.remove();
+                if (controlRuta) controlRuta.remove();
+                
+                mapa = L.map('mapa').setView([ubicacionActual.lat, ubicacionActual.lng], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap',
+                    subdomains: 'abcd'
+                }).addTo(mapa);
+                
+                if (viajeActivo && viajeActivo.origen_lat) {
+                    controlRuta = L.Routing.control({
+                        waypoints: [
+                            L.latLng(ubicacionActual.lat, ubicacionActual.lng),
+                            L.latLng(viajeActivo.origen_lat, viajeActivo.origen_lng)
+                        ],
+                        routeWhileDragging: false,
+                        showAlternatives: false,
+                        lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }
+                    }).addTo(mapa);
+                    
+                    console.log('Ruta creada hacia:', viajeActivo.origen_lat, viajeActivo.origen_lng);
+                }
+            }, 200);
+        }
+        
+        async function iniciarViaje() {
+            const res = await fetch(`/api/chofer/iniciar-viaje/${viajeActivo.id}`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                viajeActivo.estado = 'en_curso';
+                document.getElementById('btnIniciar').classList.add('hidden');
+                document.getElementById('btnFinalizar').classList.remove('hidden');
+                document.getElementById('estadoViaje').className = 'estado estado-en-curso';
+                document.getElementById('estadoViaje').innerHTML = '🚗 Viaje en curso';
+                
+                if (controlRuta) controlRuta.remove();
+                controlRuta = L.Routing.control({
+                    waypoints: [
+                        L.latLng(ubicacionActual.lat, ubicacionActual.lng),
+                        L.latLng(viajeActivo.destino_lat, viajeActivo.destino_lng)
+                    ],
+                    routeWhileDragging: false,
+                    lineOptions: { styles: [{ color: '#4CAF50', weight: 5 }] }
+                }).addTo(mapa);
+            }
+        }
+        
+        async function finalizarViaje() {
+            if (!confirm('¿Finalizar viaje?')) return;
+            
+            const res = await fetch(`/api/chofer/finalizar-viaje/${viajeActivo.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ precio_final: viajeActivo.precio_base })
+            });
+            
+            if (res.ok) {
+                mostrarNotificacion('Viaje completado');
+                document.getElementById('viajeActivoCard').classList.add('hidden');
+                document.getElementById('viajesLista').classList.remove('hidden');
+                viajeActivo = null;
+                cargarViajes();
+            }
+        }
+        
+        function toggleEstado() {
+            const estadoDiv = document.getElementById('estadoDisplay');
+            const btn = document.getElementById('btnToggle');
+            if (estadoDiv.innerHTML === '🟢 Disponible') {
+                estadoDiv.innerHTML = '🔴 Ocupado';
+                btn.innerHTML = 'Cambiar a Disponible';
+            } else {
+                estadoDiv.innerHTML = '🟢 Disponible';
+                btn.innerHTML = 'Cambiar a Ocupado';
+                cargarViajes();
+            }
+        }
+        
+        function iniciarGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    if (viajeActivo && viajeActivo.estado === 'aceptado' && controlRuta) {
+                        controlRuta.remove();
+                        controlRuta = L.Routing.control({
+                            waypoints: [
+                                L.latLng(ubicacionActual.lat, ubicacionActual.lng),
+                                L.latLng(viajeActivo.origen_lat, viajeActivo.origen_lng)
+                            ],
+                            routeWhileDragging: false,
+                            lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }
+                        }).addTo(mapa);
+                    }
+                });
+            }
+        }
+        
+        if (intervaloTimer) clearInterval(intervaloTimer);
+        intervaloTimer = setInterval(() => {
+            if (token && document.getElementById('viajesLista').classList.contains('hidden') === false) {
+                cargarViajes();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
