@@ -12,56 +12,288 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e, #16213e); }
-        .header { background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 100; }
-        .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: white; width: auto; padding: 0; }
-        .logo-container { display: flex; align-items: center; gap: 8px; }
-        .logo-img { height: 32px; width: auto; }
-        .logo-text { font-size: 20px; color: white; font-weight: 600; }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            z-index: 100;
+        }
+        
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 26px;
+            cursor: pointer;
+            color: white;
+            width: auto;
+            padding: 0;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-img {
+            height: 35px;
+            width: auto;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            color: white;
+            font-weight: 600;
+        }
         .logo-text span { color: #FF9800; }
-        .user-info { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; }
-        .side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); z-index: 200; transition: left 0.3s ease; display: flex; flex-direction: column; }
+        
+        .user-info {
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            transition: left 0.3s ease;
+            padding: 80px 20px 20px;
+        }
+        
         .side-menu.open { left: 0; }
-        .menu-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 150; display: none; }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+            display: none;
+        }
         .menu-overlay.open { display: block; }
-        .menu-logo { width: 100%; padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); }
-        .menu-logo-img { width: 100%; max-width: 180px; height: auto; margin: 0 auto; display: block; }
-        .menu-items { flex: 1; padding: 20px 15px; }
-        .menu-item { padding: 12px 15px; color: white; font-size: 15px; border-radius: 10px; margin-bottom: 5px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s; }
-        .menu-item:hover { background: rgba(255,255,255,0.1); }
-        .menu-item .icon { font-size: 20px; width: 28px; text-align: center; }
-        .container { max-width: 500px; margin: 0 auto; padding: 20px; min-height: calc(100vh - 60px); }
-        .card { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 18px; margin-bottom: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .card h2 { font-size: 17px; margin-bottom: 12px; color: #1a1a2e; }
-        button { width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        
+        .menu-item {
+            padding: 14px 16px;
+            color: white;
+            font-size: 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .menu-item:active { background: rgba(255,255,255,0.1); }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 70px);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1a1a2e;
+        }
+        
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #FF9800;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
         button.danger { background: #f44336; }
-        button.success { background: #4CAF50; }
-        .estado-display { font-size: 22px; font-weight: bold; text-align: center; margin: 10px 0; }
+        button.outline {
+            background: transparent;
+            border: 2px solid #FF9800;
+            color: #FF9800;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+        }
+        
+        .estado-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
         .estado-display.disponible { color: #4CAF50; }
         .estado-display.ocupado { color: #f44336; }
-        .viaje-card { background: #f9f9f9; padding: 12px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border-left: 3px solid #FF9800; }
-        .viaje-card:active { background: #f0f0f0; }
-        .ganancias { display: flex; gap: 12px; text-align: center; }
-        .ganancia-item { flex: 1; background: #f0f0f0; padding: 8px; border-radius: 10px; }
-        .ganancia-valor { font-size: 16px; font-weight: bold; color: #FF9800; }
-        .perfil-info { background: #f0f0f0; padding: 12px; border-radius: 12px; line-height: 1.5; margin-bottom: 12px; font-size: 13px; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px; }
+        
+        .viaje-card {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border-left: 3px solid #FF9800;
+        }
+        
+        .ganancias {
+            display: flex;
+            gap: 15px;
+            text-align: center;
+        }
+        .ganancia-item {
+            flex: 1;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 12px;
+        }
+        .ganancia-valor {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FF9800;
+        }
+        
+        .perfil-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 12px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
         .modal.open { display: flex; }
-        .modal-content { background: white; border-radius: 20px; padding: 20px; max-width: 380px; width: 100%; max-height: 80vh; overflow-y: auto; }
-        .mapa-container { height: 350px; width: 100%; border-radius: 12px; overflow: hidden; background: #e0e0e0; margin: 12px 0; display: none; }
-        .mapa-container.visible { display: block; }
-        #mapaRuta { height: 100%; width: 100%; }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 { margin-bottom: 15px; }
+        
+        .mapa-container {
+            height: 300px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #e0e0e0;
+            margin: 15px 0;
+        }
+        #mapaRuta {
+            height: 100%;
+            width: 100%;
+        }
+        
         .hidden { display: none; }
-        .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(0,0,0,0.9); color: white; padding: 10px; border-radius: 12px; text-align: center; z-index: 1000; font-size: 13px; }
-        .estado-viaje { text-align: center; padding: 8px; border-radius: 10px; margin-bottom: 12px; font-weight: bold; font-size: 14px; }
-        .estado-aceptado { background: #E3F2FD; color: #2196F3; }
-        .estado-en-curso { background: #E8F5E9; color: #4CAF50; }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 1000;
+        }
+        
         .mt-10 { margin-top: 10px; }
         .text-center { text-align: center; }
-        .flex-buttons { display: flex; gap: 10px; }
-        .flex-buttons button { flex: 1; }
+        .estado-viaje {
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .estado-aceptado { background: #E3F2FD; color: #2196F3; }
+        .estado-en-curso { background: #E8F5E9; color: #4CAF50; }
     </style>
 </head>
 <body>
@@ -76,45 +308,160 @@
     
     <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
     <div class="side-menu" id="sideMenu">
-        <div class="menu-logo">
-            <img src="Logo1.png" alt="LLévame" class="menu-logo-img" onerror="this.style.display='none'">
-        </div>
-        <div class="menu-items">
-            <div class="menu-item" onclick="cambiarSeccion('principal')"><span class="icon">🚖</span> Principal</div>
-            <div class="menu-item" onclick="cambiarSeccion('viajes')"><span class="icon">📋</span> Mis Viajes</div>
-            <div class="menu-item" onclick="cambiarSeccion('perfil')"><span class="icon">👤</span> Mi Perfil</div>
-            <div class="menu-item" onclick="cerrarSesion()"><span class="icon">🚪</span> Cerrar Sesión</div>
-        </div>
+        <div class="menu-item" onclick="cambiarSeccion('principal')">🚖 Principal</div>
+        <div class="menu-item" onclick="cambiarSeccion('viajes')">📋 Mis Viajes</div>
+        <div class="menu-item" onclick="cambiarSeccion('perfil')">👤 Mi Perfil</div>
+        <div class="menu-item" onclick="cerrarSesion()">🚪 Cerrar Sesión</div>
     </div>
 
     <div class="container" id="app">
+        <!-- Pantalla de bienvenida -->
         <div id="authScreen">
-            <div class="card"><h2>🔐 Bienvenido Chofer</h2><button onclick="mostrarLogin()">Iniciar sesión</button><button onclick="mostrarRegistroVehiculo()" class="secondary" style="margin-top:10px">Registrar mi vehículo</button></div>
+            <div class="card">
+                <h2>🔐 Bienvenido Chofer</h2>
+                <button onclick="mostrarLogin()">Iniciar sesión</button>
+                <button onclick="mostrarRegistroVehiculo()" class="secondary" style="margin-top: 12px;">Registrar mi vehículo</button>
+            </div>
         </div>
+
+        <!-- Pantalla de login -->
         <div id="loginScreen" class="hidden">
-            <div class="card"><h2>Iniciar sesión</h2><input type="text" id="loginUsuario" placeholder="Usuario"><input type="password" id="loginPassword" placeholder="Contraseña"><button onclick="login()">Entrar</button><button onclick="volver()" class="secondary" style="margin-top:10px">Volver</button></div>
+            <div class="card">
+                <h2>Iniciar sesión</h2>
+                <input type="text" id="loginUsuario" placeholder="Usuario">
+                <input type="password" id="loginPassword" placeholder="Contraseña">
+                <button onclick="login()">Entrar</button>
+                <button onclick="volver()" class="secondary" style="margin-top: 12px;">Volver</button>
+            </div>
         </div>
 
-        <div id="modalVehiculo" class="modal"><div class="modal-content"><h3>Registrar/Editar vehículo</h3>
-            <select id="tipoVehiculo" onchange="cambiarTipoVehiculo()"><option value="auto">Auto</option><option value="moto">Moto</option><option value="triciclo">Triciclo</option></select>
-            <div id="camposAuto"><input type="text" id="autoMarca" placeholder="Marca/Modelo"><input type="text" id="autoColor" placeholder="Color"><input type="text" id="autoMatricula" placeholder="Matrícula (chapa)"></div>
-            <div id="camposMoto" class="hidden"><input type="text" id="motoMarca" placeholder="Marca/Modelo"><input type="text" id="motoColor" placeholder="Color"><input type="text" id="motoMatricula" placeholder="Matrícula (chapa)"><input type="text" id="motoCirculacion" placeholder="Número de circulación"><select id="motoTipo"><option value="combustion">Combustión</option><option value="electrica">Eléctrica</option></select></div>
-            <div id="camposTriciclo" class="hidden"><input type="text" id="tricicloMarca" placeholder="Marca/Modelo"><input type="text" id="tricicloColor" placeholder="Color"><input type="text" id="tricicloMatricula" placeholder="Matrícula (chapa)"><select id="tricicloTipo"><option value="pasajeros">Pasajeros</option><option value="carga">Carga</option></select></div>
-            <div id="categoriasAuto"><p>Categorías:</p><div class="checkbox-group"><label><input type="checkbox" value="economico"> Económico</label><label><input type="checkbox" value="confort"> Confort</label><label><input type="checkbox" value="clasico"> Clásico</label><label><input type="checkbox" value="lujo"> Lujo</label></div></div>
-            <button onclick="guardarVehiculo()">Guardar vehículo</button><button onclick="cerrarModalVehiculo()" class="secondary mt-10">Cancelar</button>
-        </div></div>
+        <!-- Modal de registro de vehículo -->
+        <div id="modalVehiculo" class="modal">
+            <div class="modal-content">
+                <h3>Registrar/Editar vehículo</h3>
+                <select id="tipoVehiculo" onchange="cambiarTipoVehiculo()">
+                    <option value="auto">Auto</option>
+                    <option value="moto">Moto</option>
+                    <option value="triciclo">Triciclo</option>
+                </select>
+                
+                <div id="camposAuto">
+                    <input type="text" id="autoMarca" placeholder="Marca/Modelo">
+                    <input type="text" id="autoColor" placeholder="Color">
+                    <input type="text" id="autoMatricula" placeholder="Matrícula (chapa)">
+                </div>
+                
+                <div id="camposMoto" class="hidden">
+                    <input type="text" id="motoMarca" placeholder="Marca/Modelo">
+                    <input type="text" id="motoColor" placeholder="Color">
+                    <input type="text" id="motoMatricula" placeholder="Matrícula (chapa)">
+                    <input type="text" id="motoCirculacion" placeholder="Número de circulación">
+                    <select id="motoTipo">
+                        <option value="combustion">Combustión</option>
+                        <option value="electrica">Eléctrica</option>
+                    </select>
+                </div>
+                
+                <div id="camposTriciclo" class="hidden">
+                    <input type="text" id="tricicloMarca" placeholder="Marca/Modelo">
+                    <input type="text" id="tricicloColor" placeholder="Color">
+                    <input type="text" id="tricicloMatricula" placeholder="Matrícula (chapa)">
+                    <select id="tricicloTipo">
+                        <option value="pasajeros">Pasajeros</option>
+                        <option value="carga">Carga</option>
+                    </select>
+                </div>
+                
+                <div id="categoriasAuto">
+                    <p>Categorías:</p>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" value="economico"> Económico</label>
+                        <label><input type="checkbox" value="confort"> Confort</label>
+                        <label><input type="checkbox" value="clasico"> Clásico</label>
+                        <label><input type="checkbox" value="lujo"> Lujo</label>
+                    </div>
+                </div>
+                
+                <button onclick="guardarVehiculo()">Guardar vehículo</button>
+                <button onclick="cerrarModalVehiculo()" class="secondary mt-10">Cancelar</button>
+            </div>
+        </div>
 
-        <div id="modalPerfil" class="modal"><div class="modal-content"><h3>Editar perfil</h3><input type="text" id="editNombre" placeholder="Nombre"><input type="tel" id="editTelefono" placeholder="Teléfono"><input type="email" id="editEmail" placeholder="Email"><input type="tel" id="editEmergencia" placeholder="Teléfono de emergencia"><button onclick="guardarPerfil()">Guardar cambios</button><button onclick="cerrarModalPerfil()" class="secondary mt-10">Cancelar</button></div></div>
+        <!-- Modal de editar perfil -->
+        <div id="modalPerfil" class="modal">
+            <div class="modal-content">
+                <h3>Editar perfil</h3>
+                <input type="text" id="editNombre" placeholder="Nombre">
+                <input type="tel" id="editTelefono" placeholder="Teléfono">
+                <input type="email" id="editEmail" placeholder="Email">
+                <input type="tel" id="editEmergencia" placeholder="Teléfono de emergencia">
+                <button onclick="guardarPerfil()">Guardar cambios</button>
+                <button onclick="cerrarModalPerfil()" class="secondary mt-10">Cancelar</button>
+            </div>
+        </div>
 
+        <!-- Sección Principal -->
         <div id="seccionPrincipal" class="hidden">
-            <div class="card"><h2>📊 Mi estado</h2><div class="estado-display" id="estadoDisplay">🟢 Disponible</div><button id="btnToggle" onclick="toggleEstado()">Cambiar a Ocupado</button><div id="aprobacionMsg" class="hidden" style="color:#FF9800; margin-top:10px">⏳ Esperando aprobación del administrador</div></div>
-            <div class="card"><h2>💰 Ganancias</h2><div class="ganancias"><div class="ganancia-item"><div>Hoy</div><div class="ganancia-valor" id="gananciasHoy">0 CUP</div></div><div class="ganancia-item"><div>Semana</div><div class="ganancia-valor" id="gananciasSemana">0 CUP</div></div></div></div>
-            <div id="viajesDisponiblesSection" class="card"><h2>📋 Viajes disponibles</h2><div id="listaViajes">Cargando...</div></div>
-            <div id="viajeActivoSection" class="card hidden"><h2>🚖 Viaje en curso</h2><div class="estado-viaje" id="estadoViaje">🚗 En camino al cliente</div><div class="mapa-container" id="mapaContainer"><div id="mapaRuta"></div></div><div id="infoViaje" class="text-center mt-10" style="font-size:13px"></div><div class="flex-buttons"><button id="btnBuscarCliente" class="success" onclick="iniciarNavegacion()">📍 Buscar cliente</button><button id="btnIniciarViaje" class="hidden" onclick="iniciarViaje()">🚗 Llegué al cliente</button></div><button id="btnFinalizarViaje" class="hidden" onclick="finalizarViaje()">✅ Finalizar viaje</button></div>
+            <div class="card">
+                <h2>📊 Mi estado</h2>
+                <div class="estado-display" id="estadoDisplay">🟢 Disponible</div>
+                <button id="btnToggle" onclick="toggleEstado()">Cambiar a Ocupado</button>
+                <div id="aprobacionMsg" class="hidden" style="color:#FF9800; margin-top:10px;">⏳ Esperando aprobación del administrador</div>
+            </div>
+            
+            <div class="card">
+                <h2>💰 Ganancias</h2>
+                <div class="ganancias">
+                    <div class="ganancia-item">
+                        <div>Hoy</div>
+                        <div class="ganancia-valor" id="gananciasHoy">0 CUP</div>
+                    </div>
+                    <div class="ganancia-item">
+                        <div>Semana</div>
+                        <div class="ganancia-valor" id="gananciasSemana">0 CUP</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" id="viajesSection">
+                <h2>📋 Viajes disponibles</h2>
+                <div id="listaViajes">Cargando...</div>
+            </div>
+            
+            <!-- Viaje activo con mapa -->
+            <div class="card" id="viajeActivoCard" style="display: none;">
+                <h2>🚖 Viaje en curso</h2>
+                <div class="estado-viaje" id="estadoViaje">✅ Viaje aceptado</div>
+                <div class="mapa-container">
+                    <div id="mapaRuta"></div>
+                </div>
+                <div id="viajeActivoInfo" class="mt-10"></div>
+                <button id="btnIniciar" class="hidden" onclick="iniciarViaje()">🚗 Llegué al cliente - Iniciar viaje</button>
+                <button id="btnFinalizar" class="hidden" onclick="finalizarViaje()">✅ Llegué al destino - Finalizar viaje</button>
+            </div>
         </div>
 
-        <div id="seccionViajes" class="hidden"><div class="card"><h2>📋 Historial de viajes</h2><div id="historialViajes">Cargando...</div></div></div>
-        <div id="seccionPerfil" class="hidden"><div class="card"><h2>👤 Mi perfil</h2><div id="perfilInfo" class="perfil-info">Cargando...</div><button onclick="abrirModalPerfil()" style="background:#2196F3">Editar perfil</button></div><div class="card"><h2>🚗 Mi vehículo</h2><div id="vehiculoInfo" class="perfil-info">Cargando...</div><button onclick="abrirModalVehiculo()" class="outline">Editar vehículo</button></div></div>
+        <!-- Sección Mis Viajes -->
+        <div id="seccionViajes" class="hidden">
+            <div class="card">
+                <h2>📋 Historial de viajes</h2>
+                <div id="historialViajes">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Sección Perfil -->
+        <div id="seccionPerfil" class="hidden">
+            <div class="card">
+                <h2>👤 Mi perfil</h2>
+                <div id="perfilInfo" class="perfil-info">Cargando...</div>
+                <button onclick="abrirModalPerfil()" style="background: #2196F3;">Editar perfil</button>
+            </div>
+            <div class="card">
+                <h2>🚗 Mi vehículo</h2>
+                <div id="vehiculoInfo" class="perfil-info">Cargando...</div>
+                <button onclick="abrirModalVehiculo()" class="outline">Editar vehículo</button>
+            </div>
+        </div>
     </div>
 
     <div id="notification" class="notification hidden"></div>
@@ -124,24 +471,58 @@
         let estadoActual = 'disponible';
         let viajeActivo = null;
         let intervaloTimer = null;
-        let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
-        let datosUsuario = null;
+        let intervalUbicacion = null;
         let mapaRuta = null;
         let controlRuta = null;
-        let vehiculoAprobado = false;
-        let intervaloPosicion = null;
+        let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
+        let datosUsuario = null;
+        let vehiculoActual = null;
         
-        function toggleMenu() { document.getElementById('sideMenu').classList.toggle('open'); document.getElementById('menuOverlay').classList.toggle('open'); }
-        function cambiarSeccion(seccion) { toggleMenu(); document.getElementById('seccionPrincipal').classList.add('hidden'); document.getElementById('seccionViajes').classList.add('hidden'); document.getElementById('seccionPerfil').classList.add('hidden'); document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden'); if (seccion === 'viajes') cargarHistorialViajes(); if (seccion === 'perfil') { cargarPerfil(); cargarVehiculo(); } }
-        function mostrarNotificacion(msg, tipo) { const notif = document.getElementById('notification'); notif.textContent = msg; notif.classList.remove('hidden'); notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50'; setTimeout(() => notif.classList.add('hidden'), 3000); }
-        function mostrarLogin() { document.getElementById('authScreen').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
-        function mostrarRegistroVehiculo() { document.getElementById('authScreen').classList.add('hidden'); abrirModalVehiculo(); }
-        function volver() { document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('authScreen').classList.remove('hidden'); }
+        // ============= MENÚ =============
+        function toggleMenu() {
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('open');
+        }
         
+        function cambiarSeccion(seccion) {
+            toggleMenu();
+            document.getElementById('seccionPrincipal').classList.add('hidden');
+            document.getElementById('seccionViajes').classList.add('hidden');
+            document.getElementById('seccionPerfil').classList.add('hidden');
+            document.getElementById(`seccion${seccion.charAt(0).toUpperCase() + seccion.slice(1)}`).classList.remove('hidden');
+            if (seccion === 'viajes') cargarHistorialViajes();
+            if (seccion === 'perfil') { cargarPerfil(); cargarVehiculo(); }
+        }
+        
+        function mostrarNotificacion(msg, tipo) {
+            const notif = document.getElementById('notification');
+            notif.textContent = msg;
+            notif.classList.remove('hidden');
+            notif.style.background = tipo === 'error' ? '#f44336' : '#4CAF50';
+            setTimeout(() => notif.classList.add('hidden'), 3000);
+        }
+        
+        function mostrarLogin() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+        
+        function mostrarRegistroVehiculo() {
+            document.getElementById('authScreen').classList.add('hidden');
+            abrirModalVehiculo();
+        }
+        
+        function volver() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+        }
+        
+        // ============= LOGIN =============
         async function login() {
             const usuario = document.getElementById('loginUsuario').value;
             const password = document.getElementById('loginPassword').value;
             if (!usuario || !password) { mostrarNotificacion('Complete campos', 'error'); return; }
+            
             try {
                 const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario, password }) });
                 const data = await res.json();
@@ -152,56 +533,494 @@
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('seccionPrincipal').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = datosUsuario.nombre ? datosUsuario.nombre.split(' ')[0] : 'Chofer';
-                    await cargarPerfil(); await cargarVehiculo(); await cargarDatosChofer();
+                    
+                    await cargarPerfil();
+                    await cargarVehiculo();
+                    await cargarDatosChofer();
                     iniciarActualizacionUbicacion();
+                    
                     mostrarNotificacion(`Bienvenido ${datosUsuario.nombre}`, 'exito');
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch (error) { mostrarNotificacion('Error de conexión', 'error'); }
         }
         
-        function abrirModalPerfil() { if (datosUsuario) { document.getElementById('editNombre').value = datosUsuario.nombre || ''; document.getElementById('editTelefono').value = datosUsuario.telefono || ''; document.getElementById('editEmail').value = datosUsuario.email || ''; document.getElementById('editEmergencia').value = datosUsuario.telefono_emergencia || ''; } document.getElementById('modalPerfil').classList.add('open'); }
-        function cerrarModalPerfil() { document.getElementById('modalPerfil').classList.remove('open'); }
-        async function guardarPerfil() { const nombre = document.getElementById('editNombre').value; const telefono = document.getElementById('editTelefono').value; const email = document.getElementById('editEmail').value; const telefonoEmergencia = document.getElementById('editEmergencia').value; try { const res = await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ nombre, telefono, email, telefono_emergencia: telefonoEmergencia }) }); const data = await res.json(); if (data.exito) { mostrarNotificacion('Perfil actualizado', 'exito'); cerrarModalPerfil(); await cargarPerfil(); if (datosUsuario) datosUsuario.nombre = nombre; } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
+        // ============= MODAL PERFIL =============
+        function abrirModalPerfil() {
+            if (datosUsuario) {
+                document.getElementById('editNombre').value = datosUsuario.nombre || '';
+                document.getElementById('editTelefono').value = datosUsuario.telefono || '';
+                document.getElementById('editEmail').value = datosUsuario.email || '';
+                document.getElementById('editEmergencia').value = datosUsuario.telefono_emergencia || '';
+            }
+            document.getElementById('modalPerfil').classList.add('open');
+        }
         
-        function abrirModalVehiculo() { document.getElementById('modalVehiculo').classList.add('open'); cargarDatosVehiculoEnModal(); }
-        function cerrarModalVehiculo() { document.getElementById('modalVehiculo').classList.remove('open'); }
-        function cambiarTipoVehiculo() { const tipo = document.getElementById('tipoVehiculo').value; document.getElementById('camposAuto').classList.add('hidden'); document.getElementById('camposMoto').classList.add('hidden'); document.getElementById('camposTriciclo').classList.add('hidden'); document.getElementById('categoriasAuto').classList.add('hidden'); if (tipo === 'auto') { document.getElementById('camposAuto').classList.remove('hidden'); document.getElementById('categoriasAuto').classList.remove('hidden'); } else if (tipo === 'moto') { document.getElementById('camposMoto').classList.remove('hidden'); } else if (tipo === 'triciclo') { document.getElementById('camposTriciclo').classList.remove('hidden'); } }
-        async function cargarDatosVehiculoEnModal() { try { const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.vehiculo) { const v = data.vehiculo; document.getElementById('tipoVehiculo').value = v.tipo || 'auto'; cambiarTipoVehiculo(); if (v.tipo === 'auto') { document.getElementById('autoMarca').value = v.marca_modelo || ''; document.getElementById('autoColor').value = v.color || ''; document.getElementById('autoMatricula').value = v.matricula || ''; if (v.categorias) { const cats = JSON.parse(v.categorias); document.querySelectorAll('#categoriasAuto input').forEach(cb => { cb.checked = cats.includes(cb.value); }); } } else if (v.tipo === 'moto') { document.getElementById('motoMarca').value = v.marca_modelo || ''; document.getElementById('motoColor').value = v.color || ''; document.getElementById('motoMatricula').value = v.matricula || ''; document.getElementById('motoCirculacion').value = v.circulacion || ''; document.getElementById('motoTipo').value = v.tipo_moto || 'combustion'; } else if (v.tipo === 'triciclo') { document.getElementById('tricicloMarca').value = v.marca_modelo || ''; document.getElementById('tricicloColor').value = v.color || ''; document.getElementById('tricicloMatricula').value = v.matricula || ''; document.getElementById('tricicloTipo').value = v.tipo_triciclo || 'pasajeros'; } } } catch(e) { console.error(e); } }
-        async function guardarVehiculo() { const tipo = document.getElementById('tipoVehiculo').value; let datos = { tipo }; if (tipo === 'auto') { datos.marca_modelo = document.getElementById('autoMarca').value; datos.color = document.getElementById('autoColor').value; datos.matricula = document.getElementById('autoMatricula').value; const categorias = []; document.querySelectorAll('#categoriasAuto input:checked').forEach(cb => categorias.push(cb.value)); if (categorias.length === 0) { mostrarNotificacion('Selecciona al menos una categoría', 'error'); return; } datos.categorias = categorias; } else if (tipo === 'moto') { datos.marca_modelo = document.getElementById('motoMarca').value; datos.color = document.getElementById('motoColor').value; datos.matricula = document.getElementById('motoMatricula').value; datos.circulacion = document.getElementById('motoCirculacion').value; datos.tipo_moto = document.getElementById('motoTipo').value; datos.categorias = ['moto']; } else if (tipo === 'triciclo') { datos.marca_modelo = document.getElementById('tricicloMarca').value; datos.color = document.getElementById('tricicloColor').value; datos.matricula = document.getElementById('tricicloMatricula').value; datos.tipo_triciclo = document.getElementById('tricicloTipo').value; datos.categorias = ['triciclo']; } if (!datos.matricula) { mostrarNotificacion('La matrícula es obligatoria', 'error'); return; } try { const res = await fetch('/api/chofer/vehiculo', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(datos) }); const data = await res.json(); if (data.exito) { mostrarNotificacion('Vehículo guardado. Espera aprobación', 'exito'); cerrarModalVehiculo(); await cargarVehiculo(); } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error de conexión', 'error'); } }
+        function cerrarModalPerfil() {
+            document.getElementById('modalPerfil').classList.remove('open');
+        }
         
-        async function cargarDatosChofer() { try { const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.vehiculo) { vehiculoAprobado = data.vehiculo.aprobado; if (vehiculoAprobado) { document.getElementById('aprobacionMsg').classList.add('hidden'); document.getElementById('viajesDisponiblesSection').classList.remove('hidden'); buscarViajesDisponibles(); cargarGanancias(); setInterval(() => buscarViajesDisponibles(), 10000); setInterval(() => cargarGanancias(), 60000); } else { document.getElementById('aprobacionMsg').classList.remove('hidden'); document.getElementById('viajesDisponiblesSection').classList.add('hidden'); } } else { document.getElementById('aprobacionMsg').innerHTML = '⚠️ No has registrado tu vehículo'; document.getElementById('aprobacionMsg').classList.remove('hidden'); document.getElementById('viajesDisponiblesSection').classList.add('hidden'); } } catch(e) { console.error(e); } }
-        async function cargarPerfil() { try { const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.usuario) { datosUsuario = data.usuario; document.getElementById('perfilInfo').innerHTML = `<strong>${data.usuario.nombre || 'Sin nombre'} ${data.usuario.apellidos || ''}</strong><br>CI: ${data.usuario.ci || '-'}<br>Teléfono: ${data.usuario.telefono || '-'}<br>Email: ${data.usuario.email || '-'}<br>Usuario: ${data.usuario.usuario}<br>Emergencia: ${data.usuario.telefono_emergencia || 'No registrado'}`; } } catch(e) { document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil'; } }
-        async function cargarVehiculo() { try { const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.vehiculo) { const v = data.vehiculo; let categoriasTexto = ''; if (v.categorias) { const cats = JSON.parse(v.categorias); categoriasTexto = cats.join(', '); } document.getElementById('vehiculoInfo').innerHTML = `<strong>Tipo:</strong> ${v.tipo}<br><strong>Vehículo:</strong> ${v.marca_modelo || '-'}<br><strong>Color:</strong> ${v.color || '-'}<br><strong>Matrícula:</strong> ${v.matricula || '-'}<br><strong>Categorías:</strong> ${categoriasTexto || '-'}<br><strong>Estado:</strong> ${v.aprobado ? '✅ Aprobado' : '⏳ Pendiente'}`; } else { document.getElementById('vehiculoInfo').innerHTML = '<p>No has registrado un vehículo</p>'; } } catch(e) { console.error(e); } }
-        async function cargarGanancias() { try { const res = await fetch('/api/chofer/ganancias', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); document.getElementById('gananciasHoy').innerHTML = (data.hoy || 0) + ' CUP'; document.getElementById('gananciasSemana').innerHTML = (data.semana || 0) + ' CUP'; } catch(e) {} }
+        async function guardarPerfil() {
+            const nombre = document.getElementById('editNombre').value;
+            const telefono = document.getElementById('editTelefono').value;
+            const email = document.getElementById('editEmail').value;
+            const telefonoEmergencia = document.getElementById('editEmergencia').value;
+            
+            try {
+                const res = await fetch('/api/perfil', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ nombre, telefono, email, telefono_emergencia: telefonoEmergencia })
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    mostrarNotificacion('Perfil actualizado', 'exito');
+                    cerrarModalPerfil();
+                    await cargarPerfil();
+                    if (datosUsuario) datosUsuario.nombre = nombre;
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch(e) { mostrarNotificacion('Error', 'error'); }
+        }
         
-        function iniciarActualizacionUbicacion() { if (navigator.geolocation) { intervaloPosicion = setInterval(() => { navigator.geolocation.getCurrentPosition(async (position) => { ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude }; try { await fetch('/api/chofer/ubicacion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng }) }); } catch(e) {} if (viajeActivo && (viajeActivo.estado === 'aceptado' || viajeActivo.estado === 'en_curso')) { actualizarRuta(); } }, null, { enableHighAccuracy: true }); }, 3000); } }
+        // ============= MODAL VEHÍCULO =============
+        function abrirModalVehiculo() {
+            document.getElementById('modalVehiculo').classList.add('open');
+            cargarDatosVehiculoEnModal();
+        }
         
-        async function buscarViajesDisponibles() { if (estadoActual !== 'disponible' || !vehiculoAprobado) return; try { const res = await fetch('/api/chofer/viajes-disponibles', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); const viajes = data.viajes || []; const listaDiv = document.getElementById('listaViajes'); if (viajes.length === 0) { listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>'; } else { listaDiv.innerHTML = viajes.map(v => `<div class="viaje-card" onclick="aceptarViaje(${v.id})"><div><strong>📍 ${v.origen}</strong> → ${v.destino}</div><div>💰 ${v.precio_base} CUP | 🚗 ${v.categoria}</div><div><small>Cliente: ${v.cliente_nombre || 'Cliente'}</small></div></div>`).join(''); } } catch(e) { document.getElementById('listaViajes').innerHTML = '<p class="text-center">Error al cargar viajes</p>'; } }
+        function cerrarModalVehiculo() {
+            document.getElementById('modalVehiculo').classList.remove('open');
+        }
         
-        async function aceptarViaje(viajeId) { if (!confirm('¿Aceptar este viaje?')) return; try { const res = await fetch('/api/chofer/aceptar-viaje', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ viaje_id: viajeId }) }); const data = await res.json(); if (data.exito) { estadoActual = 'ocupado'; actualizarUIEstado(); await cargarViajeActivo(viajeId); mostrarNotificacion('Viaje aceptado', 'exito'); } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
+        function cambiarTipoVehiculo() {
+            const tipo = document.getElementById('tipoVehiculo').value;
+            document.getElementById('camposAuto').classList.add('hidden');
+            document.getElementById('camposMoto').classList.add('hidden');
+            document.getElementById('camposTriciclo').classList.add('hidden');
+            document.getElementById('categoriasAuto').classList.add('hidden');
+            
+            if (tipo === 'auto') {
+                document.getElementById('camposAuto').classList.remove('hidden');
+                document.getElementById('categoriasAuto').classList.remove('hidden');
+            } else if (tipo === 'moto') {
+                document.getElementById('camposMoto').classList.remove('hidden');
+            } else if (tipo === 'triciclo') {
+                document.getElementById('camposTriciclo').classList.remove('hidden');
+            }
+        }
         
-        async function cargarViajeActivo(viajeId) { try { const res = await fetch(`/api/viajes/estado/${viajeId}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActivo = data.viaje; document.getElementById('viajesDisponiblesSection').classList.add('hidden'); document.getElementById('viajeActivoSection').classList.remove('hidden'); document.getElementById('infoViaje').innerHTML = `<strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}<br><strong>📍 Origen:</strong> ${viajeActivo.origen}<br><strong>🎯 Destino:</strong> ${viajeActivo.destino}<br><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP`; document.getElementById('btnBuscarCliente').classList.remove('hidden'); document.getElementById('btnIniciarViaje').classList.add('hidden'); document.getElementById('btnFinalizarViaje').classList.add('hidden'); document.getElementById('estadoViaje').innerHTML = '🚗 En camino al cliente'; document.getElementById('estadoViaje').className = 'estado-viaje estado-aceptado'; if (viajeActivo.origen_lat && viajeActivo.origen_lng) { inicializarMapaRuta(); } else { mostrarNotificacion('El viaje no tiene coordenadas de origen', 'error'); } if (intervaloTimer) clearInterval(intervaloTimer); intervaloTimer = setInterval(consultarEstadoViaje, 5000); } } catch(e) { console.error(e); } }
+        async function cargarDatosVehiculoEnModal() {
+            try {
+                const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.vehiculo) {
+                    const v = data.vehiculo;
+                    document.getElementById('tipoVehiculo').value = v.tipo || 'auto';
+                    cambiarTipoVehiculo();
+                    
+                    if (v.tipo === 'auto') {
+                        document.getElementById('autoMarca').value = v.marca_modelo || '';
+                        document.getElementById('autoColor').value = v.color || '';
+                        document.getElementById('autoMatricula').value = v.matricula || '';
+                        if (v.categorias) {
+                            const cats = JSON.parse(v.categorias);
+                            document.querySelectorAll('#categoriasAuto input').forEach(cb => {
+                                cb.checked = cats.includes(cb.value);
+                            });
+                        }
+                    } else if (v.tipo === 'moto') {
+                        document.getElementById('motoMarca').value = v.marca_modelo || '';
+                        document.getElementById('motoColor').value = v.color || '';
+                        document.getElementById('motoMatricula').value = v.matricula || '';
+                        document.getElementById('motoCirculacion').value = v.circulacion || '';
+                        document.getElementById('motoTipo').value = v.tipo_moto || 'combustion';
+                    } else if (v.tipo === 'triciclo') {
+                        document.getElementById('tricicloMarca').value = v.marca_modelo || '';
+                        document.getElementById('tricicloColor').value = v.color || '';
+                        document.getElementById('tricicloMatricula').value = v.matricula || '';
+                        document.getElementById('tricicloTipo').value = v.tipo_triciclo || 'pasajeros';
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
         
-        function inicializarMapaRuta() { const mapaContainer = document.getElementById('mapaContainer'); mapaContainer.classList.add('visible'); if (mapaRuta) mapaRuta.remove(); mapaRuta = L.map('mapaRuta').setView([ubicacionActual.lat, ubicacionActual.lng], 14); L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd' }).addTo(mapaRuta); L.marker([ubicacionActual.lat, ubicacionActual.lng], { icon: L.divIcon({ html: '🚖', iconSize: [30, 30] }) }).addTo(mapaRuta).bindPopup('Tu ubicación'); actualizarRuta(); }
+        async function guardarVehiculo() {
+            const tipo = document.getElementById('tipoVehiculo').value;
+            let datos = { tipo };
+            
+            if (tipo === 'auto') {
+                datos.marca_modelo = document.getElementById('autoMarca').value;
+                datos.color = document.getElementById('autoColor').value;
+                datos.matricula = document.getElementById('autoMatricula').value;
+                const categorias = [];
+                document.querySelectorAll('#categoriasAuto input:checked').forEach(cb => categorias.push(cb.value));
+                if (categorias.length === 0) { mostrarNotificacion('Selecciona al menos una categoría', 'error'); return; }
+                datos.categorias = categorias;
+            } else if (tipo === 'moto') {
+                datos.marca_modelo = document.getElementById('motoMarca').value;
+                datos.color = document.getElementById('motoColor').value;
+                datos.matricula = document.getElementById('motoMatricula').value;
+                datos.circulacion = document.getElementById('motoCirculacion').value;
+                datos.tipo_moto = document.getElementById('motoTipo').value;
+                datos.categorias = ['moto'];
+            } else if (tipo === 'triciclo') {
+                datos.marca_modelo = document.getElementById('tricicloMarca').value;
+                datos.color = document.getElementById('tricicloColor').value;
+                datos.matricula = document.getElementById('tricicloMatricula').value;
+                datos.tipo_triciclo = document.getElementById('tricicloTipo').value;
+                datos.categorias = ['triciclo'];
+            }
+            
+            if (!datos.matricula) { mostrarNotificacion('La matrícula es obligatoria', 'error'); return; }
+            
+            try {
+                const res = await fetch('/api/chofer/vehiculo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(datos)
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    mostrarNotificacion('Vehículo guardado. Espera aprobación', 'exito');
+                    cerrarModalVehiculo();
+                    await cargarVehiculo();
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch(e) { mostrarNotificacion('Error de conexión', 'error'); }
+        }
         
-        function iniciarNavegacion() { if (!viajeActivo) return; mostrarNotificacion('📍 Navegación activada. Sigue la ruta en el mapa.', 'exito'); actualizarRuta(); }
+        // ============= DATOS DEL CHOFER =============
+        async function cargarDatosChofer() {
+            try {
+                const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                vehiculoActual = data.vehiculo;
+                
+                if (vehiculoActual) {
+                    if (vehiculoActual.aprobado) {
+                        document.getElementById('aprobacionMsg').classList.add('hidden');
+                        document.getElementById('viajesSection').classList.remove('hidden');
+                        buscarViajesDisponibles();
+                        cargarGanancias();
+                        // Actualizar cada 10 segundos
+                        if (intervaloTimer) clearInterval(intervaloTimer);
+                        intervaloTimer = setInterval(() => {
+                            buscarViajesDisponibles();
+                            cargarGanancias();
+                        }, 10000);
+                    } else {
+                        document.getElementById('aprobacionMsg').classList.remove('hidden');
+                        document.getElementById('viajesSection').classList.add('hidden');
+                    }
+                } else {
+                    document.getElementById('aprobacionMsg').innerHTML = '⚠️ No has registrado tu vehículo';
+                    document.getElementById('aprobacionMsg').classList.remove('hidden');
+                    document.getElementById('viajesSection').classList.add('hidden');
+                }
+            } catch(e) { console.error(e); }
+        }
         
-        function actualizarRuta() { if (!viajeActivo || !mapaRuta) return; let destino = null; if (viajeActivo.estado === 'aceptado' && viajeActivo.origen_lat && viajeActivo.origen_lng) { destino = { lat: viajeActivo.origen_lat, lng: viajeActivo.origen_lng }; } else if (viajeActivo.estado === 'en_curso' && viajeActivo.destino_lat && viajeActivo.destino_lng) { destino = { lat: viajeActivo.destino_lat, lng: viajeActivo.destino_lng }; } if (destino) { if (controlRuta) { mapaRuta.removeControl(controlRuta); } controlRuta = L.Routing.control({ waypoints: [ L.latLng(ubicacionActual.lat, ubicacionActual.lng), L.latLng(destino.lat, destino.lng) ], routeWhileDragging: false, showAlternatives: false, fitSelectedRoutes: true, lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] } }).addTo(mapaRuta); L.marker([destino.lat, destino.lng], { icon: L.divIcon({ html: viajeActivo.estado === 'aceptado' ? '📍' : '🎯', iconSize: [25, 25] }) }).addTo(mapaRuta).bindPopup(viajeActivo.estado === 'aceptado' ? '📍 Cliente' : '🎯 Destino'); mapaRuta.fitBounds([ [ubicacionActual.lat, ubicacionActual.lng], [destino.lat, destino.lng] ]); } }
+        async function cargarPerfil() {
+            try {
+                const res = await fetch('/api/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.usuario) {
+                    datosUsuario = data.usuario;
+                    document.getElementById('perfilInfo').innerHTML = `
+                        <strong>${data.usuario.nombre || 'Sin nombre'} ${data.usuario.apellidos || ''}</strong><br>
+                        CI: ${data.usuario.ci || '-'}<br>
+                        Teléfono: ${data.usuario.telefono || '-'}<br>
+                        Email: ${data.usuario.email || '-'}<br>
+                        Usuario: ${data.usuario.usuario}<br>
+                        Emergencia: ${data.usuario.telefono_emergencia || 'No registrado'}
+                    `;
+                }
+            } catch(e) {
+                console.error(e);
+                document.getElementById('perfilInfo').innerHTML = 'Error al cargar perfil';
+            }
+        }
         
-        async function consultarEstadoViaje() { if (!viajeActivo) return; try { const res = await fetch(`/api/viajes/estado/${viajeActivo.id}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { const estadoAnterior = viajeActivo.estado; viajeActivo = data.viaje; if (estadoAnterior === 'aceptado' && viajeActivo.estado === 'en_curso') { document.getElementById('btnBuscarCliente').classList.add('hidden'); document.getElementById('btnIniciarViaje').classList.add('hidden'); document.getElementById('btnFinalizarViaje').classList.remove('hidden'); document.getElementById('estadoViaje').innerHTML = '🚖 Viaje en curso'; document.getElementById('estadoViaje').className = 'estado-viaje estado-en-curso'; mostrarNotificacion('Has recogido al cliente. Dirígete al destino.', 'exito'); actualizarRuta(); } if (viajeActivo.estado === 'completado') { clearInterval(intervaloTimer); mostrarNotificacion(`Viaje completado. Total: ${viajeActivo.precio_final || viajeActivo.precio_base} CUP`, 'exito'); setTimeout(() => { document.getElementById('viajeActivoSection').classList.add('hidden'); document.getElementById('viajesDisponiblesSection').classList.remove('hidden'); viajeActivo = null; estadoActual = 'disponible'; actualizarUIEstado(); cargarGanancias(); cargarHistorialViajes(); buscarViajesDisponibles(); }, 3000); } } } catch(e) { console.error(e); } }
+        async function cargarVehiculo() {
+            try {
+                const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.vehiculo) {
+                    const v = data.vehiculo;
+                    let categoriasTexto = '';
+                    if (v.categorias) {
+                        const cats = JSON.parse(v.categorias);
+                        categoriasTexto = cats.join(', ');
+                    }
+                    document.getElementById('vehiculoInfo').innerHTML = `
+                        <strong>Tipo:</strong> ${v.tipo}<br>
+                        <strong>Vehículo:</strong> ${v.marca_modelo || '-'}<br>
+                        <strong>Color:</strong> ${v.color || '-'}<br>
+                        <strong>Matrícula:</strong> ${v.matricula || '-'}<br>
+                        <strong>Categorías:</strong> ${categoriasTexto || '-'}<br>
+                        <strong>Estado:</strong> ${v.aprobado ? '✅ Aprobado' : '⏳ Pendiente'}
+                    `;
+                } else {
+                    document.getElementById('vehiculoInfo').innerHTML = '<p>No has registrado un vehículo</p>';
+                }
+            } catch(e) { console.error(e); }
+        }
         
-        async function iniciarViaje() { if (!confirm('¿Has recogido al cliente? Iniciar viaje.')) return; try { const res = await fetch(`/api/chofer/iniciar-viaje/${viajeActivo.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); if (res.ok) { viajeActivo.estado = 'en_curso'; document.getElementById('btnBuscarCliente').classList.add('hidden'); document.getElementById('btnIniciarViaje').classList.add('hidden'); document.getElementById('btnFinalizarViaje').classList.remove('hidden'); document.getElementById('estadoViaje').innerHTML = '🚖 Viaje en curso'; document.getElementById('estadoViaje').className = 'estado-viaje estado-en-curso'; actualizarRuta(); mostrarNotificacion('Viaje iniciado. Dirígete al destino.', 'exito'); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
+        async function cargarGanancias() {
+            try {
+                const res = await fetch('/api/chofer/ganancias', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                document.getElementById('gananciasHoy').innerHTML = (data.hoy || 0) + ' CUP';
+                document.getElementById('gananciasSemana').innerHTML = (data.semana || 0) + ' CUP';
+            } catch(e) {}
+        }
         
-        async function finalizarViaje() { if (!confirm('¿Finalizar viaje?')) return; try { const res = await fetch(`/api/chofer/finalizar-viaje/${viajeActivo.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ precio_final: viajeActivo.precio_base }) }); if (res.ok) { mostrarNotificacion('Viaje completado', 'exito'); clearInterval(intervaloTimer); document.getElementById('viajeActivoSection').classList.add('hidden'); document.getElementById('viajesDisponiblesSection').classList.remove('hidden'); viajeActivo = null; estadoActual = 'disponible'; actualizarUIEstado(); cargarGanancias(); cargarHistorialViajes(); buscarViajesDisponibles(); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
+        // ============= UBICACIÓN =============
+        function iniciarActualizacionUbicacion() {
+            if (navigator.geolocation) {
+                // Actualizar ubicación cada 5 segundos
+                if (intervalUbicacion) clearInterval(intervalUbicacion);
+                intervalUbicacion = setInterval(() => {
+                    navigator.geolocation.getCurrentPosition(async (position) => {
+                        ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        if (estadoActual === 'disponible' || (viajeActivo && viajeActivo.estado === 'aceptado')) {
+                            try {
+                                await fetch('/api/chofer/ubicacion', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                    body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng })
+                                });
+                                
+                                // Si hay un viaje activo, actualizar la ruta
+                                if (viajeActivo && viajeActivo.estado === 'aceptado' && viajeActivo.origen_lat) {
+                                    actualizarRuta();
+                                }
+                            } catch(e) {}
+                        }
+                    }, null, { enableHighAccuracy: true });
+                }, 5000);
+            }
+        }
         
-        function toggleEstado() { estadoActual = estadoActual === 'disponible' ? 'ocupado' : 'disponible'; actualizarUIEstado(); if (estadoActual === 'disponible') buscarViajesDisponibles(); }
-        function actualizarUIEstado() { const estadoDiv = document.getElementById('estadoDisplay'); const btn = document.getElementById('btnToggle'); if (estadoActual === 'disponible') { estadoDiv.innerHTML = '🟢 Disponible'; estadoDiv.className = 'estado-display disponible'; btn.innerHTML = 'Cambiar a Ocupado'; } else { estadoDiv.innerHTML = '🔴 Ocupado'; estadoDiv.className = 'estado-display ocupado'; btn.innerHTML = 'Cambiar a Disponible'; } }
+        // ============= VIAJES DISPONIBLES =============
+        async function buscarViajesDisponibles() {
+            if (estadoActual !== 'disponible') return;
+            
+            try {
+                const res = await fetch('/api/chofer/viajes-disponibles', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                const viajes = data.viajes || [];
+                const listaDiv = document.getElementById('listaViajes');
+                if (viajes.length === 0) {
+                    listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>';
+                } else {
+                    listaDiv.innerHTML = viajes.map(v => `
+                        <div class="viaje-card" onclick="aceptarViaje(${v.id})">
+                            <div><strong>📍 ${v.origen}</strong> → ${v.destino}</div>
+                            <div>💰 ${v.precio_base} CUP | 🚗 ${v.categoria}</div>
+                            <div><small>Cliente: ${v.cliente_nombre || 'Cliente'}</small></div>
+                            <div><small>📏 Distancia: ${v.distancia ? v.distancia + 'km' : 'calculando...'}</small></div>
+                        </div>
+                    `).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
         
-        async function cargarHistorialViajes() { try { const res = await fetch('/api/chofer/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); const viajes = data.viajes || []; if (viajes.length === 0) { document.getElementById('historialViajes').innerHTML = '<p class="text-center">No hay viajes</p>'; } else { document.getElementById('historialViajes').innerHTML = viajes.map(v => `<div style="padding:10px; border-bottom:1px solid #eee;"><strong>${v.origen} → ${v.destino}</strong><br><small>${new Date(v.creado_en).toLocaleString()}</small><br>${v.estado} | ${v.precio_final || v.precio_base} CUP</div>`).join(''); } } catch(e) { console.error(e); } }
+        async function aceptarViaje(viajeId) {
+            if (!confirm('¿Aceptar este viaje?')) return;
+            
+            try {
+                const res = await fetch('/api/chofer/aceptar-viaje', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ viaje_id: viajeId })
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    estadoActual = 'ocupado';
+                    actualizarUIEstado();
+                    await cargarViajeActivo(viajeId);
+                    mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito');
+                } else { mostrarNotificacion(data.error || 'Error', 'error'); }
+            } catch(e) { mostrarNotificacion('Error', 'error'); }
+        }
         
-        function cerrarSesion() { if (intervaloTimer) clearInterval(intervaloTimer); if (intervaloPosicion) clearInterval(intervaloPosicion); localStorage.removeItem('token'); location.reload(); }
+        async function cargarViajeActivo(viajeId) {
+            try {
+                const res = await fetch(`/api/viajes/estado/${viajeId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                if (data.viaje) {
+                    viajeActivo = data.viaje;
+                    document.getElementById('viajesSection').style.display = 'none';
+                    document.getElementById('viajeActivoCard').style.display = 'block';
+                    document.getElementById('btnIniciar').classList.remove('hidden');
+                    document.getElementById('estadoViaje').innerHTML = '✅ Viaje aceptado - Dirígete al cliente';
+                    document.getElementById('viajeActivoInfo').innerHTML = `
+                        <div><strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}</div>
+                        <div><strong>📍 Origen:</strong> ${viajeActivo.origen}</div>
+                        <div><strong>🎯 Destino:</strong> ${viajeActivo.destino}</div>
+                        <div><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP</div>
+                    `;
+                    inicializarMapaRuta();
+                }
+            } catch(e) { console.error(e); }
+        }
         
-        if (token) { document.getElementById('authScreen').classList.add('hidden'); document.getElementById('seccionPrincipal').classList.remove('hidden'); document.getElementById('userName').innerHTML = 'Chofer'; Promise.all([ cargarPerfil(), cargarVehiculo(), cargarDatosChofer() ]).then(() => { iniciarActualizacionUbicacion(); }).catch(e => console.error(e)); }
+        function inicializarMapaRuta() {
+            setTimeout(() => {
+                if (mapaRuta) mapaRuta.remove();
+                if (controlRuta) controlRuta.remove();
+                
+                mapaRuta = L.map('mapaRuta').setView([ubicacionActual.lat, ubicacionActual.lng], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap',
+                    subdomains: 'abcd'
+                }).addTo(mapaRuta);
+                
+                actualizarRuta();
+            }, 100);
+        }
+        
+        function actualizarRuta() {
+            if (!mapaRuta || !viajeActivo) return;
+            
+            // Destino según estado del viaje
+            let destinoLat, destinoLng;
+            if (viajeActivo.estado === 'aceptado') {
+                // Va hacia el cliente
+                destinoLat = viajeActivo.origen_lat;
+                destinoLng = viajeActivo.origen_lng;
+            } else if (viajeActivo.estado === 'en_curso') {
+                // Va hacia el destino final
+                destinoLat = viajeActivo.destino_lat;
+                destinoLng = viajeActivo.destino_lng;
+            } else {
+                return;
+            }
+            
+            if (!ubicacionActual.lat || !destinoLat) return;
+            
+            // Crear o actualizar la ruta
+            if (controlRuta) {
+                controlRuta.remove();
+            }
+            
+            controlRuta = L.Routing.control({
+                waypoints: [
+                    L.latLng(ubicacionActual.lat, ubicacionActual.lng),
+                    L.latLng(destinoLat, destinoLng)
+                ],
+                routeWhileDragging: false,
+                showAlternatives: false,
+                lineOptions: {
+                    styles: [{ color: '#FF9800', weight: 5, opacity: 0.8 }]
+                },
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                showTraffic: false
+            }).addTo(mapaRuta);
+        }
+        
+        async function iniciarViaje() {
+            try {
+                const res = await fetch(`/api/chofer/iniciar-viaje/${viajeActivo.id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    viajeActivo.estado = 'en_curso';
+                    document.getElementById('btnIniciar').classList.add('hidden');
+                    document.getElementById('btnFinalizar').classList.remove('hidden');
+                    document.getElementById('estadoViaje').innerHTML = '🚗 Viaje en curso - Llevando al destino';
+                    mostrarNotificacion('Viaje iniciado. Lleva al cliente a su destino', 'exito');
+                    actualizarRuta();
+                }
+            } catch(e) { mostrarNotificacion('Error', 'error'); }
+        }
+        
+        async function finalizarViaje() {
+            if (!confirm('¿Finalizar viaje y cobrar?')) return;
+            
+            try {
+                const res = await fetch(`/api/chofer/finalizar-viaje/${viajeActivo.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ precio_final: viajeActivo.precio_base })
+                });
+                if (res.ok) {
+                    mostrarNotificacion(`Viaje completado. Total: ${viajeActivo.precio_base} CUP`, 'exito');
+                    estadoActual = 'disponible';
+                    actualizarUIEstado();
+                    document.getElementById('viajeActivoCard').style.display = 'none';
+                    document.getElementById('viajesSection').style.display = 'block';
+                    if (controlRuta) controlRuta.remove();
+                    viajeActivo = null;
+                    buscarViajesDisponibles();
+                    cargarGanancias();
+                    cargarHistorialViajes();
+                }
+            } catch(e) { mostrarNotificacion('Error', 'error'); }
+        }
+        
+        function toggleEstado() {
+            estadoActual = estadoActual === 'disponible' ? 'ocupado' : 'disponible';
+            actualizarUIEstado();
+            if (estadoActual === 'disponible') buscarViajesDisponibles();
+        }
+        
+        function actualizarUIEstado() {
+            const estadoDiv = document.getElementById('estadoDisplay');
+            const btn = document.getElementById('btnToggle');
+            if (estadoActual === 'disponible') {
+                estadoDiv.innerHTML = '🟢 Disponible';
+                estadoDiv.className = 'estado-display disponible';
+                btn.innerHTML = 'Cambiar a Ocupado';
+            } else {
+                estadoDiv.innerHTML = '🔴 Ocupado';
+                estadoDiv.className = 'estado-display ocupado';
+                btn.innerHTML = 'Cambiar a Disponible';
+            }
+        }
+        
+        async function cargarHistorialViajes() {
+            try {
+                const res = await fetch('/api/chofer/mis-viajes', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                const viajes = data.viajes || [];
+                if (viajes.length === 0) {
+                    document.getElementById('historialViajes').innerHTML = '<p class="text-center">No hay viajes</p>';
+                } else {
+                    document.getElementById('historialViajes').innerHTML = viajes.map(v => `
+                        <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                            <strong>${v.origen} → ${v.destino}</strong><br>
+                            <small>${new Date(v.creado_en).toLocaleString()}</small><br>
+                            ${v.estado} | ${v.precio_final || v.precio_base} CUP
+                        </div>
+                    `).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
+        
+        function cerrarSesion() { 
+            if (intervaloTimer) clearInterval(intervaloTimer);
+            if (intervalUbicacion) clearInterval(intervalUbicacion);
+            localStorage.removeItem('token'); 
+            location.reload(); 
+        }
+        
+        // Inicialización
+        if (token) {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('seccionPrincipal').classList.remove('hidden');
+            document.getElementById('userName').innerHTML = 'Chofer';
+            
+            Promise.all([
+                cargarPerfil(),
+                cargarVehiculo(),
+                cargarDatosChofer()
+            ]).then(() => {
+                iniciarActualizacionUbicacion();
+            }).catch(e => console.error(e));
+        }
     </script>
 </body>
 </html>
