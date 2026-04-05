@@ -13,6 +13,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e, #16213e); }
+        
         .header { background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 100; }
         .menu-btn { background: none; border: none; font-size: 26px; cursor: pointer; color: white; width: auto; padding: 0; }
         .logo-container { display: flex; align-items: center; gap: 10px; }
@@ -20,40 +21,58 @@
         .logo-text { font-size: 22px; color: white; font-weight: 600; }
         .logo-text span { color: #FF9800; }
         .user-info { font-size: 12px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; }
+        
         .side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(20px); z-index: 200; transition: left 0.3s ease; padding: 80px 20px 20px; }
         .side-menu.open { left: 0; }
         .menu-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
         .menu-overlay.open { display: block; }
         .menu-item { padding: 14px 16px; color: white; font-size: 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 14px; }
+        
         .container { max-width: 500px; margin: 0 auto; padding: 20px; min-height: calc(100vh - 70px); }
         .card { background: rgba(255,255,255,0.95); border-radius: 24px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .card h2 { font-size: 18px; margin-bottom: 15px; color: #1a1a2e; }
+        .card h3 { font-size: 16px; margin-bottom: 10px; color: #333; }
+        
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; }
         button { width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
         button:active { transform: scale(0.98); }
         button.secondary { background: #666; }
         button.danger { background: #f44336; }
         button.outline { background: transparent; border: 2px solid #FF9800; color: #FF9800; }
+        
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+        .checkbox-group label { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+        
         .estado-display { font-size: 24px; font-weight: bold; text-align: center; margin: 10px 0; }
         .estado-display.disponible { color: #4CAF50; }
         .estado-display.ocupado { color: #f44336; }
+        
         .viaje-card { background: #f9f9f9; padding: 12px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; border-left: 3px solid #FF9800; }
+        .viaje-card:active { background: #f0f0f0; }
+        
         .ganancias { display: flex; gap: 15px; text-align: center; }
         .ganancia-item { flex: 1; background: #f0f0f0; padding: 10px; border-radius: 12px; }
         .ganancia-valor { font-size: 18px; font-weight: bold; color: #FF9800; }
+        
         .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; line-height: 1.6; margin-bottom: 15px; }
+        
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal.open { display: flex; }
         .modal-content { background: white; border-radius: 24px; padding: 20px; max-width: 400px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .modal-content h3 { margin-bottom: 15px; }
+        
         .mapa-container { height: 300px; width: 100%; border-radius: 12px; overflow: hidden; background: #e0e0e0; margin: 15px 0; }
         #mapaRuta { height: 100%; width: 100%; }
+        
         .hidden { display: none; }
         .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
         .notification { position: fixed; bottom: 20px; left: 20px; right: 20px; background: rgba(0,0,0,0.9); color: white; padding: 12px; border-radius: 12px; text-align: center; z-index: 1000; }
+        
         .mt-10 { margin-top: 10px; }
         .text-center { text-align: center; }
+        
         .estado-viaje { text-align: center; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; }
         .estado-aceptado { background: #E3F2FD; color: #2196F3; }
         .estado-en-curso { background: #E8F5E9; color: #4CAF50; }
@@ -79,6 +98,7 @@
 
     <div class="container" id="app">
         <div id="authScreen"><div class="card"><h2>🔐 Bienvenido Chofer</h2><button onclick="mostrarLogin()">Iniciar sesión</button><button onclick="mostrarRegistroVehiculo()" class="secondary" style="margin-top:12px">Registrar mi vehículo</button></div></div>
+        
         <div id="loginScreen" class="hidden"><div class="card"><h2>Iniciar sesión</h2><input type="text" id="loginUsuario" placeholder="Usuario"><input type="password" id="loginPassword" placeholder="Contraseña"><button onclick="login()">Entrar</button><button onclick="volver()" class="secondary" style="margin-top:12px">Volver</button></div></div>
 
         <div id="modalVehiculo" class="modal"><div class="modal-content"><h3>Registrar/Editar vehículo</h3><select id="tipoVehiculo" onchange="cambiarTipoVehiculo()"><option value="auto">Auto</option><option value="moto">Moto</option><option value="triciclo">Triciclo</option></select>
@@ -163,17 +183,17 @@
         
         async function cargarGanancias() { try { const res = await fetch('/api/chofer/ganancias', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); document.getElementById('gananciasHoy').innerHTML = (data.hoy || 0) + ' CUP'; document.getElementById('gananciasSemana').innerHTML = (data.semana || 0) + ' CUP'; } catch(e) {} }
         
-        function iniciarActualizacionUbicacion() { if (navigator.geolocation) { if (intervalUbicacion) clearInterval(intervalUbicacion); intervalUbicacion = setInterval(() => { navigator.geolocation.getCurrentPosition(async (position) => { ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude }; if (estadoActual === 'disponible' || (viajeActivo && viajeActivo.estado === 'aceptado')) { try { await fetch('/api/chofer/ubicacion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng }) }); if (viajeActivo && viajeActivo.estado === 'aceptado') { setTimeout(() => actualizarRuta(), 500); } } catch(e) {} } }, null, { enableHighAccuracy: true }); }, 5000); } }
+        function iniciarActualizacionUbicacion() { if (navigator.geolocation) { if (intervalUbicacion) clearInterval(intervalUbicacion); intervalUbicacion = setInterval(() => { navigator.geolocation.getCurrentPosition(async (position) => { ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude }; if (estadoActual === 'disponible' || (viajeActivo && viajeActivo.estado === 'aceptado')) { try { await fetch('/api/chofer/ubicacion', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ lat: ubicacionActual.lat, lng: ubicacionActual.lng }) }); if (viajeActivo && viajeActivo.estado === 'aceptado') { actualizarRuta(); } } catch(e) {} } }, null, { enableHighAccuracy: true }); }, 5000); } }
         
-        async function buscarViajesDisponibles() { if (estadoActual !== 'disponible') return; try { const res = await fetch('/api/chofer/viajes-disponibles', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); const viajes = data.viajes || []; const listaDiv = document.getElementById('listaViajes'); if (viajes.length === 0) { listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>'; } else { listaDiv.innerHTML = viajes.map(v => `<div class="viaje-card" onclick="aceptarViaje(${v.id})"><div><strong>📍 ${v.origen}</strong> → ${v.destino}</div><div>💰 ${v.precio_base} CUP | 🚗 ${v.categoria}</div><div><small>Cliente: ${v.cliente_nombre || 'Cliente'}</small></div></div>`).join(''); } } catch(e) { console.error(e); } }
+        async function buscarViajesDisponibles() { if (estadoActual !== 'disponible') return; try { const res = await fetch('/api/chofer/viajes-disponibles', { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); const viajes = data.viajes || []; const listaDiv = document.getElementById('listaViajes'); if (viajes.length === 0) { listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>'; } else { listaDiv.innerHTML = viajes.map(v => `<div class="viaje-card" onclick="acceptarViaje(${v.id})"><div><strong>📍 ${v.origen}</strong> → ${v.destino}</div><div>💰 ${v.precio_base} CUP | 🚗 ${v.categoria}</div><div><small>Cliente: ${v.cliente_nombre || 'Cliente'}</small></div></div>`).join(''); } } catch(e) { console.error(e); } }
         
-        async function aceptarViaje(viajeId) { if (!confirm('¿Aceptar este viaje?')) return; try { const res = await fetch('/api/chofer/aceptar-viaje', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ viaje_id: viajeId }) }); const data = await res.json(); if (data.exito) { estadoActual = 'ocupado'; actualizarUIEstado(); await cargarViajeActivo(viajeId); mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito'); } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
+        async function acceptarViaje(viajeId) { if (!confirm('¿Aceptar este viaje?')) return; try { const res = await fetch('/api/chofer/aceptar-viaje', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ viaje_id: viajeId }) }); const data = await res.json(); if (data.exito) { estadoActual = 'ocupado'; actualizarUIEstado(); await cargarViajeActivo(viajeId); mostrarNotificacion('Viaje aceptado. Dirígete al cliente', 'exito'); } else { mostrarNotificacion(data.error || 'Error', 'error'); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
         
-        async function cargarViajeActivo(viajeId) { try { const res = await fetch(`/api/viajes/estado/${viajeId}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActivo = data.viaje; console.log('Viaje cargado:', viajeActivo); document.getElementById('viajesSection').style.display = 'none'; document.getElementById('viajeActivoCard').style.display = 'block'; document.getElementById('btnIniciar').classList.remove('hidden'); document.getElementById('estadoViaje').innerHTML = '✅ Viaje aceptado - Dirígete al cliente'; document.getElementById('viajeActivoInfo').innerHTML = `<div><strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}</div><div><strong>📍 Origen:</strong> ${viajeActivo.origen}</div><div><strong>🎯 Destino:</strong> ${viajeActivo.destino}</div><div><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP</div>`; iniciarMapa(); } } catch(e) { console.error(e); } }
+        async function cargarViajeActivo(viajeId) { try { const res = await fetch(`/api/viajes/estado/${viajeId}`, { headers: { 'Authorization': 'Bearer ' + token } }); const data = await res.json(); if (data.viaje) { viajeActivo = data.viaje; console.log('Viaje activo cargado:', viajeActivo); document.getElementById('viajesSection').style.display = 'none'; document.getElementById('viajeActivoCard').style.display = 'block'; document.getElementById('btnIniciar').classList.remove('hidden'); document.getElementById('estadoViaje').innerHTML = '✅ Viaje aceptado - Dirígete al cliente'; document.getElementById('viajeActivoInfo').innerHTML = `<div><strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}</div><div><strong>📍 Origen:</strong> ${viajeActivo.origen}</div><div><strong>🎯 Destino:</strong> ${viajeActivo.destino}</div><div><strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP</div>`; iniciarMapa(); } } catch(e) { console.error(e); } }
         
         function iniciarMapa() { setTimeout(() => { if (mapaRuta) mapaRuta.remove(); if (controlRuta) controlRuta.remove(); mapaRuta = L.map('mapaRuta').setView([ubicacionActual.lat, ubicacionActual.lng], 13); L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd' }).addTo(mapaRuta); actualizarRuta(); }, 200); }
         
-        function actualizarRuta() { if (!mapaRuta || !viajeActivo) { console.log('No se puede actualizar ruta: mapa o viajeActivo null'); return; } let destinoLat, destinoLng; if (viajeActivo.estado === 'aceptado') { destinoLat = viajeActivo.origen_lat; destinoLng = viajeActivo.origen_lng; } else if (viajeActivo.estado === 'en_curso') { destinoLat = viajeActivo.destino_lat; destinoLng = viajeActivo.destino_lng; } else { console.log('Estado no válido para ruta:', viajeActivo.estado); return; } if (!ubicacionActual.lat || !destinoLat) { console.log('Coordenadas faltantes - ubicacion:', ubicacionActual, 'destino:', destinoLat, destinoLng); return; } if (controlRuta) { controlRuta.remove(); } controlRuta = L.Routing.control({ waypoints: [ L.latLng(ubicacionActual.lat, ubicacionActual.lng), L.latLng(destinoLat, destinoLng) ], routeWhileDragging: false, showAlternatives: false, lineOptions: { styles: [{ color: '#FF9800', weight: 5, opacity: 0.8 }] }, addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true }).addTo(mapaRuta); console.log('Ruta creada desde', ubicacionActual, 'hasta', destinoLat, destinoLng); }
+        function actualizarRuta() { if (!mapaRuta || !viajeActivo) return; let destinoLat, destinoLng; if (viajeActivo.estado === 'aceptado') { destinoLat = viajeActivo.origen_lat; destinoLng = viajeActivo.origen_lng; } else if (viajeActivo.estado === 'en_curso') { destinoLat = viajeActivo.destino_lat; destinoLng = viajeActivo.destino_lng; } else { return; } if (!ubicacionActual.lat || !destinoLat) return; if (controlRuta) controlRuta.remove(); controlRuta = L.Routing.control({ waypoints: [ L.latLng(ubicacionActual.lat, ubicacionActual.lng), L.latLng(destinoLat, destinoLng) ], routeWhileDragging: false, showAlternatives: false, lineOptions: { styles: [{ color: '#FF9800', weight: 5, opacity: 0.8 }] }, addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true }).addTo(mapaRuta); }
         
         async function iniciarViaje() { try { const res = await fetch(`/api/chofer/iniciar-viaje/${viajeActivo.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } }); if (res.ok) { viajeActivo.estado = 'en_curso'; document.getElementById('btnIniciar').classList.add('hidden'); document.getElementById('btnFinalizar').classList.remove('hidden'); document.getElementById('estadoViaje').innerHTML = '🚗 Viaje en curso - Llevando al destino'; mostrarNotificacion('Viaje iniciado. Lleva al cliente a su destino', 'exito'); actualizarRuta(); } } catch(e) { mostrarNotificacion('Error', 'error'); } }
         
