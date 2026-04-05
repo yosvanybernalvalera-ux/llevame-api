@@ -79,6 +79,7 @@
             z-index: 200;
             transition: left 0.3s ease;
             padding: 80px 20px 20px;
+            border-right: 1px solid rgba(255,255,255,0.1);
         }
         
         .side-menu.open { left: 0; }
@@ -88,11 +89,24 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
             z-index: 150;
             display: none;
         }
         .menu-overlay.open { display: block; }
+        
+        .menu-logo {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .menu-logo-img {
+            width: 80px;
+            height: auto;
+            border-radius: 50%;
+        }
         
         .menu-item {
             padding: 14px 16px;
@@ -106,6 +120,7 @@
             gap: 14px;
         }
         .menu-item:active { background: rgba(255,255,255,0.1); }
+        .menu-item .icon { font-size: 22px; }
         
         .container {
             max-width: 500px;
@@ -194,6 +209,7 @@
             cursor: pointer;
             border-left: 3px solid #FF9800;
         }
+        .viaje-card:active { background: #f0f0f0; }
         
         .ganancias {
             display: flex;
@@ -310,10 +326,21 @@
     
     <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
     <div class="side-menu" id="sideMenu">
-        <div class="menu-item" onclick="cambiarSeccion('principal')">🚖 Principal</div>
-        <div class="menu-item" onclick="cambiarSeccion('viajes')">📋 Mis Viajes</div>
-        <div class="menu-item" onclick="cambiarSeccion('perfil')">👤 Mi Perfil</div>
-        <div class="menu-item" onclick="cerrarSesion()">🚪 Cerrar Sesión</div>
+        <div class="menu-logo">
+            <img src="Logo1.png" alt="LLévame" class="menu-logo-img" onerror="this.style.display='none'">
+        </div>
+        <div class="menu-item" onclick="cambiarSeccion('principal')">
+            <span class="icon">🚖</span> Principal
+        </div>
+        <div class="menu-item" onclick="cambiarSeccion('viajes')">
+            <span class="icon">📋</span> Mis Viajes
+        </div>
+        <div class="menu-item" onclick="cambiarSeccion('perfil')">
+            <span class="icon">👤</span> Mi Perfil
+        </div>
+        <div class="menu-item" onclick="cerrarSesion()">
+            <span class="icon">🚪</span> Cerrar Sesión
+        </div>
     </div>
 
     <div class="container" id="app">
@@ -702,7 +729,7 @@
                         document.getElementById('viajesDisponiblesSection').classList.remove('hidden');
                         buscarViajesDisponibles();
                         cargarGanancias();
-                        setInterval(() => buscarViajesDisponibles(), 15000);
+                        setInterval(() => buscarViajesDisponibles(), 10000);
                         setInterval(() => cargarGanancias(), 60000);
                     } else {
                         document.getElementById('aprobacionMsg').classList.remove('hidden');
@@ -777,7 +804,6 @@
                 navigator.geolocation.watchPosition(async (position) => {
                     ubicacionActual = { lat: position.coords.latitude, lng: position.coords.longitude };
                     
-                    // Actualizar ubicación en el servidor
                     try {
                         await fetch('/api/chofer/ubicacion', {
                             method: 'POST',
@@ -786,7 +812,6 @@
                         });
                     } catch(e) {}
                     
-                    // Si hay un viaje activo, actualizar la ruta en el mapa
                     if (viajeActivo && (viajeActivo.estado === 'aceptado' || viajeActivo.estado === 'en_curso')) {
                         actualizarRuta();
                     }
@@ -799,12 +824,15 @@
             if (estadoActual !== 'disponible' || !vehiculoAprobado) return;
             
             try {
-                const res = await fetch('/api/chofer/viajes-disponibles', { headers: { 'Authorization': 'Bearer ' + token } });
+                const res = await fetch('/api/chofer/viajes-disponibles', { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
                 const data = await res.json();
                 const viajes = data.viajes || [];
                 const listaDiv = document.getElementById('listaViajes');
+                
                 if (viajes.length === 0) {
-                    listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles</p>';
+                    listaDiv.innerHTML = '<p class="text-center">No hay viajes disponibles en este momento</p>';
                 } else {
                     listaDiv.innerHTML = viajes.map(v => `
                         <div class="viaje-card" onclick="aceptarViaje(${v.id})">
@@ -814,7 +842,10 @@
                         </div>
                     `).join('');
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error('Error:', e);
+                document.getElementById('listaViajes').innerHTML = '<p class="text-center">Error al cargar viajes</p>';
+            }
         }
         
         async function aceptarViaje(viajeId) {
@@ -843,11 +874,9 @@
                 if (data.viaje) {
                     viajeActivo = data.viaje;
                     
-                    // Ocultar sección de viajes disponibles y mostrar viaje activo
                     document.getElementById('viajesDisponiblesSection').classList.add('hidden');
                     document.getElementById('viajeActivoSection').classList.remove('hidden');
                     
-                    // Mostrar información del viaje
                     document.getElementById('infoViaje').innerHTML = `
                         <strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}<br>
                         <strong>📍 Origen:</strong> ${viajeActivo.origen}<br>
@@ -855,7 +884,6 @@
                         <strong>💰 Precio:</strong> ${viajeActivo.precio_base} CUP
                     `;
                     
-                    // Mostrar botón correspondiente según estado
                     if (viajeActivo.estado === 'aceptado') {
                         document.getElementById('btnIniciarViaje').classList.remove('hidden');
                         document.getElementById('btnFinalizarViaje').classList.add('hidden');
@@ -868,10 +896,8 @@
                         document.getElementById('estadoViaje').className = 'estado-viaje estado-en-curso';
                     }
                     
-                    // Inicializar mapa con ruta
                     inicializarMapaRuta();
                     
-                    // Iniciar actualización periódica del estado
                     if (intervaloTimer) clearInterval(intervaloTimer);
                     intervaloTimer = setInterval(consultarEstadoViaje, 5000);
                 }
@@ -887,9 +913,8 @@
                 subdomains: 'abcd' 
             }).addTo(mapaRuta);
             
-            // Marcar posición actual
             L.marker([ubicacionActual.lat, ubicacionActual.lng], {
-                icon: L.divIcon({ html: '🚖', iconSize: [30, 30], className: 'marcador-chofer' })
+                icon: L.divIcon({ html: '🚖', iconSize: [30, 30] })
             }).addTo(mapaRuta).bindPopup('Tu ubicación');
             
             actualizarRuta();
@@ -902,24 +927,20 @@
             let destino = null;
             
             if (viajeActivo.estado === 'aceptado') {
-                // Ruta al cliente (usar coordenadas del origen del viaje)
                 if (viajeActivo.origen_lat && viajeActivo.origen_lng) {
                     destino = { lat: viajeActivo.origen_lat, lng: viajeActivo.origen_lng };
                 }
             } else if (viajeActivo.estado === 'en_curso') {
-                // Ruta al destino final
                 if (viajeActivo.destino_lat && viajeActivo.destino_lng) {
                     destino = { lat: viajeActivo.destino_lat, lng: viajeActivo.destino_lng };
                 }
             }
             
             if (destino && mapaRuta) {
-                // Limpiar ruta anterior
                 if (controlRuta) {
                     mapaRuta.removeControl(controlRuta);
                 }
                 
-                // Crear nueva ruta
                 controlRuta = L.Routing.control({
                     waypoints: [
                         L.latLng(origen.lat, origen.lng),
@@ -931,7 +952,6 @@
                     lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }
                 }).addTo(mapaRuta);
                 
-                // Marcar destino
                 L.marker([destino.lat, destino.lng], {
                     icon: L.divIcon({ html: viajeActivo.estado === 'aceptado' ? '📍' : '🎯', iconSize: [25, 25] })
                 }).addTo(mapaRuta).bindPopup(viajeActivo.estado === 'aceptado' ? '📍 Cliente' : '🎯 Destino');
@@ -948,7 +968,6 @@
                     const estadoAnterior = viajeActivo.estado;
                     viajeActivo = data.viaje;
                     
-                    // Si el estado cambió de 'aceptado' a 'en_curso'
                     if (estadoAnterior === 'aceptado' && viajeActivo.estado === 'en_curso') {
                         document.getElementById('btnIniciarViaje').classList.add('hidden');
                         document.getElementById('btnFinalizarViaje').classList.remove('hidden');
@@ -958,7 +977,6 @@
                         actualizarRuta();
                     }
                     
-                    // Si el viaje se completó
                     if (viajeActivo.estado === 'completado') {
                         clearInterval(intervaloTimer);
                         mostrarNotificacion(`Viaje completado. Total: ${viajeActivo.precio_final || viajeActivo.precio_base} CUP`, 'exito');
