@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crear Viaje Prueba - LLévame</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 10px 5px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 LLévame - Crear Viaje de Prueba</h1>
+        <p>Este script creará un viaje con coordenadas usando TU usuario.</p>
+        <button id="btnCrear" onclick="crearViaje()">📌 Crear Viaje</button>
+        <h3>Resultado:</h3>
+        <div id="resultado"></div>
+    </div>
+    <script>
+        async function crearViaje() {
+            const resultado = document.getElementById('resultado');
+            const btn = document.getElementById('btnCrear');
+            btn.disabled = true;
+            btn.innerHTML = 'Creando...';
+            resultado.innerHTML = '<p>🔄 Iniciando sesión con tu usuario...</p>';
+            try {
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const loginData = await loginRes.json();
+                if (!loginData.token) {
+                    resultado.innerHTML = '<p class="error">❌ Error: No se pudo iniciar sesión</p>';
+                    btn.disabled = false;
+                    btn.innerHTML = '📌 Crear Viaje';
+                    return;
+                }
+                const token = loginData.token;
+                resultado.innerHTML += '<p>✅ Sesión iniciada correctamente</p>';
+                resultado.innerHTML += '<p>📌 Creando viaje con coordenadas...</p>';
+                const viajeRes = await fetch('/api/viajes/solicitar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({
+                        origen: 'Parque Central, La Habana',
+                        destino: 'Vedado, La Habana',
+                        origen_lat: 23.1365,
+                        origen_lng: -82.3589,
+                        destino_lat: 23.1234,
+                        destino_lng: -82.3987,
+                        categoria: 'confort'
+                    })
+                });
+                const viajeData = await viajeRes.json();
+                if (viajeData.exito) {
+                    resultado.innerHTML += '<p class="success">✅ Viaje creado con éxito!</p>';
+                    resultado.innerHTML += '<p><strong>Ahora ve a la app chofer, recárgala y acepta este viaje. El mapa funcionará correctamente.</strong></p>';
+                } else {
+                    resultado.innerHTML += '<p class="error">❌ Error: ' + (viajeData.error || 'desconocido') + '</p>';
+                }
+            } catch (error) {
+                resultado.innerHTML += '<p class="error">❌ Error: ' + error.message + '</p>';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📌 Crear Viaje';
+            }
+        }
+    </script>
+</body>
+</html>
