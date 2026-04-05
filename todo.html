@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LLévame - Crear y Aceptar Viaje</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; width: 100%; margin: 10px 0; font-size: 16px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 LLévame - Crear y Aceptar Viaje</h1>
+        <p>Este script creará un viaje con coordenadas REALES y lo aceptará automáticamente.</p>
+        
+        <button id="btnEjecutar" onclick="ejecutarTodo()">▶️ Ejecutar Todo</button>
+        
+        <h3>Resultado:</h3>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        const resultado = document.getElementById('resultado');
+        
+        function log(msg, tipo) {
+            const color = tipo === 'error' ? 'red' : (tipo === 'success' ? 'green' : 'blue');
+            resultado.innerHTML += `<div style="color:${color}; margin-top:5px;">${msg}</div>`;
+            console.log(msg);
+        }
+        
+        async function ejecutarTodo() {
+            const btn = document.getElementById('btnEjecutar');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Ejecutando...';
+            resultado.innerHTML = '';
+            
+            try {
+                // 1. Login como cliente (Yosvany3105)
+                log('1. Iniciando sesión como cliente...');
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const loginData = await loginRes.json();
+                
+                if (!loginData.token) {
+                    log('Error de login', 'error');
+                    return;
+                }
+                log('✅ Login exitoso', 'success');
+                
+                // 2. Crear viaje con coordenadas REALES
+                log('2. Creando viaje con coordenadas...');
+                const viajeRes = await fetch('/api/viajes/solicitar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + loginData.token },
+                    body: JSON.stringify({
+                        origen: 'Parque Central, La Habana',
+                        destino: 'Vedado, La Habana',
+                        origen_lat: 23.1365,
+                        origen_lng: -82.3589,
+                        destino_lat: 23.1234,
+                        destino_lng: -82.3987,
+                        categoria: 'moto'
+                    })
+                });
+                const viajeData = await viajeRes.json();
+                
+                if (!viajeData.exito) {
+                    log('Error creando viaje: ' + JSON.stringify(viajeData), 'error');
+                    return;
+                }
+                
+                const viajeId = viajeData.viaje.id;
+                log(`✅ Viaje creado con ID: ${viajeId}`, 'success');
+                log(`   Origen lat: ${viajeData.viaje.origen_lat}`, 'info');
+                log(`   Destino lat: ${viajeData.viaje.destino_lat}`, 'info');
+                
+                // 3. Login como chofer (misma cuenta)
+                log('3. Iniciando sesión como chofer...');
+                const loginChoferRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const choferData = await loginChoferRes.json();
+                const choferToken = choferData.token;
+                log('✅ Login chofer exitoso', 'success');
+                
+                // 4. Aceptar el viaje
+                log(`4. Aceptando viaje ID ${viajeId}...`);
+                const aceptarRes = await fetch('/api/chofer/aceptar-viaje', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + choferToken },
+                    body: JSON.stringify({ viaje_id: viajeId })
+                });
+                const aceptarData = await aceptarRes.json();
+                
+                if (aceptarData.exito) {
+                    log('✅ Viaje aceptado correctamente!', 'success');
+                } else {
+                    log('Error aceptando viaje: ' + JSON.stringify(aceptarData), 'error');
+                }
+                
+                // 5. Verificar el viaje aceptado
+                log('5. Verificando estado del viaje...');
+                const estadoRes = await fetch(`/api/viajes/estado/${viajeId}`, {
+                    headers: { 'Authorization': 'Bearer ' + choferToken }
+                });
+                const estadoData = await estadoRes.json();
+                
+                if (estadoData.viaje) {
+                    log(`✅ Estado: ${estadoData.viaje.estado}`, 'success');
+                    log(`📍 Origen lat: ${estadoData.viaje.origen_lat}`, 'info');
+                    log(`📍 Destino lat: ${estadoData.viaje.destino_lat}`, 'info');
+                }
+                
+                log('', 'info');
+                log('🎉 PROCESO COMPLETADO', 'success');
+                log('', 'info');
+                log('Ahora abre la app chofer y actualiza. Deberías ver el viaje activo con el MAPA funcionando.', 'info');
+                log('Si el mapa no aparece, recarga la app chofer una vez más.', 'info');
+                
+            } catch(e) {
+                log('❌ Error: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '▶️ Ejecutar Todo';
+            }
+        }
+    </script>
+</body>
+</html>
