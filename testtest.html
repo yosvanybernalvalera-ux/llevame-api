@@ -1,26 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Endpoint Directo</title>
+    <title>Test Básico</title>
+    <meta charset="UTF-8">
 </head>
 <body>
-    <h1>Test</h1>
-    <button onclick="test()">Probar</button>
-    <pre id="resultado"></pre>
+    <h1>Test Básico API</h1>
+    <button onclick="testLogin()">1. Probar Login</button>
+    <button onclick="testViajes()">2. Probar Viajes (después de login)</button>
+    <div id="resultado"></div>
     <script>
-        async function test() {
-            const login = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
-            });
-            const { token } = await login.json();
-            
-            const res = await fetch('/api/chofer/viajes-disponibles', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const data = await res.json();
-            document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+        let token = null;
+        const resultado = document.getElementById('resultado');
+        
+        async function testLogin() {
+            resultado.innerHTML = '<p>Probando login...</p>';
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+                });
+                const data = await res.json();
+                if (data.token) {
+                    token = data.token;
+                    resultado.innerHTML = '<p style="color:green">✅ Login exitoso. Token: ' + token.substring(0, 30) + '...</p>';
+                } else {
+                    resultado.innerHTML = '<p style="color:red">❌ Error: ' + JSON.stringify(data) + '</p>';
+                }
+            } catch(e) {
+                resultado.innerHTML = '<p style="color:red">❌ Error de conexión: ' + e.message + '</p>';
+            }
+        }
+        
+        async function testViajes() {
+            if (!token) {
+                resultado.innerHTML += '<p style="color:red">❌ Primero haz login</p>';
+                return;
+            }
+            resultado.innerHTML += '<p>Probando /api/chofer/viajes-disponibles...</p>';
+            try {
+                const res = await fetch('/api/chofer/viajes-disponibles', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                resultado.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch(e) {
+                resultado.innerHTML += '<p style="color:red">❌ Error: ' + e.message + '</p>';
+            }
         }
     </script>
 </body>
