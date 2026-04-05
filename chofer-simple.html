@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LLévame - Chofer Simple</title>
+    <title>LLévame - Chofer</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
         body { font-family: system-ui; max-width: 500px; margin: 0 auto; padding: 20px; background: #1a1a2e; color: white; }
         .card { background: rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
@@ -46,8 +48,8 @@
             <div id="estadoViaje" class="estado estado-aceptado">✅ Viaje aceptado</div>
             <div id="mapa" class="mapa"></div>
             <div id="infoViaje"></div>
-            <button id="btnIniciar" onclick="iniciarViaje()">🚗 Llegué al cliente</button>
-            <button id="btnFinalizar" class="hidden" onclick="finalizarViaje()">✅ Finalizar viaje</button>
+            <button id="btnIniciar" onclick="iniciarViaje()">🚗 Llegué al cliente - Iniciar viaje</button>
+            <button id="btnFinalizar" class="hidden" onclick="finalizarViaje()">✅ Llegué al destino - Finalizar viaje</button>
         </div>
     </div>
 
@@ -58,6 +60,7 @@
         let controlRuta = null;
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         let intervaloTimer = null;
+        let intervaloTimerActivo = null;
         
         async function login() {
             const usuario = document.getElementById('usuario').value;
@@ -74,9 +77,14 @@
                 token = data.token;
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('mainSection').classList.remove('hidden');
-                cargarViajes();
+                await cargarViajes();
+                await verificarViajeActivo();
                 iniciarGPS();
                 mostrarNotificacion('Bienvenido ' + data.usuario.nombre);
+                
+                if (intervaloTimer) clearInterval(intervaloTimer);
+                intervaloTimer = setInterval(() => cargarViajes(), 10000);
+                intervaloTimerActivo = setInterval(() => verificarViajeActivo(), 5000);
             } else {
                 alert('Error de login');
             }
@@ -97,6 +105,43 @@
             notif.style.zIndex = '1000';
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 3000);
+        }
+        
+        async function verificarViajeActivo() {
+            // Buscar viaje en estado aceptado o en_curso para este chofer
+            const res = await fetch('/api/chofer/mis-viajes', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            const viajes = data.viajes || [];
+            const viajeActivoEncontrado = viajes.find(v => v.estado === 'aceptado' || v.estado === 'en_curso');
+            
+            if (viajeActivoEncontrado && !viajeActivo) {
+                viajeActivo = viajeActivoEncontrado;
+                console.log('Viaje activo encontrado:', viajeActivo);
+                document.getElementById('viajesLista').classList.add('hidden');
+                document.getElementById('viajeActivoCard').classList.remove('hidden');
+                document.getElementById('infoViaje').innerHTML = `
+                    <strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}<br>
+                    <strong>Origen:</strong> ${viajeActivo.origen}<br>
+                    <strong>Destino:</strong> ${viajeActivo.destino}<br>
+                    <strong>Precio:</strong> ${viajeActivo.precio_base} CUP
+                `;
+                
+                if (viajeActivo.estado === 'en_curso') {
+                    document.getElementById('btnIniciar').classList.add('hidden');
+                    document.getElementById('btnFinalizar').classList.remove('hidden');
+                    document.getElementById('estadoViaje').className = 'estado estado-en-curso';
+                    document.getElementById('estadoViaje').innerHTML = '🚗 Viaje en curso';
+                }
+                
+                iniciarMapa();
+            } else if (!viajeActivoEncontrado && viajeActivo) {
+                viajeActivo = null;
+                document.getElementById('viajeActivoCard').classList.add('hidden');
+                document.getElementById('viajesLista').classList.remove('hidden');
+                cargarViajes();
+            }
         }
         
         async function cargarViajes() {
@@ -130,31 +175,8 @@
             const data = await res.json();
             
             if (data.exito) {
-                await cargarViajeActivo(viajeId);
+                await verificarViajeActivo();
                 mostrarNotificacion('Viaje aceptado');
-                document.getElementById('viajesLista').classList.add('hidden');
-                document.getElementById('viajeActivoCard').classList.remove('hidden');
-            }
-        }
-        
-        async function cargarViajeActivo(viajeId) {
-            const res = await fetch('/api/viajes/estado/' + viajeId, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const data = await res.json();
-            
-            if (data.viaje) {
-                viajeActivo = data.viaje;
-                console.log('Viaje cargado:', viajeActivo);
-                
-                document.getElementById('infoViaje').innerHTML = `
-                    <strong>Cliente:</strong> ${viajeActivo.cliente_nombre || 'Cliente'}<br>
-                    <strong>Origen:</strong> ${viajeActivo.origen}<br>
-                    <strong>Destino:</strong> ${viajeActivo.destino}<br>
-                    <strong>Precio:</strong> ${viajeActivo.precio_base} CUP
-                `;
-                
-                iniciarMapa();
             }
         }
         
@@ -169,18 +191,27 @@
                     subdomains: 'abcd'
                 }).addTo(mapa);
                 
-                if (viajeActivo && viajeActivo.origen_lat) {
+                let destinoLat, destinoLng;
+                if (viajeActivo.estado === 'aceptado') {
+                    destinoLat = viajeActivo.origen_lat;
+                    destinoLng = viajeActivo.origen_lng;
+                } else {
+                    destinoLat = viajeActivo.destino_lat;
+                    destinoLng = viajeActivo.destino_lng;
+                }
+                
+                if (destinoLat) {
                     controlRuta = L.Routing.control({
                         waypoints: [
                             L.latLng(ubicacionActual.lat, ubicacionActual.lng),
-                            L.latLng(viajeActivo.origen_lat, viajeActivo.origen_lng)
+                            L.latLng(destinoLat, destinoLng)
                         ],
                         routeWhileDragging: false,
                         showAlternatives: false,
                         lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }
                     }).addTo(mapa);
                     
-                    console.log('Ruta creada hacia:', viajeActivo.origen_lat, viajeActivo.origen_lng);
+                    console.log('Ruta creada hacia:', destinoLat, destinoLng);
                 }
             }, 200);
         }
@@ -206,6 +237,8 @@
                     routeWhileDragging: false,
                     lineOptions: { styles: [{ color: '#4CAF50', weight: 5 }] }
                 }).addTo(mapa);
+                
+                mostrarNotificacion('Viaje iniciado');
             }
         }
         
@@ -220,9 +253,9 @@
             
             if (res.ok) {
                 mostrarNotificacion('Viaje completado');
+                viajeActivo = null;
                 document.getElementById('viajeActivoCard').classList.add('hidden');
                 document.getElementById('viajesLista').classList.remove('hidden');
-                viajeActivo = null;
                 cargarViajes();
             }
         }
@@ -244,27 +277,28 @@
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
                     ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    if (viajeActivo && viajeActivo.estado === 'aceptado' && controlRuta) {
+                    if (viajeActivo && (viajeActivo.estado === 'aceptado' || viajeActivo.estado === 'en_curso') && controlRuta) {
                         controlRuta.remove();
+                        let destinoLat, destinoLng;
+                        if (viajeActivo.estado === 'aceptado') {
+                            destinoLat = viajeActivo.origen_lat;
+                            destinoLng = viajeActivo.origen_lng;
+                        } else {
+                            destinoLat = viajeActivo.destino_lat;
+                            destinoLng = viajeActivo.destino_lng;
+                        }
                         controlRuta = L.Routing.control({
                             waypoints: [
                                 L.latLng(ubicacionActual.lat, ubicacionActual.lng),
-                                L.latLng(viajeActivo.origen_lat, viajeActivo.origen_lng)
+                                L.latLng(destinoLat, destinoLng)
                             ],
                             routeWhileDragging: false,
-                            lineOptions: { styles: [{ color: '#FF9800', weight: 5 }] }
+                            lineOptions: { styles: [{ color: viajeActivo.estado === 'aceptado' ? '#FF9800' : '#4CAF50', weight: 5 }] }
                         }).addTo(mapa);
                     }
                 });
             }
         }
-        
-        if (intervaloTimer) clearInterval(intervaloTimer);
-        intervaloTimer = setInterval(() => {
-            if (token && document.getElementById('viajesLista').classList.contains('hidden') === false) {
-                cargarViajes();
-            }
-        }, 10000);
     </script>
 </body>
 </html>
