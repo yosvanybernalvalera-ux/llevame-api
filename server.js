@@ -231,13 +231,14 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
   }
 });
 
-// ENDPOINT VIAJES DISPONIBLES - VERSIÓN SIMPLIFICADA
+// ENDPOINT VIAJES DISPONIBLES - CON FILTRO POR CATEGORÍA
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
     console.log('Buscando viajes para chofer:', req.usuario.id);
     
-    // Verificar aprobación
-    const vehiculo = await pool.query('SELECT aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
+    // Obtener las categorías del chofer
+    const vehiculo = await pool.query('SELECT categorias, aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
+    
     if (vehiculo.rows.length === 0) {
       return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
     }
@@ -245,13 +246,34 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
       return res.json({ viajes: [], mensaje: 'Chofer no aprobado aún' });
     }
     
-    // Consulta simple
+    // Obtener categorías del chofer
+    let categoriasChofer = [];
+    try {
+      const catRaw = vehiculo.rows[0].categorias;
+      if (typeof catRaw === 'string') {
+        categoriasChofer = JSON.parse(catRaw);
+      } else if (Array.isArray(catRaw)) {
+        categoriasChofer = catRaw;
+      } else {
+        categoriasChofer = [];
+      }
+    } catch(e) {
+      categoriasChofer = [];
+    }
+    
+    console.log('Categorías del chofer:', categoriasChofer);
+    
+    if (categoriasChofer.length === 0) {
+      return res.json({ viajes: [], mensaje: 'Tu vehículo no tiene categorías asignadas' });
+    }
+    
+    // Buscar viajes que coincidan con las categorías del chofer
     const result = await pool.query(`
       SELECT id, cliente_id, origen, destino, categoria, precio_base, creado_en
       FROM viajes
-      WHERE estado = 'buscando_chofer'
+      WHERE estado = 'buscando_chofer' AND categoria = ANY($1)
       ORDER BY creado_en ASC
-    `);
+    `, [categoriasChofer]);
     
     // Agregar nombre del cliente
     const viajes = [];
@@ -267,7 +289,7 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
       });
     }
     
-    console.log('Viajes encontrados:', viajes.length);
+    console.log('Viajes filtrados encontrados:', viajes.length);
     res.json({ viajes: viajes });
   } catch (error) {
     console.error('Error:', error);
