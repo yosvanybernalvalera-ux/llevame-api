@@ -231,29 +231,52 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
 
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
+    // 1. Obtener vehículo del chofer
     const vehiculo = await pool.query('SELECT categorias, aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
-    if (vehiculo.rows.length === 0) return res.json({ viajes: [] });
-    if (!vehiculo.rows[0].aprobado) return res.json({ viajes: [] });
     
+    if (vehiculo.rows.length === 0) {
+      return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
+    }
+    
+    if (!vehiculo.rows[0].aprobado) {
+      return res.json({ viajes: [], mensaje: 'Tu vehículo no está aprobado' });
+    }
+    
+    // 2. Parsear categorías (pueden ser JSONB o string)
     let categoriasChofer = [];
-    try {
-      const catRaw = vehiculo.rows[0].categorias;
-      categoriasChofer = typeof catRaw === 'string' ? JSON.parse(catRaw) : (Array.isArray(catRaw) ? catRaw : []);
-    } catch(e) { categoriasChofer = []; }
+    const catRaw = vehiculo.rows[0].categorias;
     
-    if (categoriasChofer.length === 0) return res.json({ viajes: [] });
+    if (typeof catRaw === 'string') {
+      try {
+        categoriasChofer = JSON.parse(catRaw);
+      } catch(e) {
+        categoriasChofer = [];
+      }
+    } else if (Array.isArray(catRaw)) {
+      categoriasChofer = catRaw;
+    } else {
+      categoriasChofer = [];
+    }
     
+    if (categoriasChofer.length === 0) {
+      return res.json({ viajes: [], mensaje: 'No tienes categorías asignadas' });
+    }
+    
+    // 3. Buscar viajes (usando ANY con array)
     const result = await pool.query(`
       SELECT v.id, v.origen, v.destino, v.categoria, v.precio_base, u.nombre as cliente_nombre
       FROM viajes v
       JOIN usuarios u ON v.cliente_id = u.id
-      WHERE v.estado = 'buscando_chofer' AND v.categoria = ANY($1)
+      WHERE v.estado = 'buscando_chofer' 
+        AND v.categoria = ANY($1::text[])
       ORDER BY v.creado_en ASC
     `, [categoriasChofer]);
     
     res.json({ viajes: result.rows });
+    
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener viajes' });
+    console.error('Error en viajes-disponibles:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
