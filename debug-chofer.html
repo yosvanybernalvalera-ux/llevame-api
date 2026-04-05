@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Chofer - LLévame</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+        .log { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🐛 Debug App Chofer</h1>
+        <button onclick="loginYProbar()">1. Iniciar sesión y ver vehículo</button>
+        <button onclick="verViajes()">2. Ver viajes disponibles</button>
+        <button onclick="aceptarViaje(43)">3. Aceptar viaje ID 43</button>
+        <button onclick="verEstadoViaje(43)">4. Ver estado viaje ID 43</button>
+        <div id="resultado" class="log"></div>
+    </div>
+
+    <script>
+        let token = null;
+        const resultado = document.getElementById('resultado');
+        
+        function log(msg) {
+            resultado.innerHTML += '<div>' + msg + '</div>';
+            console.log(msg);
+        }
+        
+        async function loginYProbar() {
+            resultado.innerHTML = '';
+            log('🔐 Iniciando sesión con Yosvany3105...');
+            
+            const loginRes = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'Yosvany3105', password: 'Yovi.3105' })
+            });
+            const loginData = await loginRes.json();
+            
+            if (!loginData.token) {
+                log('❌ Error de login');
+                return;
+            }
+            
+            token = loginData.token;
+            log('✅ Token obtenido');
+            
+            const vehiculoRes = await fetch('/api/chofer/vehiculo', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const vehiculoData = await vehiculoRes.json();
+            log('📋 Vehículo: ' + JSON.stringify(vehiculoData, null, 2));
+        }
+        
+        async function verViajes() {
+            if (!token) { log('❌ Primero haz login'); return; }
+            
+            log('📋 Buscando viajes disponibles...');
+            const viajesRes = await fetch('/api/chofer/viajes-disponibles', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const viajesData = await viajesRes.json();
+            log('📋 Viajes: ' + JSON.stringify(viajesData, null, 2));
+        }
+        
+        async function aceptarViaje(viajeId) {
+            if (!token) { log('❌ Primero haz login'); return; }
+            
+            log('🚖 Aceptando viaje ' + viajeId + '...');
+            const aceptarRes = await fetch('/api/chofer/aceptar-viaje', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ viaje_id: viajeId })
+            });
+            const aceptarData = await aceptarRes.json();
+            log('✅ Respuesta: ' + JSON.stringify(aceptarData));
+        }
+        
+        async function verEstadoViaje(viajeId) {
+            if (!token) { log('❌ Primero haz login'); return; }
+            
+            log('🔍 Consultando estado del viaje ' + viajeId + '...');
+            const estadoRes = await fetch('/api/viajes/estado/' + viajeId, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const estadoData = await estadoRes.json();
+            log('📋 Datos del viaje:');
+            log(JSON.stringify(estadoData, null, 2));
+            
+            if (estadoData.viaje) {
+                const v = estadoData.viaje;
+                log('📍 origen_lat: ' + v.origen_lat);
+                log('📍 origen_lng: ' + v.origen_lng);
+                log('📍 destino_lat: ' + v.destino_lat);
+                log('📍 destino_lng: ' + v.destino_lng);
+                log('📌 Estado: ' + v.estado);
+            }
+        }
+    </script>
+</body>
+</html>
