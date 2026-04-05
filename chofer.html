@@ -68,19 +68,17 @@
             border-radius: 20px;
         }
         
-        /* Menú lateral - diseño compacto */
+        /* Menú lateral - logo horizontal ancho completo */
         .side-menu {
             position: fixed;
             top: 0;
             left: -280px;
-            width: 260px;
+            width: 280px;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(20px);
             z-index: 200;
             transition: left 0.3s ease;
-            padding: 20px 15px;
-            border-right: 1px solid rgba(255,255,255,0.1);
             display: flex;
             flex-direction: column;
         }
@@ -99,19 +97,24 @@
         .menu-overlay.open { display: block; }
         
         .menu-logo {
+            width: 100%;
+            padding: 20px;
             text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
             border-bottom: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.3);
         }
         
         .menu-logo-img {
-            width: 70px;
-            height: 70px;
-            object-fit: contain;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            padding: 8px;
+            width: 100%;
+            max-width: 180px;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .menu-items {
+            flex: 1;
+            padding: 20px 15px;
         }
         
         .menu-item {
@@ -340,17 +343,19 @@
         <div class="menu-logo">
             <img src="Logo1.png" alt="LLévame" class="menu-logo-img" onerror="this.style.display='none'">
         </div>
-        <div class="menu-item" onclick="cambiarSeccion('principal')">
-            <span class="icon">🚖</span> Principal
-        </div>
-        <div class="menu-item" onclick="cambiarSeccion('viajes')">
-            <span class="icon">📋</span> Mis Viajes
-        </div>
-        <div class="menu-item" onclick="cambiarSeccion('perfil')">
-            <span class="icon">👤</span> Mi Perfil
-        </div>
-        <div class="menu-item" onclick="cerrarSesion()">
-            <span class="icon">🚪</span> Cerrar Sesión
+        <div class="menu-items">
+            <div class="menu-item" onclick="cambiarSeccion('principal')">
+                <span class="icon">🚖</span> Principal
+            </div>
+            <div class="menu-item" onclick="cambiarSeccion('viajes')">
+                <span class="icon">📋</span> Mis Viajes
+            </div>
+            <div class="menu-item" onclick="cambiarSeccion('perfil')">
+                <span class="icon">👤</span> Mi Perfil
+            </div>
+            <div class="menu-item" onclick="cerrarSesion()">
+                <span class="icon">🚪</span> Cerrar Sesión
+            </div>
         </div>
     </div>
 
@@ -828,10 +833,13 @@
             if (estadoActual !== 'disponible' || !vehiculoAprobado) return;
             
             try {
+                console.log('Buscando viajes disponibles...');
                 const res = await fetch('/api/chofer/viajes-disponibles', { 
                     headers: { 'Authorization': 'Bearer ' + token } 
                 });
                 const data = await res.json();
+                console.log('Respuesta:', data);
+                
                 const viajes = data.viajes || [];
                 const listaDiv = document.getElementById('listaViajes');
                 
