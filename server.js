@@ -235,12 +235,13 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
   }
 });
 
+// Obtener viajes disponibles - CORREGIDO
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
     console.log('=== VIAJES DISPONIBLES ===');
     console.log('Chofer ID:', req.usuario.id);
     
-    // Verificar si el chofer está aprobado
+    // Verificar si el chofer tiene vehículo y está aprobado
     const vehiculo = await pool.query('SELECT aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
     if (vehiculo.rows.length === 0) {
       return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
@@ -249,9 +250,10 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
       return res.json({ viajes: [], mensaje: 'Chofer no aprobado aún' });
     }
     
-    // Obtener TODOS los viajes en estado 'buscando_chofer'
+    // Consulta corregida
     const result = await pool.query(`
-      SELECT v.*, u.nombre as cliente_nombre 
+      SELECT v.id, v.origen, v.destino, v.categoria, v.estado, v.precio_base, 
+             u.nombre as cliente_nombre
       FROM viajes v
       JOIN usuarios u ON v.cliente_id = u.id
       WHERE v.estado = 'buscando_chofer'
@@ -259,14 +261,13 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
     `);
     
     console.log('Viajes encontrados:', result.rows.length);
-    console.log('Viajes:', JSON.stringify(result.rows, null, 2));
-    
     res.json({ viajes: result.rows });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Error al obtener viajes: ' + error.message });
   }
 });
+
 // Aceptar viaje
 app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
   const { viaje_id } = req.body;
@@ -422,8 +423,6 @@ app.delete('/api/direcciones/:id', verificarToken, async (req, res) => {
 });
 
 // ============= ENDPOINTS ADMIN =============
-
-// Obtener choferes pendientes de aprobación
 app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   try {
@@ -440,7 +439,6 @@ app.get('/admin/choferes/pendientes', verificarToken, async (req, res) => {
   }
 });
 
-// Aprobar chofer
 app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   const { id } = req.params;
@@ -452,10 +450,21 @@ app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
   }
 });
 
-// Obtener configuración
 app.get('/admin/configuracion', verificarToken, async (req, res) => {
   if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
   res.json({ mensaje: 'Configuración disponible pronto' });
+});
+
+// ============= ENDPOINT PARA EJECUTAR SQL =============
+app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
+  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+  const { sql } = req.body;
+  try {
+    const result = await pool.query(sql);
+    res.json({ exito: true, rows: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ============= RUTAS =============
@@ -466,36 +475,27 @@ app.get('/', (req, res) => {
 app.get('/admin/login', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
-<head>
-  <title>LLévame - Admin</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .login-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; }
-    h1 { text-align: center; color: #FF9800; margin-bottom: 30px; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
-    button { width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer; }
-  </style>
+<head><title>LLévame - Admin</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:system-ui;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login-card{background:white;padding:40px;border-radius:20px;width:100%;max-width:400px}
+  h1{text-align:center;color:#FF9800;margin-bottom:30px}
+  input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:8px}
+  button{width:100%;padding:12px;background:#FF9800;color:white;border:none;border-radius:8px;cursor:pointer}
+</style>
 </head>
 <body>
 <div class="login-card">
-  <h1>LLévame - Admin</h1>
-  <form id="loginForm">
-    <input type="text" id="username" placeholder="Usuario">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button type="submit">Iniciar sesión</button>
-  </form>
+<h1>LLévame - Admin</h1>
+<form id="loginForm">
+<input type="text" id="username" placeholder="Usuario">
+<input type="password" id="password" placeholder="Contraseña">
+<button type="submit">Iniciar sesión</button>
+</form>
 </div>
 <script>
-  document.getElementById('loginForm').onsubmit = async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: document.getElementById('username').value, password: document.getElementById('password').value }) });
-    const data = await res.json();
-    if (data.token && data.usuario.rol === 'admin') {
-      localStorage.setItem('token', data.token);
-      window.location.href = '/admin/dashboard';
-    } else { alert('Credenciales inválidas'); }
-  };
+document.getElementById('loginForm').onsubmit=async(e)=>{e.preventDefault();const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:document.getElementById('username').value,password:document.getElementById('password').value})});const data=await res.json();if(data.token&&data.usuario.rol==='admin'){localStorage.setItem('token',data.token);window.location.href='/admin/dashboard';}else{alert('Credenciales inválidas');}};
 </script>
 </body>
 </html>`);
@@ -504,96 +504,38 @@ app.get('/admin/login', (req, res) => {
 app.get('/admin/dashboard', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
-<head>
-  <title>LLévame - Dashboard</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui; background: #f5f5f5; padding: 20px; }
-    .header { background: #FF9800; color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-    .card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-    button { background: #FF9800; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-    .logout { background: #f44336; }
-    .chofer-item { padding: 10px; border-bottom: 1px solid #eee; }
-    .btn-aprobar { background: #4CAF50; margin-top: 5px; padding: 5px 10px; font-size: 12px; }
-  </style>
+<head><title>LLévame - Dashboard</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:system-ui;background:#f5f5f5;padding:20px}
+  .header{background:#FF9800;color:white;padding:20px;border-radius:15px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+  .card{background:white;padding:20px;border-radius:15px;margin-bottom:20px}
+  button{background:#FF9800;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer}
+  .logout{background:#f44336}
+  .chofer-item{padding:10px;border-bottom:1px solid #eee}
+  .btn-aprobar{background:#4CAF50;margin-top:5px;padding:5px 10px;font-size:12px}
+</style>
 </head>
 <body>
 <div class="header">
-  <h1>LLévame - Panel Admin</h1>
-  <button class="logout" onclick="logout()">Cerrar sesión</button>
+<h1>LLévame - Panel Admin</h1>
+<button class="logout" onclick="logout()">Cerrar sesión</button>
 </div>
 <div class="card">
-  <h2>👨‍✈️ Choferes pendientes de aprobación</h2>
-  <div id="pendientes">Cargando...</div>
-</div>
-<div class="card">
-  <h2>📊 Estadísticas</h2>
-  <div id="stats">Cargando...</div>
+<h2>👨‍✈️ Choferes pendientes de aprobación</h2>
+<div id="pendientes">Cargando...</div>
 </div>
 <script>
-  const token = localStorage.getItem('token');
-  if (!token) window.location.href = '/admin/login';
-  
-  async function cargarPendientes() {
-    try {
-      const res = await fetch('/admin/choferes/pendientes', { headers: { 'Authorization': 'Bearer ' + token } });
-      const data = await res.json();
-      const pendientes = data.choferes || [];
-      const div = document.getElementById('pendientes');
-      if (pendientes.length === 0) {
-        div.innerHTML = '<p>✅ No hay choferes pendientes de aprobación</p>';
-      } else {
-        div.innerHTML = pendientes.map(c => \`
-          <div class="chofer-item">
-            <strong>\${c.nombre}</strong> (\${c.usuario})<br>
-            Vehículo: \${c.marca_modelo || c.tipo} - \${c.matricula || 'Sin matrícula'}<br>
-            Teléfono: \${c.telefono || 'No registrado'}<br>
-            <button class="btn-aprobar" onclick="aprobar(\${c.usuario_id})">✓ Aprobar chofer</button>
-          </div>
-        \`).join('');
-      }
-    } catch(e) { console.error(e); }
-  }
-  
-  async function aprobar(id) {
-    await fetch('/admin/choferes/aprobar/' + id, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
-    cargarPendientes();
-  }
-  
-  async function cargarStats() {
-    try {
-      const res = await fetch('/api/chofer/vehiculo', { headers: { 'Authorization': 'Bearer ' + token } });
-      const data = await res.json();
-      document.getElementById('stats').innerHTML = '<p>Panel de administración funcionando correctamente.</p>';
-    } catch(e) {}
-  }
-  
-  function logout() { localStorage.removeItem('token'); window.location.href = '/admin/login'; }
-  
-  cargarPendientes();
-  cargarStats();
+const token=localStorage.getItem('token');if(!token)window.location.href='/admin/login';
+async function cargarPendientes(){try{const res=await fetch('/admin/choferes/pendientes',{headers:{'Authorization':'Bearer '+token}});const data=await res.json();const pendientes=data.choferes||[];const div=document.getElementById('pendientes');if(pendientes.length===0){div.innerHTML='<p>✅ No hay choferes pendientes de aprobación</p>';}else{div.innerHTML=pendientes.map(c=>'<div class="chofer-item"><strong>'+c.nombre+'</strong> ('+c.usuario+')<br>Vehículo: '+(c.marca_modelo||c.tipo)+' - '+(c.matricula||'Sin matrícula')+'<br>Teléfono: '+(c.telefono||'No registrado')+'<br><button class="btn-aprobar" onclick="aprobar('+c.usuario_id+')">✓ Aprobar chofer</button></div>').join('');}}catch(e){console.error(e);}}
+async function aprobar(id){await fetch('/admin/choferes/aprobar/'+id,{method:'POST',headers:{'Authorization':'Bearer '+token}});cargarPendientes();}
+function logout(){localStorage.removeItem('token');window.location.href='/admin/login';}
+cargarPendientes();
 </script>
 </body>
 </html>`);
 });
-// ============= ENDPOINT PARA EJECUTAR SQL (SOLO ADMIN) =============
-app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'admin') {
-    return res.status(403).json({ error: 'Acceso denegado. Solo administrador.' });
-  }
-  
-  const { sql } = req.body;
-  
-  try {
-    const result = await pool.query(sql);
-    res.json({ exito: true, rows: result.rows });
-  } catch (error) {
-    console.error('Error SQL:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
-// Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
