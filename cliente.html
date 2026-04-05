@@ -37,7 +37,6 @@
         .input-wrapper { position: relative; }
         .sugerencias { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; }
         .sugerencia-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; }
-        .sugerencia-item:hover { background: #f0f0f0; }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; padding: 20px; }
         .modal.open { display: flex; }
         .modal-header { background: #1a1a2e; color: white; padding: 15px; display: flex; justify-content: space-between; border-radius: 12px 12px 0 0; }
@@ -56,10 +55,6 @@
         .perfil-info { background: #f0f0f0; padding: 15px; border-radius: 12px; line-height: 1.6; margin-bottom: 15px; }
         .viaje-item { padding: 10px; border-bottom: 1px solid #eee; }
         .text-center { text-align: center; }
-        .estado-viaje { text-align: center; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; }
-        .estado-buscando { background: #FFF3E0; color: #FF9800; }
-        .estado-aceptado { background: #E3F2FD; color: #2196F3; }
-        .estado-en-curso { background: #E8F5E9; color: #4CAF50; }
     </style>
 </head>
 <body>
@@ -86,26 +81,15 @@
         <div id="registroScreen" class="hidden"><div class="card"><h2>Crear cuenta</h2><input type="text" id="regUsuario" placeholder="Usuario *"><input type="password" id="regPassword" placeholder="Contraseña *"><input type="text" id="regNombre" placeholder="Nombre *"><input type="text" id="regApellidos" placeholder="Apellidos *"><input type="text" id="regCi" placeholder="CI *"><input type="tel" id="regTelefono" placeholder="Teléfono"><input type="email" id="regEmail" placeholder="Email"><button onclick="registro()">Registrarme</button><button onclick="volver()" class="secondary" style="margin-top:12px">Volver</button></div></div>
 
         <div id="seccionViaje" class="hidden">
-            <div id="formularioViaje">
-                <div class="card">
-                    <h2>📍 ¿A dónde vas?</h2>
-                    <div class="input-wrapper"><input type="text" id="origen" placeholder="Origen" autocomplete="off"><div id="sugerenciasOrigen" class="sugerencias hidden"></div></div>
-                    <div class="ubicacion-buttons"><button onclick="abrirMapa('origen')">🗺️ Seleccionar en mapa</button><button onclick="usarUbicacionActual()">📍 Mi ubicación</button></div>
-                    <div class="input-wrapper"><input type="text" id="destino" placeholder="Destino" autocomplete="off"><div id="sugerenciasDestino" class="sugerencias hidden"></div></div>
-                    <div class="ubicacion-buttons"><button onclick="abrirMapa('destino')">🗺️ Seleccionar en mapa</button></div>
-                    <div id="categoriasSection" class="hidden"><div class="categorias" id="categorias"></div></div>
-                    <div id="precioSection" class="hidden"><div class="precio-box"><div class="valor" id="precioEstimado">-- CUP</div></div></div>
-                    <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
-                </div>
-            </div>
-            <div id="seguimientoViaje" class="hidden">
-                <div class="card">
-                    <h2>🚖 Seguimiento de tu viaje</h2>
-                    <div class="estado-viaje" id="estadoViaje">🔄 Buscando chofer...</div>
-                    <div class="mapa-container"><div id="mapaSeguimiento"></div></div>
-                    <div id="infoViaje" class="mt-10 text-center"></div>
-                    <button id="btnCancelar" class="danger mt-10 hidden" onclick="cancelarViaje()">Cancelar viaje</button>
-                </div>
+            <div class="card">
+                <h2>📍 ¿A dónde vas?</h2>
+                <div class="input-wrapper"><input type="text" id="origen" placeholder="Origen" autocomplete="off"><div id="sugerenciasOrigen" class="sugerencias hidden"></div></div>
+                <div class="ubicacion-buttons"><button onclick="abrirMapa('origen')">🗺️ Seleccionar en mapa</button><button onclick="usarUbicacionActual()">📍 Mi ubicación</button></div>
+                <div class="input-wrapper"><input type="text" id="destino" placeholder="Destino" autocomplete="off"><div id="sugerenciasDestino" class="sugerencias hidden"></div></div>
+                <div class="ubicacion-buttons"><button onclick="abrirMapa('destino')">🗺️ Seleccionar en mapa</button></div>
+                <div id="categoriasSection" class="hidden"><div class="categorias" id="categorias"></div></div>
+                <div id="precioSection" class="hidden"><div class="precio-box"><div class="valor" id="precioEstimado">-- CUP</div></div></div>
+                <button id="btnSolicitar" class="hidden" onclick="solicitarTaxi()">Confirmar Taxi</button>
             </div>
         </div>
 
@@ -125,13 +109,10 @@
         let token = localStorage.getItem('token');
         let categoriaSeleccionada = 'economico';
         let mapaModalActual = null;
-        let mapaSeguimiento = null;
         let ubicacionSeleccionada = null;
         let modoSeleccion = 'origen';
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
         let origenLat = null, origenLng = null, destinoLat = null, destinoLng = null;
-        let viajeActual = null;
-        let intervaloSeguimiento = null;
         
         const preciosBase = { economico: 100, confort: 150, clasico: 200, lujo: 300, moto: 80, triciclo: 50 };
         const categorias = [
@@ -312,65 +293,17 @@
                 });
                 const data = await res.json();
                 if (data.exito) {
-                    viajeActual = data.viaje;
                     mostrarNotificacion('✅ Taxi solicitado', 'exito');
-                    document.getElementById('formularioViaje').classList.add('hidden');
-                    document.getElementById('seguimientoViaje').classList.remove('hidden');
-                    document.getElementById('btnCancelar').classList.remove('hidden');
-                    iniciarSeguimiento();
+                    document.getElementById('origen').value = '';
+                    document.getElementById('destino').value = '';
+                    origenLat = null; origenLng = null; destinoLat = null; destinoLng = null;
+                    document.getElementById('categoriasSection').classList.add('hidden');
+                    document.getElementById('precioSection').classList.add('hidden');
+                    document.getElementById('btnSolicitar').classList.add('hidden');
+                    cargarHistorial();
                 } else { mostrarNotificacion(data.error || 'Error', 'error'); }
             } catch(e) { mostrarNotificacion('Error de conexión', 'error'); }
             finally { btn.disabled = false; btn.innerHTML = 'Confirmar Taxi'; }
-        }
-        
-        function iniciarSeguimiento() {
-            if (intervaloSeguimiento) clearInterval(intervaloSeguimiento);
-            if (mapaSeguimiento) mapaSeguimiento.remove();
-            mapaSeguimiento = L.map('mapaSeguimiento').setView([origenLat, origenLng], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd' }).addTo(mapaSeguimiento);
-            L.marker([origenLat, origenLng]).addTo(mapaSeguimiento).bindPopup('🚩 Origen');
-            L.marker([destinoLat, destinoLng]).addTo(mapaSeguimiento).bindPopup('🎯 Destino');
-            intervaloSeguimiento = setInterval(consultarEstadoViaje, 3000);
-        }
-        
-        async function consultarEstadoViaje() {
-            if (!viajeActual) return;
-            try {
-                const res = await fetch(`/api/viajes/estado/${viajeActual.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await res.json();
-                if (data.viaje) {
-                    viajeActual = data.viaje;
-                    actualizarUIEstado();
-                    if (viajeActual.estado === 'completado') {
-                        clearInterval(intervaloSeguimiento);
-                        setTimeout(() => { document.getElementById('seguimientoViaje').classList.add('hidden'); document.getElementById('formularioViaje').classList.remove('hidden'); viajeActual = null; cargarHistorial(); }, 3000);
-                    }
-                }
-            } catch(e) { console.error(e); }
-        }
-        
-        function actualizarUIEstado() {
-            const estadoDiv = document.getElementById('estadoViaje');
-            const infoDiv = document.getElementById('infoViaje');
-            let estadoTexto = '', estadoClass = '', infoTexto = '';
-            switch(viajeActual.estado) {
-                case 'buscando_chofer': estadoTexto = '🔄 Buscando chofer...'; estadoClass = 'estado-buscando'; infoTexto = '⏳ Por favor espera, estamos buscando el chofer más cercano.'; break;
-                case 'aceptado': estadoTexto = '✅ Chofer asignado. Está en camino hacia ti'; estadoClass = 'estado-aceptado'; infoTexto = `🚖 Chofer: ${viajeActual.chofer_nombre || 'Asignado'} | Llegada estimada: 5-10 minutos`; break;
-                case 'en_curso': estadoTexto = '🚗 Viaje en curso. En camino a tu destino'; estadoClass = 'estado-en-curso'; infoTexto = `🎯 Destino: ${viajeActual.destino} | 💰 Precio: ${viajeActual.precio_base} CUP`; break;
-                case 'completado': estadoTexto = '🏁 Viaje completado. ¡Gracias por viajar con LLévame!'; estadoClass = 'estado-completado'; infoTexto = `💰 Total: ${viajeActual.precio_final || viajeActual.precio_base} CUP`; break;
-                default: estadoTexto = viajeActual.estado; estadoClass = 'estado-buscando';
-            }
-            estadoDiv.className = `estado-viaje ${estadoClass}`; estadoDiv.innerHTML = estadoTexto; infoDiv.innerHTML = infoTexto;
-        }
-        
-        async function cancelarViaje() {
-            if (!confirm('¿Cancelar este viaje?')) return;
-            await fetch(`/api/viajes/cancelar/${viajeActual.id}`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
-            mostrarNotificacion('Viaje cancelado', 'exito');
-            clearInterval(intervaloSeguimiento);
-            document.getElementById('seguimientoViaje').classList.add('hidden');
-            document.getElementById('formularioViaje').classList.remove('hidden');
-            viajeActual = null;
         }
         
         async function cargarHistorial() {
