@@ -235,30 +235,38 @@ app.post('/api/chofer/ubicacion', verificarToken, async (req, res) => {
   }
 });
 
-// Obtener viajes disponibles (SIN filtrar por categorías para pruebas)
 app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   try {
-    // Primero verificar si el chofer está aprobado
+    console.log('=== VIAJES DISPONIBLES ===');
+    console.log('Chofer ID:', req.usuario.id);
+    
+    // Verificar si el chofer está aprobado
     const vehiculo = await pool.query('SELECT aprobado FROM vehiculos WHERE usuario_id = $1', [req.usuario.id]);
-    if (vehiculo.rows.length === 0 || !vehiculo.rows[0].aprobado) {
+    if (vehiculo.rows.length === 0) {
+      return res.json({ viajes: [], mensaje: 'No has registrado un vehículo' });
+    }
+    if (!vehiculo.rows[0].aprobado) {
       return res.json({ viajes: [], mensaje: 'Chofer no aprobado aún' });
     }
     
-    const result = await pool.query(
-      `SELECT v.*, u.nombre as cliente_nombre 
-       FROM viajes v
-       JOIN usuarios u ON v.cliente_id = u.id
-       WHERE v.estado = 'buscando_chofer'
-       ORDER BY v.creado_en ASC`
-    );
-    console.log('Viajes disponibles encontrados:', result.rows.length);
+    // Obtener TODOS los viajes en estado 'buscando_chofer'
+    const result = await pool.query(`
+      SELECT v.*, u.nombre as cliente_nombre 
+      FROM viajes v
+      JOIN usuarios u ON v.cliente_id = u.id
+      WHERE v.estado = 'buscando_chofer'
+      ORDER BY v.creado_en ASC
+    `);
+    
+    console.log('Viajes encontrados:', result.rows.length);
+    console.log('Viajes:', JSON.stringify(result.rows, null, 2));
+    
     res.json({ viajes: result.rows });
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ error: 'Error al obtener viajes' });
+    res.status(500).json({ error: 'Error al obtener viajes: ' + error.message });
   }
 });
-
 // Aceptar viaje
 app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
   const { viaje_id } = req.body;
