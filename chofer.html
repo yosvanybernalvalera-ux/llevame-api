@@ -27,6 +27,7 @@
             position: sticky;
             top: 0;
             border-bottom: 1px solid rgba(255,255,255,0.15);
+            z-index: 100;
         }
         
         .menu-btn {
@@ -39,12 +40,23 @@
             padding: 0;
         }
         
-        .header h1 {
-            font-size: 22px;
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-img {
+            height: 35px;
+            width: auto;
+        }
+        
+        .logo-text {
+            font-size: 20px;
             color: white;
             font-weight: 600;
         }
-        .header h1 span { color: #FF9800; }
+        .logo-text span { color: #FF9800; }
         
         .user-info {
             font-size: 12px;
@@ -74,7 +86,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,0,0,0.5);
             z-index: 150;
             display: none;
         }
@@ -112,6 +124,12 @@
             font-size: 18px;
             margin-bottom: 15px;
             color: #1a1a2e;
+        }
+        
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
         }
         
         input, select {
@@ -257,7 +275,10 @@
 <body>
     <div class="header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <h1>LLé<span>vame</span></h1>
+        <div class="logo-container">
+            <img src="logo3.png" alt="LLévame" class="logo-img" onerror="this.style.display='none'">
+            <div class="logo-text">LLé<span>vame</span></div>
+        </div>
         <div class="user-info" id="userName"></div>
     </div>
     
@@ -480,7 +501,6 @@
                     document.getElementById('seccionPrincipal').classList.remove('hidden');
                     document.getElementById('userName').innerHTML = datosUsuario.nombre ? datosUsuario.nombre.split(' ')[0] : 'Chofer';
                     
-                    // Cargar todos los datos después del login
                     await cargarPerfil();
                     await cargarVehiculo();
                     await cargarDatosChofer();
@@ -874,13 +894,12 @@
         
         function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
         
-        // Inicialización - si hay token, cargar datos
+        // Inicialización
         if (token) {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('seccionPrincipal').classList.remove('hidden');
             document.getElementById('userName').innerHTML = 'Chofer';
             
-            // Cargar todos los datos en paralelo
             Promise.all([
                 cargarPerfil(),
                 cargarVehiculo(),
