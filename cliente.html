@@ -6,7 +6,9 @@
     <title>LLévame - Cliente</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -101,7 +103,6 @@
         <div id="registroScreen" class="hidden"><div class="card"><h2>Crear cuenta</h2><input type="text" id="regUsuario" placeholder="Usuario *"><input type="password" id="regPassword" placeholder="Contraseña *"><input type="text" id="regNombre" placeholder="Nombre *"><input type="text" id="regApellidos" placeholder="Apellidos *"><input type="text" id="regCi" placeholder="CI *"><input type="tel" id="regTelefono" placeholder="Teléfono"><input type="email" id="regEmail" placeholder="Email"><button onclick="registro()">Registrarme</button><button onclick="volver()" class="secondary" style="margin-top:12px">Volver</button></div></div>
 
         <div id="seccionViaje" class="hidden">
-            <!-- Formulario de solicitud -->
             <div id="formularioViaje">
                 <div class="card">
                     <h2>📍 ¿A dónde vas?</h2>
@@ -128,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- Seguimiento del viaje -->
             <div id="seguimientoViaje" class="hidden">
                 <div class="card">
                     <h2>🚖 Seguimiento de tu viaje</h2>
@@ -157,6 +157,7 @@
         let categoriaSeleccionada = 'economico';
         let mapaModalActual = null;
         let mapaSeguimiento = null;
+        let controlRuta = null;
         let ubicacionSeleccionada = null;
         let modoSeleccion = 'origen';
         let ubicacionActual = { lat: 23.1365, lng: -82.3589 };
@@ -420,7 +421,6 @@
         function iniciarSeguimiento() {
             if (intervaloSeguimiento) clearInterval(intervaloSeguimiento);
             
-            // Inicializar mapa de seguimiento
             if (mapaSeguimiento) mapaSeguimiento.remove();
             mapaSeguimiento = L.map('mapaSeguimiento').setView([origenLat, origenLng], 14);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
@@ -428,11 +428,28 @@
                 subdomains: 'abcd' 
             }).addTo(mapaSeguimiento);
             
-            // Marcar origen y destino
             L.marker([origenLat, origenLng]).addTo(mapaSeguimiento).bindPopup('🚩 Origen');
             L.marker([destinoLat, destinoLng]).addTo(mapaSeguimiento).bindPopup('🎯 Destino');
             
             intervaloSeguimiento = setInterval(consultarEstadoViaje, 3000);
+        }
+        
+        function actualizarRuta(desdeLat, desdeLng, hastaLat, hastaLng) {
+            if (controlRuta) controlRuta.remove();
+            if (!desdeLat || !hastaLat) return;
+            
+            controlRuta = L.Routing.control({
+                waypoints: [
+                    L.latLng(desdeLat, desdeLng),
+                    L.latLng(hastaLat, hastaLng)
+                ],
+                routeWhileDragging: false,
+                showAlternatives: false,
+                lineOptions: { styles: [{ color: '#FF9800', weight: 5, opacity: 0.8 }] },
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true
+            }).addTo(mapaSeguimiento);
         }
         
         async function consultarEstadoViaje() {
@@ -448,8 +465,22 @@
                     viajeActual = data.viaje;
                     actualizarUIEstado();
                     
-                    // Mostrar ubicación del chofer en el mapa
-                    if ((viajeActual.estado === 'aceptado' || viajeActual.estado === 'en_curso') && viajeActual.chofer_lat) {
+                    if (viajeActual.estado === 'aceptado' && viajeActual.chofer_lat) {
+                        actualizarRuta(viajeActual.chofer_lat, viajeActual.chofer_lng, origenLat, origenLng);
+                        
+                        if (marcadorChofer) {
+                            marcadorChofer.setLatLng([viajeActual.chofer_lat, viajeActual.chofer_lng]);
+                        } else {
+                            marcadorChofer = L.marker([viajeActual.chofer_lat, viajeActual.chofer_lng], {
+                                icon: L.divIcon({ html: '🚖', iconSize: [30, 30], className: 'marcador-chofer' })
+                            }).addTo(mapaSeguimiento).bindPopup('🚖 Chofer');
+                        }
+                        mapaSeguimiento.setView([viajeActual.chofer_lat, viajeActual.chofer_lng], 14);
+                    }
+                    
+                    if (viajeActual.estado === 'en_curso' && viajeActual.chofer_lat) {
+                        actualizarRuta(viajeActual.chofer_lat, viajeActual.chofer_lng, destinoLat, destinoLng);
+                        
                         if (marcadorChofer) {
                             marcadorChofer.setLatLng([viajeActual.chofer_lat, viajeActual.chofer_lng]);
                         } else {
@@ -530,10 +561,8 @@
         
         function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
         
-        // Event listeners para búsqueda
         document.getElementById('origen').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Origen'));
         document.getElementById('destino').addEventListener('input', (e) => buscarDirecciones(e.target.value, 'Destino'));
-        
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-wrapper')) {
                 document.getElementById('sugerenciasOrigen')?.classList.add('hidden');
