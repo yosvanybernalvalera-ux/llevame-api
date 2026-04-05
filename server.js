@@ -266,26 +266,16 @@ app.get('/api/chofer/viajes-disponibles', verificarToken, async (req, res) => {
   }
 });
 
-// ENDPOINT ACEPTAR VIAJE - CORREGIDO
 app.post('/api/chofer/aceptar-viaje', verificarToken, async (req, res) => {
   const { viaje_id } = req.body;
-  console.log('Aceptando viaje:', viaje_id, 'Chofer:', req.usuario.id);
-  
   try {
     const viaje = await pool.query('SELECT * FROM viajes WHERE id = $1 AND estado = $2', [viaje_id, 'buscando_chofer']);
-    if (viaje.rows.length === 0) {
-      return res.status(400).json({ error: 'Viaje no disponible' });
-    }
+    if (viaje.rows.length === 0) return res.status(400).json({ error: 'Viaje no disponible' });
     
-    await pool.query(
-      'UPDATE viajes SET chofer_id = $1, estado = $2, aceptado_en = NOW() WHERE id = $3',
-      [req.usuario.id, 'aceptado', viaje_id]
-    );
+    await pool.query('UPDATE viajes SET chofer_id = $1, estado = $2, aceptado_en = NOW() WHERE id = $3', [req.usuario.id, 'aceptado', viaje_id]);
     await pool.query('UPDATE usuarios SET estado_chofer = $1 WHERE id = $2', ['ocupado', req.usuario.id]);
-    
     res.json({ exito: true, mensaje: 'Viaje aceptado' });
   } catch (error) {
-    console.error('Error:', error);
     res.status(500).json({ error: 'Error al aceptar viaje: ' + error.message });
   }
 });
@@ -351,7 +341,16 @@ app.post('/api/viajes/solicitar', verificarToken, async (req, res) => {
 app.get('/api/viajes/estado/:id', verificarToken, async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query(`SELECT v.*, u.telefono as chofer_telefono, u.nombre as chofer_nombre, u.ultima_ubicacion_lat as chofer_lat, u.ultima_ubicacion_lng as chofer_lng FROM viajes v LEFT JOIN usuarios u ON v.chofer_id = u.id WHERE v.id = $1`, [id]);
+    const result = await pool.query(`
+      SELECT v.*, u.telefono as chofer_telefono, u.nombre as chofer_nombre,
+             u.ultima_ubicacion_lat as chofer_lat, u.ultima_ubicacion_lng as chofer_lng
+      FROM viajes v
+      LEFT JOIN usuarios u ON v.chofer_id = u.id
+      WHERE v.id = $1
+    `, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Viaje no encontrado' });
+    }
     res.json({ viaje: result.rows[0] });
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener estado' });
@@ -430,17 +429,6 @@ app.post('/admin/choferes/aprobar/:id', verificarToken, async (req, res) => {
     res.json({ exito: true });
   } catch (error) {
     res.status(500).json({ error: 'Error al aprobar chofer' });
-  }
-});
-
-app.post('/admin/ejecutar-sql', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-  const { sql } = req.body;
-  try {
-    const result = await pool.query(sql);
-    res.json({ exito: true, rows: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
