@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Corregir Tablas - LLévame</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        button { background: #FF9800; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin: 10px 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🚕 LLévame - Corregir Tablas</h1>
+        <pre>ALTER TABLE viajes ADD COLUMN IF NOT EXISTS origen_lat REAL;
+ALTER TABLE viajes ADD COLUMN IF NOT EXISTS origen_lng REAL;
+ALTER TABLE viajes ADD COLUMN IF NOT EXISTS destino_lat REAL;
+ALTER TABLE viajes ADD COLUMN IF NOT EXISTS destino_lng REAL;</pre>
+        
+        <button onclick="corregirTablas()">Corregir Tablas</button>
+        <button onclick="verificarColumnas()">Verificar Columnas</button>
+        
+        <h3>Resultado:</h3>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function getToken() {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: 'admin', password: 'Llevame2025' })
+            });
+            const data = await res.json();
+            return data.token;
+        }
+        
+        async function corregirTablas() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Corrigiendo tablas...</p>';
+            try {
+                const token = await getToken();
+                const sql = `ALTER TABLE viajes ADD COLUMN IF NOT EXISTS origen_lat REAL;
+ALTER TABLE viajes ADD COLUMN IF NOT EXISTS origen_lng REAL;
+ALTER TABLE viajes ADD COLUMN IF NOT EXISTS destino_lat REAL;
+ALTER TABLE viajes ADD COLUMN IF NOT EXISTS destino_lng REAL;`;
+                
+                const response = await fetch('/admin/ejecutar-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ sql })
+                });
+                const data = await response.json();
+                if (data.exito) {
+                    resultado.innerHTML = '<p class="success">✅ Tablas corregidas correctamente</p>';
+                    resultado.innerHTML += '<p>Columnas agregadas: origen_lat, origen_lng, destino_lat, destino_lng</p>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
+                }
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            }
+        }
+        
+        async function verificarColumnas() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = '<p>🔄 Verificando columnas...</p>';
+            try {
+                const token = await getToken();
+                const response = await fetch('/admin/verificar-columnas-viajes', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                if (data.exito) {
+                    resultado.innerHTML = '<p class="success">✅ Columnas en tabla viajes:</p>';
+                    resultado.innerHTML += '<ul>' + data.columnas.map(c => '<li>' + c + '</li>').join('') + '</ul>';
+                } else {
+                    resultado.innerHTML = '<p class="error">❌ Error: ' + data.error + '</p>';
+                }
+            } catch(e) {
+                resultado.innerHTML = '<p class="error">❌ Error: ' + e.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
